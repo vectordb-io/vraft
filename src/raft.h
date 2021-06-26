@@ -59,7 +59,7 @@ class Raft {
     }
 
     bool ImLeader() const {
-        if (leader_ == Config::GetInstance().MyAddress()->ToString()) {
+        if (leader_ == Config::GetInstance().me().ToString()) {
             assert(state_ == STATE_LEADER);
             return true;
         } else {

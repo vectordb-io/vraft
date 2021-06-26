@@ -10,6 +10,7 @@ Log::~Log() {
 
 Status
 Log::Init() {
+    return Status::OK();
 }
 
 }  // namespace vraft

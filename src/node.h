@@ -7,10 +7,10 @@
 #include "raft.h"
 #include "status.h"
 #include "common.h"
+#include "nodeid.h"
 #include "vraft_rpc.grpc.pb.h"
 
 namespace vraft {
-
 
 class Node {
   public:
@@ -20,14 +20,14 @@ class Node {
         return instance;
     }
 
-    Node() = default;
-    ~Node() {}
     Node(const Node&) = delete;
     Node& operator=(const Node&) = delete;
-
     Status Init();
     Status Start();
-    uint64_t Id();
+
+    const NodeId &id() const {
+        return id_;
+    }
 
     void OnPing(const vraft_rpc::Ping &request, vraft_rpc::PingReply &reply);
     Status Ping(const vraft_rpc::Ping &request, const std::string &address);
@@ -35,12 +35,16 @@ class Node {
     Status PingAll();
     Status PingPeers();
 
+  private:
     void Sleep(int min, int max) const;
 
   private:
-    Raft raft_;
-};
+    Node();
+    ~Node() = default;
 
+    Raft raft_;
+    NodeId id_;
+};
 
 }  // namespace vraft
 

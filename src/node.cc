@@ -9,6 +9,10 @@
 
 namespace vraft {
 
+Node::Node()
+    :id_(Config::GetInstance().me().ToString()) {
+}
+
 Status
 Node::Init() {
     Env::GetInstance().grpc_server()->set_on_ping_cb(
@@ -28,31 +32,24 @@ Node::Start() {
     }
 
     if (Config::GetInstance().ping()) {
-        //std::this_thread::sleep_for(std::chrono::seconds(1));
-        vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Node::PingPeers, &(vraft::Node::GetInstance())), 3000);
+        vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Node::PingPeers, this), 3000);
     }
 
-    raft_.BeFollower();
-}
-
-uint64_t
-Node::Id() {
-    uint32_t ip = (uint32_t)inet_addr(Config::GetInstance().MyAddress()->host_.c_str());
-    assert(ip != (uint32_t)-1);
-    uint64_t node_id = (static_cast<uint64_t>(ip) << 32) | Config::GetInstance().MyAddress()->port_;
-    return node_id;
+    //raft_.BeFollower();
+    return Status::OK();
 }
 
 void
 Node::OnPing(const vraft_rpc::Ping &request, vraft_rpc::PingReply &reply) {
-    LOG(INFO) << "receive from " << request.address() << ": " << request.msg();
-    reply.set_address(Config::GetInstance().MyAddress()->ToString());
+    NodeId node_id(request.node_id());
+    LOG(INFO) << "receive from " << node_id.address() << ": " << request.msg();
+    reply.set_node_id(id_.code());
     if (request.msg() == "ping") {
         reply.set_msg("pang");
     } else {
         reply.set_msg("no sounds");
     }
-    LOG(INFO) << "send to " << request.address() << ": " << reply.msg();
+    LOG(INFO) << "send to " << node_id.address() << ": " << reply.msg();
 }
 
 Status
@@ -68,17 +65,18 @@ Node::Ping(const vraft_rpc::Ping &request, const std::string &address) {
 
 Status
 Node::OnPingReply(const vraft_rpc::PingReply &reply) {
-    LOG(INFO) << "receive from " << reply.address() << ": " << reply.msg();
+    NodeId node_id(reply.node_id());
+    LOG(INFO) << "receive from " << node_id.address() << ": " << reply.msg();
     return Status::OK();
 }
 
 Status
 Node::PingAll() {
-    for (auto &hp : Config::GetInstance().address_) {
+    for (auto &hp : Config::GetInstance().addresses()) {
         vraft_rpc::Ping request;
-        request.set_address(Config::GetInstance().MyAddress()->ToString());
+        request.set_node_id(id_.code());
         request.set_msg("ping");
-        auto s = Ping(request, hp->ToString());
+        auto s = Ping(request, hp.ToString());
         assert(s.ok());
     }
     return Status::OK();
@@ -86,16 +84,11 @@ Node::PingAll() {
 
 Status
 Node::PingPeers() {
-    for (auto &hp : Config::GetInstance().address_) {
-        // do not send message to myself
-        if (hp->ToString() == Config::GetInstance().MyAddress()->ToString()) {
-            continue;
-        }
-
+    for (auto &hp : Config::GetInstance().peers()) {
         vraft_rpc::Ping request;
-        request.set_address(Config::GetInstance().MyAddress()->ToString());
+        request.set_node_id(id_.code());
         request.set_msg("ping");
-        auto s = Ping(request, hp->ToString());
+        auto s = Ping(request, hp.ToString());
         assert(s.ok());
     }
     return Status::OK();

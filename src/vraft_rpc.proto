@@ -5,17 +5,17 @@ package vraft_rpc;
 service VRaft {
   rpc RpcPing (Ping) returns (PingReply) {}
   rpc RpcRequestVote (RequestVote) returns (RequestVoteReply) {}
-  
+  rpc RpcAppendEntries (AppendEntries) returns (AppendEntriesReply) {}
 }
 
 message Ping {
   string msg = 1;
-  string address = 2;
+  int64 node_id = 2;
 }
 
 message PingReply {
   string msg = 1;
-  string address = 2;
+  int64 node_id = 2;
 }
 
 message Term {
@@ -24,16 +24,34 @@ message Term {
 
 message RequestVote {
   int64 term = 1;
-  string address = 2;
+  int64 node_id = 2;
   int64 last_log_index = 3;
   int64 last_log_term = 4;
 };
 
 message RequestVoteReply {
   int64 term = 1;
-  bool granted = 2;
+  bool vote_granted = 2;
 
-  string address = 3;
+  int64 node_id = 3;
+};
+
+message Entry {
+
+};
+
+message AppendEntries {
+  int64 term = 1;
+  int64 node_id = 2;
+  int32 prev_log_index = 3;
+  int32 prev_log_term = 4;
+  repeated Entry entries = 5;
+  int32 commit_index = 6;
+};
+
+message AppendEntriesReply {
+  int64 term = 1;
+  bool success = 2;
 };
 
 

@@ -14,9 +14,9 @@ RequestVoteManager::~RequestVoteManager() {
 
 void
 RequestVoteManager::Vote(const vraft_rpc::RequestVoteReply &reply) {
-    assert(reply.granted());
+    //assert(reply.granted());
     assert(reply.term() == term_);
-    votes_.insert(std::pair<std::string, vraft_rpc::RequestVoteReply>(reply.address(), reply));
+    //votes_.insert(std::pair<std::string, vraft_rpc::RequestVoteReply>(reply.address(), reply));
 }
 
 bool
@@ -77,14 +77,16 @@ Status
 Raft::RequestVoteAll() {
     vraft_rpc::RequestVote request;
     request.set_term(current_term_);
-    request.set_address(Config::GetInstance().MyAddress()->ToString());
+    //request.set_address(Config::GetInstance().MyAddress()->ToString());
     request.set_last_log_index(Env::GetInstance().log()->LastLogId().index());
     request.set_last_log_term(Env::GetInstance().log()->LastLogId().term());
 
+    /*
     for (auto &hp : Config::GetInstance().address_) {
         auto s = RequestVote(request, hp->ToString());
         assert(s.ok());
     }
+    */
 }
 
 void

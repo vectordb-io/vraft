@@ -1,11 +1,12 @@
+#include "util.h"
 #include "env.h"
 #include "node.h"
 
 namespace vraft {
 
 Env::Env()
-    :log_(Config::GetInstance().storage_path()),
-     storage_(Config::GetInstance().storage_path()) {
+    :log_(Config::GetInstance().path() + "/log"),
+     storage_(Config::GetInstance().path() + "/store") {
 }
 
 Env::~Env() {
@@ -50,6 +51,10 @@ Env::VoteForPersist(const std::string &vote_for) {
 Status
 Env::Init() {
     Status s;
+
+    if (!util::DirOK(Config::GetInstance().path())) {
+        util::Mkdir(Config::GetInstance().path());
+    }
 
     s = storage_.Init();
     assert(s.ok());

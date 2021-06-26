@@ -4,9 +4,11 @@
 #include <getopt.h>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <vector>
 #include <memory>
+#include "util.h"
 #include "status.h"
 
 namespace vraft {
@@ -14,19 +16,38 @@ namespace vraft {
 class HostAndPort {
   public:
     HostAndPort() = default;
-    HostAndPort(const HostAndPort&) = default;
-
-    HostAndPort(std::string host, int port)
+    HostAndPort(const std::string &host, int port)
         :host_(host), port_(port) {
     }
 
+    HostAndPort(const HostAndPort&) = default;
+    HostAndPort& operator=(const HostAndPort&) = default;
+    ~HostAndPort() = default;
+
     std::string
     ToString() const {
-        char buf[64];
-        snprintf(buf, sizeof(buf), "%s:%d", host_.c_str(), port_);
-        return std::string(buf);
+        char buf[32];
+        snprintf(buf, sizeof(buf), ":%d", port_);
+        return host_ + std::string(buf);
     }
 
+    const std::string& host() const {
+        return host_;
+    }
+
+    void set_host(const std::string& host) {
+        host_ = host;
+    }
+
+    int port() const {
+        return port_;
+    }
+
+    void set_port(int port) {
+        port_ = port;
+    }
+
+  private:
     std::string host_;
     int port_;
 };
@@ -42,45 +63,38 @@ class Config {
     Config(const Config&) = delete;
     Config& operator=(const Config&) = delete;
 
-    std::string DebugString() const {
-        std::string s;
-        s.append("\n[\n");
-        s.append("address: \n");
-        for (auto hp : address_) {
-            s.append(hp->ToString());
-            s.append("\n");
-        }
-        s.append("]\n");
-        return s;
-    }
+    Status Init(int argc, char **argv);
+    std::string ToString() const;
+    void PrintHelp() const;
 
     int Quorum() const {
-        int n = address_.size();
+        int n = addresses_.size();
         return n /  2 + 1;
     }
 
-    Status Load(int argc, char **argv);
+    const HostAndPort& me() const {
+        return me_;
+    }
 
-    std::shared_ptr<HostAndPort>
-    MyAddress() const {
-        auto it = address_.begin();
-        if (it != address_.end()) {
-            return *it;
-        } else {
-            return std::shared_ptr<HostAndPort>();
-        }
+    const std::vector<HostAndPort>& peers() const {
+        return peers_;
+    }
+
+    const std::vector<HostAndPort>& addresses() const {
+        return addresses_;
+    }
+
+    const std::string& exe_name() const {
+        return exe_name_;
     }
 
     bool ping() const {
         return ping_;
     }
 
-    const std::string& storage_path() const {
-        return storage_path_;
+    const std::string& path() const {
+        return path_;
     }
-
-    // address_[0] is mine
-    std::vector<std::shared_ptr<HostAndPort>> address_;
 
     int election_timeout() const {
         return election_timeout_;
@@ -91,52 +105,21 @@ class Config {
     }
 
   private:
-    Config()
-        :ping_(false) {
-    }
+    Config();
+    ~Config();
 
-    ~Config() {}
+    void ParseHostPort(const std::string &s, std::string &host, int &port);
+    void ParseOne(const std::string &s, vraft::HostAndPort &hp);
+    void ParsePeers(const std::string &s, std::vector<vraft::HostAndPort> &v);
+    void ParseMe(const std::string &s, vraft::HostAndPort &hp);
 
-    // intput:
-    // hp = 127.0.0.1:38000
-    // output:
-    // host = 127.0.0.1
-    // port = 38000
-    void ParseHostPort(std::string &hp, std::string &host, int &port) {
-        char* psave = nullptr;
-        const char *d = ":";
-        char *p;
-        p = strtok_r((char*)hp.c_str(), d, &psave);
-        host = std::string(p);
-        p = strtok_r(nullptr, d, &psave);
-        sscanf(p, "%d", &port);
-    }
+    HostAndPort me_;
+    std::vector<HostAndPort> peers_;
+    std::vector<HostAndPort> addresses_;
 
-    void ParseOne(std::string s, vraft::HostAndPort &hp) {
-        ParseHostPort(s, hp.host_, hp.port_);
-    }
-
-    void ParsePeers(std::string s, std::vector<vraft::HostAndPort> &v) {
-        char* psave = nullptr;
-        const char *d = ",";
-        char *p;
-        p = strtok_r((char*)s.c_str(), d, &psave);
-        while (p) {
-            std::string tmp(p);
-            vraft::HostAndPort hp;
-            ParseOne(tmp, hp);
-            v.push_back(hp);
-            p = strtok_r(nullptr, d, &psave);
-        }
-    }
-
-    void ParseMe(std::string s, vraft::HostAndPort &hp) {
-        ParseOne(s, hp);
-    }
-
+    std::string exe_name_;
     bool ping_;
-    std::string storage_path_;
-
+    std::string path_;
     int election_timeout_;   // ms
     int heartbeat_timeout_;  // ms
 };

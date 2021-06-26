@@ -65,7 +65,7 @@ GrpcServer::AsyncRequestVote(const vraft_rpc::RequestVote &request, const std::s
 
 Status
 GrpcServer::StartService() {
-    std::string server_address(Config::GetInstance().MyAddress()->ToString());
+    std::string server_address(Config::GetInstance().me().ToString());
     grpc::ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&service_);
@@ -133,7 +133,8 @@ GrpcServer::ThreadAsyncCall() {
         assert(ok);
 
         if (p->GetStatus().ok()) {
-            p->Process();
+            //p->Process();
+            Env::GetInstance().thread_pool()->ProduceOne(std::bind(&AsyncTaskCall::Process, p));
         } else {
             LOG(ERROR) << "err:" << p->GetStatus().error_message();
         }

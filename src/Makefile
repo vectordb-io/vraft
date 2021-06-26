@@ -1,30 +1,35 @@
 CC:=g++
 CFLAGS+=-c -Wall -g -std=c++17
+INCLUDES=-I./ -I../third_party/jsonxx.v0.9.2/include/
 
 OBJS_SERVER=server_main.o config.o vraft_rpc.grpc.pb.o vraft_rpc.pb.o status.o thread_pool.o timer.o grpc_server.o env.o node.o storage.o coding.o async_task_called.o async_task_call.o raft.o log.o util.o
-INCLUDES_SERVER=-I./
 LIBS_SERVER=-lglog -lprotobuf -lgrpc++ -lgrpc -lpthread -lleveldb
 LFLAGS_SERVER=-L/usr/local/lib
 
 OBJS_CLIENT=client_main.o vraft_rpc.grpc.pb.o vraft_rpc.pb.o status.o
-INCLUDES_CLIENT=-I./
 LIBS_CLIENT=-lglog -lprotobuf -lgrpc++ -lgrpc -lpthread -lleveldb
 LFLAGS_CLIENT=-L/usr/local/lib
 
-OBJS_THREAD_POOL_TEST=thread_pool_test.o thread_pool.o
-INCLUDES_THREAD_POOL_TEST=-I./
+OBJS_THREAD_POOL_TEST=thread_pool_test.o thread_pool.o status.o
 LIBS_THREAD_POOL_TEST=-lglog -lprotobuf -lgrpc++ -lgrpc -lpthread -lleveldb
 LFLAGS_THREAD_POOL_TEST=-L/usr/local/lib
+
+OBJS_CONFIG_TEST=config_test.o config.o status.o util.o
+LIBS_CONFIG_TEST=-lglog -lprotobuf -lgrpc++ -lgrpc -lpthread -lleveldb
+LFLAGS_CONFIG_TEST=-L/usr/local/lib
 
 cs: vraft_server vraft_client
 	@echo ""
 	@echo "success, go go go!"
 	@echo ""
 
-test: thread_pool_test 
+test: thread_pool_test config_test
 	@echo ""
 	@echo "make $<"
 	@echo ""
+
+config_test: $(OBJS_CONFIG_TEST)
+	$(CC) $^ -o $@ $(LIBS_CONFIG_TEST) $(LFLAGS_CONFIG_TEST)
 
 thread_pool_test: $(OBJS_THREAD_POOL_TEST)
 	$(CC) $^ -o $@ $(LIBS_THREAD_POOL_TEST) $(LFLAGS_THREAD_POOL_TEST)
@@ -36,7 +41,7 @@ vraft_client: $(OBJS_CLIENT)
 	$(CC) $^ -o $@ $(LIBS_CLIENT) $(LFLAGS_CLIENT)
 
 %.o: %.cc %.h
-	$(CC) $< $(CFLAGS) -o $@
+	$(CC) $(INCLUDES) $(CFLAGS) -o $@ $<
 
 .PHONY:
 proto:
@@ -51,6 +56,7 @@ clean:
 	rm -rf vraft_server
 	rm -rf vraft_client
 	rm -rf thread_pool_test
+	rm -rf config_test
 
 cleanall: clean
 	rm -f vraft_rpc.pb.*
