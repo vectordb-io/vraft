@@ -115,7 +115,7 @@ class Raft {
     void TraceAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const;
     void TraceOnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const;
 
-    void TraceLog(const std::string &log_flag) const;
+    void TraceLog(const std::string &log_flag, const std::string func_name) const;
 
     jsonxx::json64 ToJson() const;
     std::string ToString() const;

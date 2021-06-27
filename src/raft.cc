@@ -192,9 +192,7 @@ Raft::OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply) {
 
 Status
 Raft::RequestVotePeers(int64_t term) {
-    std::string log_str = "RequestVotePeers, state:";
-    log_str.append(State2String(state_));
-    LOG(INFO) << log_str;
+    TraceLog("RequestVotePeers", __func__);
 
     vraft_rpc::RequestVote request;
     request.set_term(term);
@@ -234,10 +232,16 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
         success = false;
     }
 
+    if (success == true) {
+        leader_ = request.node_id();
+    }
+
     if (state_ == STATE_FOLLOWER) {
         ResetF2CTimer();
+
     } else if (state_ == STATE_CANDIDATE) {
         BeFollower();
+
     } else if (state_ == STATE_LEADER) {
 
     }
@@ -293,11 +297,12 @@ Raft::AppendEntriesPeers() {
 
 void Raft::PrintId() const {
     LOG(INFO) << Node::GetInstance().id().ToString() << " : I am " << State2String(state_);
+    TraceLog("PrintId", __func__);
 }
 
 void
 Raft::BeFollower() {
-    TraceLog("--BeFollower--");
+    TraceLog("BeFollower", __func__);
 
     state_ = STATE_FOLLOWER;
     leader_ = 0;
@@ -309,7 +314,7 @@ Raft::BeFollower() {
 
 void
 Raft::Elect() {
-    TraceLog("--Elect--");
+    TraceLog("Elect", __func__);
 
     if (state_ == STATE_CANDIDATE) {
         NextTerm();
@@ -362,7 +367,7 @@ Raft::ClearVoteFor() {
 
 void
 Raft::UpdateTerm(int64_t term) {
-    TraceLog("--UpdateTerm--");
+    TraceLog("UpdateTerm", __func__);
 
     if (term > current_term_) {
         current_term_ = term;
@@ -462,7 +467,7 @@ Raft::ClearHeartbeatTimer() {
 
 void
 Raft::Follower2Candidate() {
-    TraceLog("--Follower2Candidate--");
+    TraceLog("Follower2Candidate", __func__);
 
     assert(state_ == STATE_FOLLOWER);
     state_ = STATE_CANDIDATE;
@@ -473,7 +478,7 @@ Raft::Follower2Candidate() {
 
 void
 Raft::Candidate2Leader() {
-    TraceLog("--Candidate2Leader--");
+    TraceLog("Candidate2Leader", __func__);
 
     if (state_ == STATE_CANDIDATE) {
         state_ = STATE_LEADER;
@@ -488,7 +493,7 @@ Raft::Candidate2Leader() {
 
 void
 Raft::Leader2Follower() {
-    TraceLog("--Leader2Follower--");
+    TraceLog("Leader3Follower", __func__);
 
     assert(state_ == STATE_LEADER);
     BeFollower();
@@ -496,7 +501,7 @@ Raft::Leader2Follower() {
 
 void
 Raft::Candidate2Follower() {
-    TraceLog("--Candidate2Follower--");
+    TraceLog("Candidate2Follower", __func__);
 
     assert(state_ == STATE_CANDIDATE);
     BeFollower();
@@ -530,7 +535,7 @@ Raft::PersistVoteFor(uint64_t node_id) {
 void
 Raft::TraceRequestVote(const vraft_rpc::RequestVote &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
@@ -538,7 +543,7 @@ Raft::TraceRequestVote(const vraft_rpc::RequestVote &msg, const std::string &add
 void
 Raft::TraceOnRequestVote(const vraft_rpc::RequestVote &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
@@ -546,7 +551,7 @@ Raft::TraceOnRequestVote(const vraft_rpc::RequestVote &msg, const std::string &a
 void
 Raft::TraceRequestVoteReply(const vraft_rpc::RequestVoteReply &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
@@ -554,7 +559,7 @@ Raft::TraceRequestVoteReply(const vraft_rpc::RequestVoteReply &msg, const std::s
 void
 Raft::TraceOnRequestVoteReply(const vraft_rpc::RequestVoteReply &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
@@ -562,7 +567,7 @@ Raft::TraceOnRequestVoteReply(const vraft_rpc::RequestVoteReply &msg, const std:
 void
 Raft::TraceAppendEntries(const vraft_rpc::AppendEntries &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
@@ -570,7 +575,7 @@ Raft::TraceAppendEntries(const vraft_rpc::AppendEntries &msg, const std::string 
 void
 Raft::TraceOnAppendEntries(const vraft_rpc::AppendEntries &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
@@ -578,7 +583,7 @@ Raft::TraceOnAppendEntries(const vraft_rpc::AppendEntries &msg, const std::strin
 void
 Raft::TraceAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : send to ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 
@@ -587,15 +592,15 @@ Raft::TraceAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const st
 void
 Raft::TraceOnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const {
     std::string log_str = Node::GetInstance().id().address();
-    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg));
+    log_str.append(" : recv from ").append(address).append(" ").append(::vraft::ToString(msg)).append("\n");
     log_str.append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
 
 void
-Raft::TraceLog(const std::string &log_flag) const {
+Raft::TraceLog(const std::string &log_flag, const std::string func_name) const {
     std::string log_str = "debug ";
-    log_str.append(log_flag).append(" ").append(__func__).append(ToStringPretty()).append("\n\n");
+    log_str.append("--").append(log_flag).append("-- [func:").append(func_name).append("]\n").append(ToStringPretty()).append("\n\n");
     LOG(INFO) << log_str;
 }
 
@@ -604,9 +609,10 @@ Raft::ToJson() const {
     jsonxx::json64 j, jret;
     j["state"] = State2String(state_);
     j["current_term"] = current_term_;
-    j["vote_for"] = vote_for_;
-    NodeId nid(leader_);
-    j["leader"] = nid.ToString();
+    NodeId nid_vote_for(vote_for_);
+    j["vote_for"] = nid_vote_for.ToString();
+    NodeId nid_leader(leader_);
+    j["leader"] = nid_leader.ToString();
     j["request_vote_manager"] = request_vote_manager_.ToString();
 
     jret["Raft"] = j;
