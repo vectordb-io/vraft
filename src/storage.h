@@ -22,9 +22,9 @@ class Storage {
     Status Init();
 
     Status CurrentTerm(int64_t &term) const;
-    Status CurrentTermPersist(int64_t term);
-    Status VoteFor(std::string &vote_for) const;
-    Status VoteForPersist(const std::string &vote_for);
+    Status PersistCurrentTerm(int64_t term);
+    Status VoteFor(uint64_t &node_id) const;
+    Status PersistVoteFor(uint64_t node_id);
 
   private:
     std::string path_;

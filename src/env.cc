@@ -25,26 +25,32 @@ Env::AsyncRequestVote(const vraft_rpc::RequestVote &request, const std::string &
 }
 
 Status
+Env::AsyncAppendEntries(const vraft_rpc::AppendEntries &request, const std::string &address, AppendEntriesFinishCallBack cb) {
+    auto s = grpc_server_.AsyncAppendEntries(request, address, cb);
+    return s;
+}
+
+Status
 Env::CurrentTerm(int64_t &term) const {
     auto s = storage_.CurrentTerm(term);
     return s;
 }
 
 Status
-Env::CurrentTermPersist(int64_t term) {
-    auto s = storage_.CurrentTermPersist(term);
+Env::PersistCurrentTerm(int64_t term) {
+    auto s = storage_.PersistCurrentTerm(term);
     return s;
 }
 
 Status
-Env::VoteFor(std::string &vote_for) const {
-    auto s = storage_.VoteFor(vote_for);
+Env::VoteFor(uint64_t &node_id) const {
+    auto s = storage_.VoteFor(node_id);
     return s;
 }
 
 Status
-Env::VoteForPersist(const std::string &vote_for) {
-    auto s = storage_.VoteForPersist(vote_for);
+Env::PersistVoteFor(uint64_t node_id) {
+    auto s = storage_.PersistVoteFor(node_id);
     return s;
 }
 

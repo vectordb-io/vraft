@@ -33,4 +33,17 @@ AsyncTaskRequestVote::Process() {
     delete this;
 }
 
+grpc::Status
+AsyncTaskAppendEntries::GetStatus() {
+    return status_;
+}
+
+void
+AsyncTaskAppendEntries::Process() {
+    auto s = cb_(reply_);
+    assert(s.ok());
+    // optimizing by memory pool
+    delete this;
+}
+
 } // namespace vraft

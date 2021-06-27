@@ -30,7 +30,14 @@ class GrpcServer {
     void IntendOnPing();
     void OnPing(AsyncTaskOnPing *p);
     Status AsyncPing(const vraft_rpc::Ping &request, const std::string &address, PingFinishCallBack cb);
+
+    void IntendOnRequestVote();
+    void OnRequestVote(AsyncTaskOnRequestVote *p);
     Status AsyncRequestVote(const vraft_rpc::RequestVote &request, const std::string &address, RequestVoteFinishCallBack cb);
+
+    void IntendOnAppendEntries();
+    void OnAppendEntries(AsyncTaskOnAppendEntries *p);
+    Status AsyncAppendEntries(const vraft_rpc::AppendEntries &request, const std::string &address, AppendEntriesFinishCallBack cb);
 
     void set_on_ping_cb(OnPingCallBack cb) {
         on_ping_cb_ = cb;
@@ -40,10 +47,15 @@ class GrpcServer {
         on_request_vote_cb_ = cb;
     }
 
+    void set_on_append_entries_cb(OnAppendEntriesCallBack cb) {
+        on_append_entries_cb_ = cb;
+    }
+
   private:
     bool running_;
     OnPingCallBack on_ping_cb_;
     OnRequestVoteCallBack on_request_vote_cb_;
+    OnAppendEntriesCallBack on_append_entries_cb_;
 
     std::unique_ptr<grpc::CompletionQueue> cq_out_;
     std::unique_ptr<grpc::ServerCompletionQueue> cq_in_;

@@ -84,7 +84,6 @@ Config::ToString() const {
     j["heartbeat_timeout"] = heartbeat_timeout_;
 
     jret["Config"] = j;
-
     return jret.dump(4, ' ');
 }
 

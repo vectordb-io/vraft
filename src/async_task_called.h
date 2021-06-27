@@ -43,6 +43,57 @@ class AsyncTaskOnPing : public AsyncTaskCalled {
     OnPingCallBack cb_;
 };
 
+class AsyncTaskOnRequestVote: public AsyncTaskCalled {
+  public:
+    AsyncTaskOnRequestVote(vraft_rpc::VRaft::AsyncService* service,
+                           grpc::ServerCompletionQueue* cq)
+        :service_(service), cq_in_(cq),
+         responder_(&ctx_),
+         done_(false) {
+    }
+
+    ~AsyncTaskOnRequestVote() {}
+
+    virtual void Process() override;
+
+    vraft_rpc::VRaft::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_in_;
+    grpc::ServerContext ctx_;
+
+    grpc::ServerAsyncResponseWriter<vraft_rpc::RequestVoteReply> responder_;
+    vraft_rpc::RequestVote request_;
+    vraft_rpc::RequestVoteReply reply_;
+
+    bool done_;
+    OnRequestVoteCallBack cb_;
+};
+
+class AsyncTaskOnAppendEntries: public AsyncTaskCalled {
+  public:
+    AsyncTaskOnAppendEntries(vraft_rpc::VRaft::AsyncService* service,
+                             grpc::ServerCompletionQueue* cq)
+        :service_(service), cq_in_(cq),
+         responder_(&ctx_),
+         done_(false) {
+    }
+
+    ~AsyncTaskOnAppendEntries() {}
+
+    virtual void Process() override;
+
+    vraft_rpc::VRaft::AsyncService* service_;
+    grpc::ServerCompletionQueue* cq_in_;
+    grpc::ServerContext ctx_;
+
+    grpc::ServerAsyncResponseWriter<vraft_rpc::AppendEntriesReply> responder_;
+    vraft_rpc::AppendEntries request_;
+    vraft_rpc::AppendEntriesReply reply_;
+
+    bool done_;
+    OnAppendEntriesCallBack cb_;
+};
+
+
 } // namespace vraft
 
 #endif

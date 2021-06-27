@@ -4,6 +4,7 @@
 #include <random>
 #include <functional>
 #include <glog/logging.h>
+#include "log.h"
 #include "raft.h"
 #include "status.h"
 #include "common.h"

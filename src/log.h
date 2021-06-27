@@ -35,11 +35,10 @@ class LogId {
 
 class Log {
   public:
-    Log(const std::string &s);
+    Log(const std::string &path);
     ~Log();
     Log(const Log&) = delete;
     Log& operator=(const Log&) = delete;
-
     Status Init();
 
     LogId LastLogId() const {

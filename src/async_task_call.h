@@ -46,6 +46,20 @@ class AsyncTaskRequestVote : public AsyncTaskCall {
 
 };
 
+class AsyncTaskAppendEntries: public AsyncTaskCall {
+  public:
+    vraft_rpc::AppendEntriesReply reply_;
+    grpc::ClientContext ctx_;
+    grpc::Status status_;
+    std::unique_ptr<grpc::ClientAsyncResponseReader<vraft_rpc::AppendEntriesReply>> response_reader_;
+    AppendEntriesFinishCallBack cb_;
+
+    ~AsyncTaskAppendEntries() {}
+    virtual void Process() override;
+    virtual grpc::Status GetStatus() override;
+
+};
+
 } // namespace vraft
 
 #endif

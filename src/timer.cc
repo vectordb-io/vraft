@@ -203,7 +203,7 @@ Timer::MainFunc() {
                 uint64_t data;
                 read(events[i].data.fd, &data, sizeof(uint64_t));
                 //LOG(INFO) << "timer ring! read from fd:" << events[i].data.fd << ", data:" << data;
-                LOG(INFO) << "timer ring! timer fd:" << events[i].data.fd;
+                //LOG(INFO) << "timer ring! timer fd:" << events[i].data.fd;
                 auto t = GetTask(events[i].data.fd);
                 assert(t);
                 t->func_();

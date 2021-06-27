@@ -2,7 +2,8 @@
 
 namespace vraft {
 
-Log::Log(const std::string &s) {
+Log::Log(const std::string &path)
+    :path_(path) {
 }
 
 Log::~Log() {

@@ -28,12 +28,13 @@ class Env {
     // network
     Status AsyncPing(const vraft_rpc::Ping &request, const std::string &address, PingFinishCallBack cb);
     Status AsyncRequestVote(const vraft_rpc::RequestVote &request, const std::string &address, RequestVoteFinishCallBack cb);
+    Status AsyncAppendEntries(const vraft_rpc::AppendEntries &request, const std::string &address, AppendEntriesFinishCallBack cb);
 
     // storage
     Status CurrentTerm(int64_t &term) const;
-    Status CurrentTermPersist(int64_t term);
-    Status VoteFor(std::string &vote_for) const;
-    Status VoteForPersist(const std::string &vote_for);
+    Status PersistCurrentTerm(int64_t term);
+    Status VoteFor(uint64_t &node_id) const;
+    Status PersistVoteFor(uint64_t node_id);
 
     ThreadPool* thread_pool() {
         return &thread_pool_;
@@ -57,8 +58,8 @@ class Env {
     Env(const Env&) = delete;
     Env& operator=(const Env&) = delete;
 
-    Log log_;
     Timer timer_;
+    Log log_;
     Storage storage_;
     ThreadPool thread_pool_;
     GrpcServer grpc_server_;

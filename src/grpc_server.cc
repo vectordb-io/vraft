@@ -48,15 +48,72 @@ GrpcServer::AsyncPing(const vraft_rpc::Ping &request, const std::string &address
     return Status::OK();
 }
 
+void
+GrpcServer::IntendOnRequestVote() {
+    // optimizing by memory pool
+    auto p = new AsyncTaskOnRequestVote(&service_, cq_in_.get());
+    assert(on_request_vote_cb_);
+    p->cb_ = on_request_vote_cb_;
+    service_.RequestRpcRequestVote(&(p->ctx_), &(p->request_), &(p->responder_), p->cq_in_, p->cq_in_, p);
+}
+
+void
+GrpcServer::OnRequestVote(AsyncTaskOnRequestVote *p) {
+    p->cb_(p->request_, p->reply_);
+    p->done_ = true;
+    p->responder_.Finish(p->reply_, grpc::Status::OK, p);
+}
+
+void
+GrpcServer::IntendOnAppendEntries() {
+    // optimizing by memory pool
+    auto p = new AsyncTaskOnAppendEntries(&service_, cq_in_.get());
+    assert(on_append_entries_cb_);
+    p->cb_ = on_append_entries_cb_;
+    service_.RequestRpcAppendEntries(&(p->ctx_), &(p->request_), &(p->responder_), p->cq_in_, p->cq_in_, p);
+}
+
+void
+GrpcServer::OnAppendEntries(AsyncTaskOnAppendEntries *p) {
+    p->cb_(p->request_, p->reply_);
+    p->done_ = true;
+    p->responder_.Finish(p->reply_, grpc::Status::OK, p);
+}
+
 Status
 GrpcServer::AsyncRequestVote(const vraft_rpc::RequestVote &request, const std::string &address, RequestVoteFinishCallBack cb) {
+
+
     std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
     std::unique_ptr<vraft_rpc::VRaft::Stub> stub = vraft_rpc::VRaft::NewStub(channel);
+
+
     // optimizing by memory pool
     auto p = new AsyncTaskRequestVote();
     p->cb_ = cb;
 
+
     p->response_reader_ = stub->PrepareAsyncRpcRequestVote(&(p->ctx_), request, cq_out_.get());
+
+
+    p->response_reader_->StartCall();
+
+
+    p->response_reader_->Finish(&p->reply_, &p->status_, (void*)p);
+
+
+    return Status::OK();
+}
+
+Status
+GrpcServer::AsyncAppendEntries(const vraft_rpc::AppendEntries &request, const std::string &address, AppendEntriesFinishCallBack cb) {
+    std::shared_ptr<grpc::Channel> channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
+    std::unique_ptr<vraft_rpc::VRaft::Stub> stub = vraft_rpc::VRaft::NewStub(channel);
+    // optimizing by memory pool
+    auto p = new AsyncTaskAppendEntries();
+    p->cb_ = cb;
+
+    p->response_reader_ = stub->PrepareAsyncRpcAppendEntries(&(p->ctx_), request, cq_out_.get());
     p->response_reader_->StartCall();
     p->response_reader_->Finish(&p->reply_, &p->status_, (void*)p);
 
@@ -80,6 +137,8 @@ GrpcServer::StartService() {
     thread_call_ = std::make_unique<std::thread>(&GrpcServer::ThreadAsyncCall, this);
 
     IntendOnPing();
+    IntendOnRequestVote();
+    IntendOnAppendEntries();
 
     return Status::OK();
 }
@@ -117,10 +176,12 @@ GrpcServer::ThreadAsyncCalled() {
     bool ok;
     while (running_) {
         cq_in_->Next(&tag, &ok);
-        assert(ok);
-
-        AsyncTaskCalled *p = static_cast<AsyncTaskCalled*>(tag);
-        p->Process();
+        if (ok) {
+            AsyncTaskCalled *p = static_cast<AsyncTaskCalled*>(tag);
+            p->Process();
+        } else {
+            LOG(INFO) << "ThreadAsyncCalled error";
+        }
     }
 }
 
@@ -130,13 +191,19 @@ GrpcServer::ThreadAsyncCall() {
     bool ok = false;
     while (cq_out_->Next(&tag, &ok) && running_) {
         AsyncTaskCall *p = static_cast<AsyncTaskCall*>(tag);
-        assert(ok);
+        if (!ok) {
+            LOG(INFO) << "ThreadAsyncCall error";
+            assert(0);
+        }
 
         if (p->GetStatus().ok()) {
             //p->Process();
             Env::GetInstance().thread_pool()->ProduceOne(std::bind(&AsyncTaskCall::Process, p));
         } else {
             LOG(ERROR) << "err:" << p->GetStatus().error_message();
+            delete p;
+            //printf("delete %p \n", p);
+            //fflush(nullptr);
         }
     }
 }

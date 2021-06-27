@@ -12,6 +12,10 @@ using PingFinishCallBack = std::function<Status (vraft_rpc::PingReply)>;
 using OnRequestVoteCallBack = std::function<void (const vraft_rpc::RequestVote &request, vraft_rpc::RequestVoteReply &reply)>;
 using RequestVoteFinishCallBack = std::function<Status (vraft_rpc::RequestVoteReply)>;
 
+using OnAppendEntriesCallBack = std::function<void (const vraft_rpc::AppendEntries &request, vraft_rpc::AppendEntriesReply &reply)>;
+using AppendEntriesFinishCallBack = std::function<Status (vraft_rpc::AppendEntriesReply)>;
+
+
 }  // namespace vraft
 
 #endif

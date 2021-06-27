@@ -26,7 +26,7 @@ Storage::CurrentTerm(int64_t &term) const {
 }
 
 Status
-Storage::CurrentTermPersist(int64_t term) {
+Storage::PersistCurrentTerm(int64_t term) {
     std::string buf;
     Term2String(term, buf);
 
@@ -38,19 +38,25 @@ Storage::CurrentTermPersist(int64_t term) {
 }
 
 Status
-Storage::VoteFor(std::string &vote_for) const {
-    auto s = db_->Get(leveldb::ReadOptions(), KEY_VOTE_FOR, &vote_for);
+Storage::VoteFor(uint64_t &node_id) const {
+    std::string buf;
+    auto s = db_->Get(leveldb::ReadOptions(), KEY_VOTE_FOR, &buf);
     if (s.IsNotFound()) {
         return Status::NotFound(KEY_CURRENT_TERM);
     }
+    auto ret = String2NodeId(buf, node_id);
+    assert(ret);
     return Status::OK();
 }
 
 Status
-Storage::VoteForPersist(const std::string &vote_for) {
+Storage::PersistVoteFor(uint64_t node_id) {
+    std::string buf;
+    NodeId2String(node_id, buf);
+
     leveldb::WriteOptions wo;
     wo.sync = true;
-    auto s = db_->Put(wo, KEY_VOTE_FOR, vote_for);
+    auto s = db_->Put(wo, KEY_VOTE_FOR, buf);
     assert(s.ok());
     return Status::OK();
 }

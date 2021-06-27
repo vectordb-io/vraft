@@ -27,6 +27,7 @@ Node::Init() {
 
 Status
 Node::Start() {
+    LOG(INFO) << "node start ...";
     while(!Env::GetInstance().timer()->running()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
@@ -35,7 +36,11 @@ Node::Start() {
         vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Node::PingPeers, this), 3000);
     }
 
-    //raft_.BeFollower();
+    vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Raft::PrintId, &raft_), 1000);
+
+    auto s = raft_.Start();
+    assert(s.ok());
+
     return Status::OK();
 }
 
