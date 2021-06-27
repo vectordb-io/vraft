@@ -17,6 +17,17 @@ AsyncTaskOnPing::Process() {
 }
 
 void
+AsyncTaskOnClientRequest::Process() {
+    if (done_) {
+        // optimizing by memory pool
+        delete this;
+    } else {
+        Env::GetInstance().thread_pool()->ProduceOne(std::bind(&GrpcServer::OnClientRequest, Env::GetInstance().grpc_server(), this));
+        Env::GetInstance().grpc_server()->IntendOnClientRequest();
+    }
+}
+
+void
 AsyncTaskOnRequestVote::Process() {
     if (done_) {
         // optimizing by memory pool

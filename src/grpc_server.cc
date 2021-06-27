@@ -49,6 +49,35 @@ GrpcServer::AsyncPing(const vraft_rpc::Ping &request, const std::string &address
 }
 
 void
+GrpcServer::IntendOnClientRequest() {
+    // optimizing by memory pool
+    auto p = new AsyncTaskOnClientRequest(&service_, cq_in_.get());
+    assert(on_client_request_cb_);
+    p->cb_ = on_client_request_cb_;
+    service_.RequestRpcClientRequest(&(p->ctx_), &(p->request_), &(p->responder_), p->cq_in_, p->cq_in_, p);
+
+    LOG(INFO) << "intend client request call:" << p;
+}
+
+void
+GrpcServer::OnClientRequest(AsyncTaskOnClientRequest *p) {
+    async_req_manager_.Add(p);
+    p->cb_(p->request_, p);
+}
+
+Status
+GrpcServer::AsyncClientRequestReply(const vraft_rpc::ClientRequestReply &reply, void *call) {
+    if (async_req_manager_.Has(call)) {
+        AsyncTaskOnClientRequest *p = static_cast<AsyncTaskOnClientRequest*>(call);
+        p->done_ = true;
+        p->reply_.CopyFrom(reply);
+        p->responder_.Finish(p->reply_, grpc::Status::OK, p);
+        async_req_manager_.Delete(p);
+    }
+    return Status::OK();
+}
+
+void
 GrpcServer::IntendOnRequestVote() {
     // optimizing by memory pool
     auto p = new AsyncTaskOnRequestVote(&service_, cq_in_.get());
@@ -137,9 +166,17 @@ GrpcServer::StartService() {
     thread_call_ = std::make_unique<std::thread>(&GrpcServer::ThreadAsyncCall, this);
 
     IntendOnPing();
+    IntendOnClientRequest();
     IntendOnRequestVote();
     IntendOnAppendEntries();
 
+    return Status::OK();
+}
+
+Status
+GrpcServer::Init() {
+    auto s = async_req_manager_.Init();
+    assert(s.ok());
     return Status::OK();
 }
 

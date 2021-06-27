@@ -47,6 +47,7 @@ class Raft {
     Status Init();
     Status Start();
 
+    void OnClientRequest(const vraft_rpc::ClientRequest &request, void *async_flag);
     void OnRequestVote(const vraft_rpc::RequestVote &request, vraft_rpc::RequestVoteReply &reply);
     Status RequestVote(const vraft_rpc::RequestVote &request, const std::string &address);
     Status OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply);

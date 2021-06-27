@@ -11,6 +11,7 @@
 #include "config.h"
 #include "async_task_called.h"
 #include "async_task_call.h"
+#include "async_req_manager.h"
 
 namespace vraft {
 
@@ -21,6 +22,7 @@ class GrpcServer {
     GrpcServer& operator=(const GrpcServer&) = delete;
     ~GrpcServer();
 
+    Status Init();
     Status Start();
     Status Stop();
     Status StartService();
@@ -30,6 +32,10 @@ class GrpcServer {
     void IntendOnPing();
     void OnPing(AsyncTaskOnPing *p);
     Status AsyncPing(const vraft_rpc::Ping &request, const std::string &address, PingFinishCallBack cb);
+
+    void IntendOnClientRequest();
+    void OnClientRequest(AsyncTaskOnClientRequest *p);
+    Status AsyncClientRequestReply(const vraft_rpc::ClientRequestReply &reply, void *call);
 
     void IntendOnRequestVote();
     void OnRequestVote(AsyncTaskOnRequestVote *p);
@@ -43,6 +49,10 @@ class GrpcServer {
         on_ping_cb_ = cb;
     }
 
+    void set_on_client_request_cb(OnClientRequestCallBack cb) {
+        on_client_request_cb_ = cb;
+    }
+
     void set_on_request_vote_cb(OnRequestVoteCallBack cb) {
         on_request_vote_cb_ = cb;
     }
@@ -54,6 +64,7 @@ class GrpcServer {
   private:
     bool running_;
     OnPingCallBack on_ping_cb_;
+    OnClientRequestCallBack on_client_request_cb_;
     OnRequestVoteCallBack on_request_vote_cb_;
     OnAppendEntriesCallBack on_append_entries_cb_;
 
@@ -70,6 +81,8 @@ class GrpcServer {
 
     // boot thread
     std::unique_ptr<std::thread> boot_thread_;
+
+    AsyncReqManager async_req_manager_;
 };
 
 } // namespace vraft

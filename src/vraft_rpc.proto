@@ -4,6 +4,7 @@ package vraft_rpc;
 
 service VRaft {
   rpc RpcPing (Ping) returns (PingReply) {}
+  rpc RpcClientRequest (ClientRequest) returns (ClientRequestReply) {}
   rpc RpcRequestVote (RequestVote) returns (RequestVoteReply) {}
   rpc RpcAppendEntries (AppendEntries) returns (AppendEntriesReply) {}
 }
@@ -25,6 +26,19 @@ message Term {
 message NodeId {
   uint64 node_id = 1;
 }
+
+message ClientRequest {
+  int32 client_id = 1;
+  int64 sequence_num = 2;
+  string cmd = 3;
+};
+
+message ClientRequestReply {
+  int32 code = 1;
+  string msg = 2;
+  string response = 3;
+  string leader_hint = 4;
+};
 
 message RequestVote {
   int64 term = 1;
@@ -51,6 +65,8 @@ message AppendEntries {
   int32 prev_log_term = 4;
   repeated Entry entries = 5;
   int32 commit_index = 6;
+
+  uint64 async_flag = 7;
 };
 
 message AppendEntriesReply {
@@ -58,6 +74,7 @@ message AppendEntriesReply {
   bool success = 2;
 
   uint64 node_id = 3;
+  uint64 async_flag = 4;
 };
 
 

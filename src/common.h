@@ -9,6 +9,8 @@ namespace vraft {
 using OnPingCallBack = std::function<void (const vraft_rpc::Ping &request, vraft_rpc::PingReply &reply)>;
 using PingFinishCallBack = std::function<Status (vraft_rpc::PingReply)>;
 
+using OnClientRequestCallBack = std::function<void (const vraft_rpc::ClientRequest &request, void *async_flag)>;
+
 using OnRequestVoteCallBack = std::function<void (const vraft_rpc::RequestVote &request, vraft_rpc::RequestVoteReply &reply)>;
 using RequestVoteFinishCallBack = std::function<Status (vraft_rpc::RequestVoteReply)>;
 

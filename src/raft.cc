@@ -105,6 +105,10 @@ Raft::Init() {
         }
     }
 
+    Env::GetInstance().grpc_server()->set_on_client_request_cb(
+        std::bind(&Raft::OnClientRequest, this, std::placeholders::_1, std::placeholders::_2)
+    );
+
     Env::GetInstance().grpc_server()->set_on_request_vote_cb(
         std::bind(&Raft::OnRequestVote, this, std::placeholders::_1, std::placeholders::_2)
     );
@@ -121,6 +125,11 @@ Raft::Start() {
     LOG(INFO) << "raft start ...";
     BeFollower();
     return Status::OK();
+}
+
+void
+Raft::OnClientRequest(const vraft_rpc::ClientRequest &request, void *async_flag) {
+
 }
 
 void
