@@ -48,10 +48,6 @@ class Env {
         return &timer_;
     }
 
-    Log* log() {
-        return &log_;
-    }
-
   private:
     Env();
     ~Env();
@@ -59,7 +55,6 @@ class Env {
     Env& operator=(const Env&) = delete;
 
     Timer timer_;
-    Log log_;
     Storage storage_;
     ThreadPool thread_pool_;
     GrpcServer grpc_server_;

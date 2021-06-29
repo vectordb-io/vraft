@@ -22,22 +22,47 @@ enum State {
 
 std::string State2String(State s);
 
-class RequestVoteManager {
+class VotesGranted {
   public:
-    RequestVoteManager(int quorum);
-    ~RequestVoteManager();
-    RequestVoteManager(const RequestVoteManager&) = delete;
-    RequestVoteManager& operator=(const RequestVoteManager&) = delete;
+    VotesGranted(int quorum);
+    ~VotesGranted();
+    VotesGranted(const VotesGranted&) = delete;
+    VotesGranted& operator=(const VotesGranted&) = delete;
 
     void Vote(const vraft_rpc::RequestVoteReply &reply);
     bool Majority() const;
     void Reset(int64_t term);
+
+    jsonxx::json64 ToJson() const;
     std::string ToString() const;
+    std::string ToStringPretty() const;
 
   private:
     std::map<uint64_t, vraft_rpc::RequestVoteReply> votes_;
     int64_t term_;
     int quorum_;
+};
+
+class VotesResponded {
+  public:
+    VotesResponded();
+    ~VotesResponded() = default;
+    VotesResponded(const VotesResponded&) = delete;
+    VotesResponded& operator=(const VotesResponded&) = delete;
+
+    bool IsResponded(int64_t node_id) const;
+    void Add(const vraft_rpc::RequestVoteReply &reply);
+    void Reset(int64_t term);
+
+    jsonxx::json64 ToJson() const;
+    std::string ToString() const;
+    std::string ToStringPretty() const;
+
+  private:
+    std::map<uint64_t, vraft_rpc::RequestVoteReply> responded_;
+    std::set<uint64_t> unresponded_;
+    std::set<uint64_t> all_nodes_;
+    int64_t term_;
 };
 
 class PersistedTerm {
@@ -118,6 +143,10 @@ class ServerVars {
 
 class CandidateVars {
   public:
+    CandidateVars(int quorum);
+    ~CandidateVars() = default;
+    CandidateVars(const CandidateVars&) = delete;
+    CandidateVars& operator=(const CandidateVars&) = delete;
     Status Init();
 
     jsonxx::json64 ToJson() const;
@@ -125,17 +154,33 @@ class CandidateVars {
     std::string ToStringPretty() const;
 
   private:
+    VotesGranted votes_granted_;
+    VotesResponded votes_responded_;
 };
 
 class LeaderVars {
   public:
+    LeaderVars() = default;
+    ~LeaderVars() = default;
+    LeaderVars(const LeaderVars&) = delete;
+    LeaderVars& operator=(const LeaderVars&) = delete;
     Status Init();
 
     jsonxx::json64 ToJson() const;
     std::string ToString() const;
     std::string ToStringPretty() const;
 
+    std::map<uint64_t, int>& next_index() {
+        return next_index_;
+    }
+
+    std::map<uint64_t, int>& match_index() {
+        return match_index_;
+    }
+
   private:
+    std::map<uint64_t, int> next_index_;
+    std::map<uint64_t, int> match_index_;
 };
 
 class LogVars {
@@ -214,12 +259,10 @@ class Raft {
     void TraceOnRequestVote(const vraft_rpc::RequestVote &msg, const std::string &address) const;
     void TraceRequestVoteReply(const vraft_rpc::RequestVoteReply &msg, const std::string &address) const;
     void TraceOnRequestVoteReply(const vraft_rpc::RequestVoteReply &msg, const std::string &address) const;
-
     void TraceAppendEntries(const vraft_rpc::AppendEntries &msg, const std::string &address) const;
     void TraceOnAppendEntries(const vraft_rpc::AppendEntries &msg, const std::string &address) const;
     void TraceAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const;
     void TraceOnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const;
-
     void TraceLog(const std::string &log_flag, const std::string func_name) const;
 
     jsonxx::json64 ToJson() const;
@@ -236,8 +279,6 @@ class Raft {
     int follower2candidate_timer_;
     int election_timer_;
     int heartbeat_timer_;
-
-    //RequestVoteManager request_vote_manager_;
 };
 
 }  // namespace vraft

@@ -20,45 +20,107 @@ State2String(State s) {
 }
 
 // ---------------------------------------------------------------------------------------------
-// class RequestVoteManager
-RequestVoteManager::RequestVoteManager(int quorum)
-    :term_(-1),
+// class VotesGranted
+VotesGranted::VotesGranted(int quorum)
+    :term_(0),
      quorum_(quorum) {
 }
 
-RequestVoteManager::~RequestVoteManager() {
+VotesGranted::~VotesGranted() {
 }
 
 void
-RequestVoteManager::Vote(const vraft_rpc::RequestVoteReply &reply) {
+VotesGranted::Vote(const vraft_rpc::RequestVoteReply &reply) {
     assert(reply.vote_granted());
     assert(reply.term() == term_);
     votes_.insert(std::pair<uint64_t, vraft_rpc::RequestVoteReply>(reply.node_id(), reply));
 }
 
 bool
-RequestVoteManager::Majority() const {
+VotesGranted::Majority() const {
     return static_cast<int>(votes_.size()) >= quorum_;
 }
 
 void
-RequestVoteManager::Reset(int64_t term) {
+VotesGranted::Reset(int64_t term) {
     term_ = term;
     votes_.clear();
 }
 
-std::string
-RequestVoteManager::ToString() const {
+jsonxx::json64
+VotesGranted::ToJson() const {
     jsonxx::json64 j, jret;
     j["term"] = term_;
     j["quorum"] = quorum_;
     j["votes"] = votes_.size();
-//    for (auto &kv in votes_) {
-//        j["votes"][kv.first] = ToString(kv.second);
-//    }
-    jret["RequestVoteManager"] = j;
-    //return jret.dump(4, ' ');
-    return jret.dump();
+    jret["VotesGranted"] = j;
+    return jret;
+}
+
+std::string
+VotesGranted::ToString() const {
+    return ToJson().dump();
+}
+
+std::string
+VotesGranted::ToStringPretty() const {
+    return ToJson().dump(4, ' ');
+}
+
+// ---------------------------------------------------------------------------------------------
+// class VotesGranted
+VotesResponded::VotesResponded()
+    :term_(0) {
+    for (auto &hp : Config::GetInstance().addresses()) {
+        NodeId nid(hp.ToString());
+        all_nodes_.insert(nid.code());
+    }
+
+    unresponded_ = all_nodes_;
+}
+
+bool
+VotesResponded::IsResponded(int64_t node_id) const {
+    auto it = responded_.find(node_id);
+    return it != responded_.end();
+}
+
+void
+VotesResponded::Add(const vraft_rpc::RequestVoteReply &reply) {
+    assert(reply.term() == term_);
+    auto it = unresponded_.find(reply.node_id());
+    assert(it != unresponded_.end());
+
+    responded_.insert(std::pair<uint64_t, vraft_rpc::RequestVoteReply>(reply.node_id(), reply));
+    unresponded_.erase(it);
+}
+
+void
+VotesResponded::Reset(int64_t term) {
+    term_ = term;
+    responded_.clear();
+    unresponded_ = all_nodes_;
+}
+
+jsonxx::json64
+VotesResponded::ToJson() const {
+    jsonxx::json64 j, jret;
+    j["term"] = term_;
+    j["all_nodes"] = all_nodes_.size();
+    j["responded"] = responded_.size();
+    j["unresponded"] = unresponded_.size();
+    jret["VotesResponded"] = j;
+    return jret;
+}
+
+std::string
+VotesResponded::ToString() const {
+    return ToJson().dump();
+}
+
+std::string
+VotesResponded::ToStringPretty() const {
+    return ToJson().dump(4, ' ');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -81,6 +143,7 @@ PersistedTerm::Init() {
             assert(0);
         }
     }
+    return Status::OK();
 }
 
 void
@@ -122,6 +185,7 @@ PersistedVoteFor::Init() {
             assert(0);
         }
     }
+    return Status::OK();
 }
 
 bool
@@ -171,18 +235,30 @@ ServerVars::Init() {
 
 jsonxx::json64
 ServerVars::ToJson() const {
+    jsonxx::json64 j, jret;
+    j["state"] = State2String(state_);
+    j["current_term"] = current_term_.get();
+    j["vote_for"] = vote_for_.ToNodeId().ToJsonTiny();
+    jret["ServerVars"] = j;
+    return jret;
 }
 
 std::string
 ServerVars::ToString() const {
+    return ToJson().dump();
 }
 
 std::string
 ServerVars::ToStringPretty() const {
+    return ToJson().dump(4, ' ');
 }
 
 // ---------------------------------------------------------------------------------------------
 // class CandidateVars
+CandidateVars::CandidateVars(int quorum)
+    :votes_granted_(quorum) {
+}
+
 Status
 CandidateVars::Init() {
     return Status::OK();
@@ -190,33 +266,63 @@ CandidateVars::Init() {
 
 jsonxx::json64
 CandidateVars::ToJson() const {
+    jsonxx::json64 j, jret;
+    j["votes_granted"] = votes_granted_.ToJson();
+    j["votes_responded"] = votes_responded_.ToJson();
+    jret["CandidateVars"] = j;
+    return jret;
 }
 
 std::string
 CandidateVars::ToString() const {
+    return ToJson().dump();
 }
 
 std::string
 CandidateVars::ToStringPretty() const {
+    return ToJson().dump(4, ' ');
 }
 
 // ---------------------------------------------------------------------------------------------
 // class LeaderVars
 Status
 LeaderVars::Init() {
+    for (auto &hp : Config::GetInstance().addresses()) {
+        NodeId nid(hp.ToString());
+        next_index_.insert(std::pair<uint64_t, int>(nid.code(), 1));
+        match_index_.insert(std::pair<uint64_t, int>(nid.code(), 0));
+    }
+
     return Status::OK();
 }
 
 jsonxx::json64
 LeaderVars::ToJson() const {
+    jsonxx::json64 j, jret;
+    for (auto &kv : next_index_) {
+        NodeId nid(kv.first);
+        int index = kv.second;
+        j["next_index"][nid.address()] = index;
+    }
+
+    for (auto &kv : match_index_) {
+        NodeId nid(kv.first);
+        int index = kv.second;
+        j["match_index"][nid.address()] = index;
+    }
+
+    jret["LeaderVars"] = j;
+    return jret;
 }
 
 std::string
 LeaderVars::ToString() const {
+    return ToJson().dump();
 }
 
 std::string
 LeaderVars::ToStringPretty() const {
+    return ToJson().dump(4, ' ');
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -228,30 +334,39 @@ LogVars::LogVars(const std::string &log_path)
 
 Status
 LogVars::Init() {
+    auto s = log_.Init();
+    assert(s.ok());
     return Status::OK();
 }
 
 jsonxx::json64
 LogVars::ToJson() const {
+    jsonxx::json64 j, jret;
+    j["commit_index"] = commit_index_;
+    j["log"] = log_.ToJson();
+    jret["LogVars"] = j;
+    return jret;
 }
 
 std::string
 LogVars::ToString() const {
+    return ToJson().dump();
 }
 
 std::string
 LogVars::ToStringPretty() const {
+    return ToJson().dump(4, ' ');
 }
 
 // ---------------------------------------------------------------------------------------------
 // class Raft
 Raft::Raft()
-    :leader_(0),
+    :candidate_vars_(Config::GetInstance().Quorum()),
+     log_vars_(Config::GetInstance().path() + "/log"),
+     leader_(0),
      follower2candidate_timer_(-1),
      election_timer_(-1),
-     heartbeat_timer_(-1),
-     log_vars_(Config::GetInstance().path() + "/log") {
-    //request_vote_manager_(Config::GetInstance().Quorum()) {
+     heartbeat_timer_(-1) {
 }
 
 Raft::~Raft() {

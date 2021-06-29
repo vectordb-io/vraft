@@ -5,8 +5,7 @@
 namespace vraft {
 
 Env::Env()
-    :log_(Config::GetInstance().path() + "/log"),
-     storage_(Config::GetInstance().path() + "/store") {
+    :storage_(Config::GetInstance().path() + "/store") {
 }
 
 Env::~Env() {
@@ -63,9 +62,6 @@ Env::Init() {
     }
 
     s = storage_.Init();
-    assert(s.ok());
-
-    s = log_.Init();
     assert(s.ok());
 
     return Status::OK();
