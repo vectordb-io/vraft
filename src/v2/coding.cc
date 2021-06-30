@@ -1,6 +1,19 @@
+#include "log.h"
 #include "coding.h"
 
 namespace vraft {
+
+void
+Entry2Pb(const Entry &entry, vraft_rpc::Entry &pb) {
+    pb.set_term(entry.term());
+    pb.set_cmd(entry.cmd());
+}
+
+void
+Pb2Entry(const vraft_rpc::Entry &pb, Entry &entry) {
+    entry.set_term(pb.term());
+    entry.set_cmd(pb.cmd());
+}
 
 void Term2String(int64_t term, std::string &buf) {
     vraft_rpc::Term pb;
@@ -84,7 +97,12 @@ ToJson(const vraft_rpc::AppendEntries &pb) {
     j["node_id"] = pb.node_id();
     j["prev_log_index"] = pb.prev_log_index();
     j["prev_log_term"] = pb.prev_log_term();
-    // Entries
+
+    for (int i = 0; i < pb.entries_size(); ++i) {
+        Entry entry(pb.entries(i).term(), pb.entries(i).cmd());
+        j["entries"][i] = entry.ToJson();
+    }
+
     j["commit_index"] = pb.commit_index();
     jret["AppendEntries"] = j;
     return jret;
@@ -105,6 +123,8 @@ ToJson(const vraft_rpc::AppendEntriesReply &pb) {
     jsonxx::json64 j, jret;
     j["term"] = pb.term();
     j["success"] = pb.success();
+    j["match_index"] = pb.match_index();
+    j["node_id"] = pb.node_id();
     jret["AppendEntriesReply"] = j;
     return jret;
 

@@ -173,7 +173,7 @@ Log::TruncateEntries(int from_index) {
 }
 
 int
-Log::Size() const {
+Log::Len() const {
     std::unique_lock<std::mutex> guard(mutex_);
     return last_log_index_;
 }
@@ -183,7 +183,7 @@ Log::ToJson() const {
     jsonxx::json64 j, jret;
     j["last_log_index"] = LastLogIndex();
     j["last_log_term"] = LastLogTerm();
-    j["size"] = Size();
+    j["size"] = Len();
     for (int i = 1; i <= last_log_index_; ++i) {
         Entry entry;
         auto s = GetEntry(i, entry);

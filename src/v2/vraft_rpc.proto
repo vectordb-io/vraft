@@ -77,9 +77,10 @@ message AppendEntries {
 message AppendEntriesReply {
   int64 term = 1;
   bool success = 2;
+  int32 match_index = 3;
 
-  uint64 node_id = 3;
-  uint64 async_flag = 4;
+  uint64 node_id = 4;
+  uint64 async_flag = 5;
 };
 
 

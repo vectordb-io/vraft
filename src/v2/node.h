@@ -30,6 +30,10 @@ class Node {
         return id_;
     }
 
+    const Raft& raft() const {
+        return raft_;
+    }
+
     void OnPing(const vraft_rpc::Ping &request, vraft_rpc::PingReply &reply);
     Status Ping(const vraft_rpc::Ping &request, const std::string &address);
     Status OnPingReply(const vraft_rpc::PingReply &reply);

@@ -7,6 +7,9 @@
 
 namespace vraft {
 
+void Entry2Pb(const Entry &entry, vraft_rpc::Entry &pb);
+void Pb2Entry(const vraft_rpc::Entry &pb, Entry &entry);
+
 void Term2String(int64_t term, std::string &buf);
 bool String2Term(const std::string &buf, int64_t &term);
 

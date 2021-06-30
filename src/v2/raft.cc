@@ -23,7 +23,8 @@ State2String(State s) {
 // class VotesGranted
 VotesGranted::VotesGranted(int quorum)
     :term_(0),
-     quorum_(quorum) {
+     quorum_(quorum),
+     to_leader_(false) {
 }
 
 VotesGranted::~VotesGranted() {
@@ -45,6 +46,7 @@ void
 VotesGranted::Reset(int64_t term) {
     term_ = term;
     votes_.clear();
+    to_leader_ = false;
 }
 
 jsonxx::json64
@@ -134,7 +136,7 @@ Status
 PersistedTerm::Init() {
     auto s = Env::GetInstance().CurrentTerm(term_);
     if (s.IsNotFound()) {
-        term_ = 0;
+        term_ = 1;
         auto s1 = Env::GetInstance().PersistCurrentTerm(term_);
         assert(s1.ok());
     } else {
@@ -224,6 +226,8 @@ PersistedVoteFor::ToUInt() const {
 // class ServerVars
 Status
 ServerVars::Init() {
+    state_ = STATE_FOLLOWER;
+
     auto s = current_term_.Init();
     assert(s.ok());
 
@@ -261,6 +265,9 @@ CandidateVars::CandidateVars(int quorum)
 
 Status
 CandidateVars::Init() {
+    votes_granted_.Reset(Node::GetInstance().raft().CurrentTerm());
+    votes_responded_.Reset(Node::GetInstance().raft().CurrentTerm());
+
     return Status::OK();
 }
 
@@ -287,7 +294,7 @@ CandidateVars::ToStringPretty() const {
 // class LeaderVars
 Status
 LeaderVars::Init() {
-    for (auto &hp : Config::GetInstance().addresses()) {
+    for (auto &hp : Config::GetInstance().peers()) {
         NodeId nid(hp.ToString());
         next_index_.insert(std::pair<uint64_t, int>(nid.code(), 1));
         match_index_.insert(std::pair<uint64_t, int>(nid.code(), 0));
@@ -336,6 +343,7 @@ Status
 LogVars::Init() {
     auto s = log_.Init();
     assert(s.ok());
+
     return Status::OK();
 }
 
@@ -364,7 +372,6 @@ Raft::Raft()
     :candidate_vars_(Config::GetInstance().Quorum()),
      log_vars_(Config::GetInstance().path() + "/log"),
      leader_(0),
-     follower2candidate_timer_(-1),
      election_timer_(-1),
      heartbeat_timer_(-1) {
 }
@@ -374,8 +381,6 @@ Raft::~Raft() {
 
 Status
 Raft::Init() {
-    //state_ = STATE_FOLLOWER;
-
     auto s = server_vars_.Init();
     assert(s.ok());
 
@@ -420,21 +425,40 @@ Raft::OnRequestVote(const vraft_rpc::RequestVote &request, vraft_rpc::RequestVot
     NodeId node_id(request.node_id());
     TraceOnRequestVote(request, node_id.address());
 
+    if (request.term() > CurrentTerm()) {
+        UpdateTerm(request.term());
+    }
+    assert(request.term() <= CurrentTerm());
+
+    bool log_ok = (request.last_log_term() > log_vars_.log().LastLogTerm()) ||
+                  ((request.last_log_term() == log_vars_.log().LastLogTerm()) &&
+                   (request.last_log_index() >= log_vars_.log().Len()));
+    bool grant = (request.term() == CurrentTerm()) && log_ok &&
+                 (!server_vars_.vote_for().HasVoted() ||
+                  server_vars_.vote_for().ToUInt() == request.node_id());
+
+    if (grant) {
+        server_vars_.mutable_vote_for().Vote(request.node_id());
+    }
+
+    reply.set_term(CurrentTerm());
+    reply.set_vote_granted(grant);
+    reply.set_node_id(Node::GetInstance().id().code());
+
     TraceRequestVoteReply(reply, node_id.address());
 }
 
 Status
 Raft::RequestVote(const vraft_rpc::RequestVote &request, const std::string &address) {
     TraceRequestVote(request, address);
+    assert(server_vars_.state() == STATE_CANDIDATE);
+
     auto s = Env::GetInstance().AsyncRequestVote(
                  request,
                  address,
                  std::bind(&Raft::OnRequestVoteReply, this, std::placeholders::_1)
              );
-    if (!s.ok()) {
-        LOG(INFO) << s.ToString();
-    }
-    return Status::OK();
+    return s;
 }
 
 Status
@@ -442,22 +466,132 @@ Raft::OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply) {
     NodeId node_id(reply.node_id());
     TraceOnRequestVoteReply(reply, node_id.address());
 
+    if (reply.term() < CurrentTerm()) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "DropStaleResponse, receive term:%ld, current term:%ld", reply.term(), CurrentTerm());
+        std::string log_str(buf);
+        LOG(INFO) << log_str;
+        return Status::OK();
+    }
+
+    if (reply.term() > CurrentTerm()) {
+        UpdateTerm(reply.term());
+    }
+    assert(reply.term() == CurrentTerm());
+
+    candidate_vars_.mutable_votes_responded().Add(reply);
+    if (reply.vote_granted()) {
+        candidate_vars_.mutable_votes_granted().Vote(reply);
+        if (candidate_vars_.mutable_votes_granted().Majority()) {
+            if (!candidate_vars_.mutable_votes_granted().to_leader()) {
+                Candidate2Leader();
+                candidate_vars_.mutable_votes_granted().set_to_leader();
+            }
+        }
+    }
+
     return Status::OK();
 }
 
-Status
-Raft::RequestVotePeers() {
-    TraceLog("RequestVotePeers", __func__);
-
-
-
-    return Status::OK();
-}
 
 void
 Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::AppendEntriesReply &reply) {
     NodeId node_id(request.node_id());
     TraceOnAppendEntries(request, node_id.address());
+
+    if (request.term() > CurrentTerm()) {
+        UpdateTerm(request.term());
+    }
+    assert(request.term() <= CurrentTerm());
+
+    if (request.entries_size() > 0) {
+        assert(request.entries_size() == 1);
+    }
+
+    int local_prev_log_term;
+    if (request.prev_log_index() > 0 &&
+            request.prev_log_index() <= log_vars_.log().Len()) {
+        Entry entry;
+        auto s = log_vars_.log().GetEntry(request.prev_log_index(), entry);
+        assert(s.ok());
+        local_prev_log_term = entry.term();
+    }
+    bool log_ok = (request.prev_log_index() == 0) ||
+                  ((request.prev_log_index() > 0) &&
+                   (request.prev_log_index() <= log_vars_.log().Len()) &&
+                   (request.prev_log_term() == local_prev_log_term));
+
+    // reject request
+    if ((request.term() < CurrentTerm()) ||
+            ((request.term() == CurrentTerm()) &&
+             (CurrentState() == STATE_FOLLOWER) &&
+             !log_ok)) {
+        reply.set_term(CurrentTerm());
+        reply.set_success(false);
+        reply.set_match_index(0);
+        reply.set_node_id(Node::GetInstance().id().code());
+        return;
+    }
+
+    // return to follower state
+    if (request.term() == CurrentTerm() &&
+            CurrentState() == STATE_CANDIDATE) {
+        BeFollower();
+    }
+
+    // accept request
+    if (request.term() == CurrentTerm() &&
+            CurrentState() == STATE_FOLLOWER &&
+            log_ok) {
+
+        leader_ = request.node_id();
+
+        int index = request.prev_log_index() + 1;
+        Entry tmp_entry;
+        bool tmp_flag;
+
+        //conflict: remove 1 entry
+        tmp_flag = request.entries_size() > 0 &&
+                   log_vars_.log().Len() >= request.prev_log_index();
+        if (tmp_flag) {
+            auto s = log_vars_.log().GetEntry(index, tmp_entry);
+            assert(s.ok());
+        }
+
+        if (tmp_flag &&
+                tmp_entry.term() != request.entries(0).term()) {
+            int from_index = log_vars_.log().Len();
+            auto s = log_vars_.mutable_log().TruncateEntries(from_index);
+            assert(s.ok());
+        }
+
+        // no conflict: append entry
+        if (request.entries_size() > 0 &&
+                log_vars_.log().Len() == request.prev_log_index()) {
+            Entry append_entry;
+            Pb2Entry(request.entries(0), append_entry);
+            auto s = log_vars_.mutable_log().AppendEntry(append_entry);
+            assert(s.ok());
+        }
+
+        // already done with request
+        tmp_flag = request.entries_size() > 0 &&
+                   log_vars_.log().Len() >= request.prev_log_index();
+        if (tmp_flag) {
+            auto s = log_vars_.log().GetEntry(index, tmp_entry);
+            assert(s.ok());
+        }
+
+        if (request.entries_size() == 0 ||
+                (tmp_flag && tmp_entry.term() == request.entries(0).term())) {
+            log_vars_.set_commit_index(request.commit_index());
+            AdvanceCommitIndex();
+            reply.set_term(CurrentTerm());
+            reply.set_success(true);
+            reply.set_match_index(request.prev_log_index() + request.entries_size());
+            reply.set_node_id(Node::GetInstance().id().code());
+        }
+    }
 
     TraceAppendEntriesReply(reply, node_id.address());
 }
@@ -479,149 +613,236 @@ Raft::OnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &reply) {
     NodeId node_id(reply.node_id());
     TraceOnAppendEntriesReply(reply, node_id.address());
 
+    if (reply.term() < CurrentTerm()) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "DropStaleResponse, receive term:%ld, current term:%ld", reply.term(), CurrentTerm());
+        std::string log_str(buf);
+        LOG(INFO) << log_str;
+        return Status::OK();
+    }
+
+    if (reply.term() > CurrentTerm()) {
+        UpdateTerm(reply.term());
+    }
+    assert(reply.term() == CurrentTerm());
+
+    NodeId nid(reply.node_id());
+    if (reply.success()) {
+        auto it1 = leader_vars_.mutable_next_index().find(nid.code());
+        assert(it1 != leader_vars_.mutable_next_index().end());
+        it1->second = reply.match_index() + 1;
+
+        auto it2 = leader_vars_.mutable_match_index().find(nid.code());
+        assert(it2 != leader_vars_.mutable_match_index().end());
+        it2->second = reply.match_index();
+    } else {
+        auto it1 = leader_vars_.mutable_next_index().find(nid.code());
+        assert(it1 != leader_vars_.mutable_next_index().end());
+        it1->second = std::max(it1->second - 1, 1);
+    }
+
+    return Status::OK();
+}
+
+Status
+Raft::RequestVotePeers() {
+    TraceLog("RequestVotePeers", __func__);
+    assert(server_vars_.state() == STATE_CANDIDATE);
+
+    vraft_rpc::RequestVote request;
+    request.set_term(CurrentTerm());
+    request.set_node_id(Node::GetInstance().id().code());
+    request.set_last_log_index(Node::GetInstance().raft().log_vars().log().LastLogIndex());
+    request.set_last_log_term(Node::GetInstance().raft().log_vars().log().LastLogTerm());
+
+    for (auto &hp : Config::GetInstance().peers()) {
+        auto s = RequestVote(request, hp.ToString());
+        if (!s.ok()) {
+            LOG(INFO) << s.ToString();
+            assert(0);
+        }
+    }
+
     return Status::OK();
 }
 
 Status
 Raft::AppendEntriesPeers() {
     TraceLog("AppendEntriesPeers", __func__);
+    assert(server_vars_.state() == STATE_LEADER);
 
+    vraft_rpc::AppendEntries request;
+    request.set_term(CurrentTerm());
+    request.set_node_id(Node::GetInstance().id().code());
+    for (auto &hp : Config::GetInstance().peers()) {
+        NodeId nid(hp.ToString());
+
+        int next_index;
+        auto it = leader_vars_.next_index().find(nid.code());
+        assert(it != leader_vars_.next_index().end());
+        next_index = it->second;
+
+        int prev_log_index = next_index - 1;
+        int64_t prev_log_term = 0;
+        if (prev_log_index > 0) {
+            Entry entry;
+            auto s = log_vars_.log().GetEntry(prev_log_index, entry);
+            assert(s.ok());
+            prev_log_term = entry.term();
+        }
+        int last_entry_index = std::min(log_vars_.log().Len(), next_index);
+
+        if (next_index <= log_vars_.log().Len()) {
+            Entry send_entry;
+            auto s = log_vars_.log().GetEntry(prev_log_index, send_entry);
+            assert(s.ok());
+            vraft_rpc::Entry *pentry = request.add_entries();
+            pentry->set_term(send_entry.term());
+            pentry->set_cmd(send_entry.cmd());
+        }
+        request.set_prev_log_index(prev_log_index);
+        request.set_prev_log_term(prev_log_term);
+        request.set_commit_index(std::min(log_vars_.commit_index(), last_entry_index));
+
+        auto s = AppendEntries(request, hp.ToString());
+        assert(s.ok());
+    }
 
     return Status::OK();
 }
 
-void Raft::PrintId() const {
+void
+Raft::PrintId() const {
     LOG(INFO) << Node::GetInstance().id().ToString() << " : I am " << State2String(server_vars_.state());
     TraceLog("PrintId", __func__);
+}
+
+State
+Raft::CurrentState() const {
+    return server_vars_.state();
+}
+
+int64_t
+Raft::CurrentTerm() const {
+    return server_vars_.current_term().get();
+}
+
+bool
+Raft::HasLeader() const {
+    return (leader_ != 0);
 }
 
 void
 Raft::BeFollower() {
     TraceLog("BeFollower", __func__);
-
-    //state_ = STATE_FOLLOWER;
+    server_vars_.set_state(STATE_FOLLOWER);
     //leader_ = 0;
 
-    //ClearElectionTimer();
-    //ClearHeartbeatTimer();
-    //ResetF2CTimer();
+    ClearHeartbeatTimer();
+    ResetElectionTimer();
 }
 
 void
 Raft::Elect() {
     TraceLog("Elect", __func__);
+    if (server_vars_.state() == STATE_FOLLOWER) {
+        Follower2Candidate();
+    }
+    assert(server_vars_.state() == STATE_CANDIDATE);
 
-    //if (state_ == STATE_CANDIDATE) {
-    //    NextTerm();
-    //    ClearVoteFor();
-    //    request_vote_manager_.Reset(current_term_);
-    //    VoteForSelf();
-    //    RequestVotePeers();
-    //    ResetElectionTimer();
-    //}
+    server_vars_.mutable_current_term().Next();
+    server_vars_.mutable_vote_for().Clear();
+    candidate_vars_.mutable_votes_granted().Reset(server_vars_.current_term().get());
+    candidate_vars_.mutable_votes_responded().Reset(server_vars_.current_term().get());
+
+    VoteForSelf();
+    RequestVotePeers();
+    ResetElectionTimer();
 }
 
 void
 Raft::VoteForTerm(int64_t term, uint64_t node_id) {
-    //assert(term == current_term_);
-    //assert(vote_for_ == 0);
-    //vote_for_ = node_id;
-    //auto s = PersistVoteFor(vote_for_);
-    //assert(s.ok());
+    assert(term == server_vars_.current_term().get());
+    assert(!server_vars_.vote_for().HasVoted());
+
+    server_vars_.mutable_vote_for().Vote(node_id);
 }
 
 void
 Raft::VoteForSelf() {
-    //VoteForTerm(current_term_, Node::GetInstance().id().code());
-    //vraft_rpc::RequestVoteReply reply;
-    //reply.set_term(current_term_);
-    //reply.set_vote_granted(true);
-    //reply.set_node_id(Node::GetInstance().id().code());
-    //request_vote_manager_.Vote(reply);
+    VoteForTerm(server_vars_.current_term().get(), Node::GetInstance().id().code());
+
+    vraft_rpc::RequestVoteReply reply;
+    reply.set_term(server_vars_.current_term().get());
+    reply.set_vote_granted(true);
+    reply.set_node_id(Node::GetInstance().id().code());
+
+    candidate_vars_.mutable_votes_granted().Vote(reply);
+    candidate_vars_.mutable_votes_responded().Add(reply);
 }
 
 void
 Raft::UpdateTerm(int64_t term) {
     TraceLog("UpdateTerm", __func__);
 
-    //if (term > current_term_) {
-    //    current_term_ = term;
-    //    auto s = PersistCurrentTerm(current_term_);
-    //    assert(s.ok());
+    if (term > server_vars_.current_term().get()) {
+        server_vars_.mutable_current_term().set(term);
+        BeFollower();
+        server_vars_.mutable_vote_for().Clear();
+    }
+}
 
-    //    BeFollower();
-
-    //    s = ClearVoteFor();
-    //    assert(s.ok());
-    //}
+void
+Raft::AdvanceCommitIndex() {
+    TraceLog("AdvanceCommitIndex", __func__);
 }
 
 void
 Raft::Follower2Candidate() {
     TraceLog("Follower2Candidate", __func__);
-
-    //assert(state_ == STATE_FOLLOWER);
-    //state_ = STATE_CANDIDATE;
-    //ClearF2CTimer();
-    //ClearHeartbeatTimer();
-    //Elect();
+    assert(server_vars_.state() == STATE_FOLLOWER);
+    server_vars_.set_state(STATE_CANDIDATE);
 }
 
 void
 Raft::Candidate2Leader() {
     TraceLog("Candidate2Leader", __func__);
+    assert(server_vars_.state() == STATE_CANDIDATE);
+    assert(candidate_vars_.votes_granted().Majority());
 
-    //if (state_ == STATE_CANDIDATE) {
-    //    state_ = STATE_LEADER;
-    //    leader_ = Node::GetInstance().id().code();
-    //    ClearF2CTimer();
-    //    ClearElectionTimer();
-    //    ResetHeartbeatTimer();
-    //    auto s = AppendEntriesPeers();
-    //    assert(s.ok());
-    //}
+    if (server_vars_.state() == STATE_CANDIDATE) {
+        server_vars_.set_state(STATE_LEADER);
+        leader_ = Node::GetInstance().id().code();
+
+        for (auto &kv : leader_vars_.mutable_next_index()) {
+            kv.second = Node::GetInstance().raft().log_vars().log().Len() + 1;
+        }
+
+        for (auto &kv : leader_vars_.mutable_match_index()) {
+            kv.second = 0;
+        }
+
+        ClearElectionTimer();
+        ResetHeartbeatTimer();
+        auto s = AppendEntriesPeers();
+        assert(s.ok());
+    }
 }
 
 void
 Raft::Leader2Follower() {
     TraceLog("Leader3Follower", __func__);
 
-    //assert(state_ == STATE_LEADER);
-    //BeFollower();
+    assert(server_vars_.state() == STATE_LEADER);
+    BeFollower();
 }
 
 void
 Raft::Candidate2Follower() {
     TraceLog("Candidate2Follower", __func__);
 
-    //assert(state_ == STATE_CANDIDATE);
-    //BeFollower();
-}
-
-void
-Raft::ResetF2CTimer() {
-    int timer_ms = util::random_int(Config::GetInstance().election_timeout(),
-                                    2 * Config::GetInstance().election_timeout());
-    if (-1 == follower2candidate_timer_) {
-        follower2candidate_timer_ = Env::GetInstance().timer()->RunAfter(
-                                        std::bind(&Raft::EqFollower2Candidate, this), timer_ms);
-        assert(follower2candidate_timer_ != -1);
-    } else {
-        auto s = Env::GetInstance().timer()->ResetRunAfter(follower2candidate_timer_, timer_ms);
-        assert(s.ok());
-    }
-}
-
-void
-Raft::ClearF2CTimer() {
-    if (-1 != follower2candidate_timer_) {
-        Env::GetInstance().timer()->Stop(follower2candidate_timer_);
-    }
-}
-
-void
-Raft::EqFollower2Candidate() {
-    Env::GetInstance().thread_pool()->ProduceOne(std::bind(&Raft::Follower2Candidate, this));
+    assert(server_vars_.state() == STATE_CANDIDATE);
+    BeFollower();
 }
 
 void
@@ -766,14 +987,6 @@ Raft::ToJson() const {
 
     NodeId nid(leader_);
     j["leader"] = nid.ToJson();
-
-    //j["state"] = State2String(server_vars_.state());
-    //j["current_term"] = server_vars_.current_term();
-    //NodeId nid_vote_for(server_vars_.current_term().ToUInt());
-    //j["vote_for"] = nid_vote_for.ToString();
-    //NodeId nid_leader(leader_);
-    //j["leader"] = nid_leader.ToString();
-    //j["request_vote_manager"] = request_vote_manager_.ToString();
 
     jret["Raft"] = j;
     return jret;

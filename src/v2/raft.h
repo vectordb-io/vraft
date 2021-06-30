@@ -33,6 +33,14 @@ class VotesGranted {
     bool Majority() const;
     void Reset(int64_t term);
 
+    bool to_leader() const {
+        return to_leader_;
+    }
+
+    void set_to_leader() {
+        to_leader_ = true;
+    }
+
     jsonxx::json64 ToJson() const;
     std::string ToString() const;
     std::string ToStringPretty() const;
@@ -41,6 +49,7 @@ class VotesGranted {
     std::map<uint64_t, vraft_rpc::RequestVoteReply> votes_;
     int64_t term_;
     int quorum_;
+    bool to_leader_;
 };
 
 class VotesResponded {
@@ -149,6 +158,22 @@ class CandidateVars {
     CandidateVars& operator=(const CandidateVars&) = delete;
     Status Init();
 
+    const VotesGranted& votes_granted() const {
+        return votes_granted_;
+    }
+
+    VotesGranted& mutable_votes_granted() {
+        return votes_granted_;
+    }
+
+    const VotesResponded& votes_responded() const {
+        return votes_responded_;
+    }
+
+    VotesResponded& mutable_votes_responded() {
+        return votes_responded_;
+    }
+
     jsonxx::json64 ToJson() const;
     std::string ToString() const;
     std::string ToStringPretty() const;
@@ -170,11 +195,19 @@ class LeaderVars {
     std::string ToString() const;
     std::string ToStringPretty() const;
 
-    std::map<uint64_t, int>& next_index() {
+    const std::map<uint64_t, int>& next_index() const {
         return next_index_;
     }
 
-    std::map<uint64_t, int>& match_index() {
+    std::map<uint64_t, int>& mutable_next_index() {
+        return next_index_;
+    }
+
+    const std::map<uint64_t, int>& match_index() const {
+        return match_index_;
+    }
+
+    std::map<uint64_t, int>& mutable_match_index() {
         return match_index_;
     }
 
@@ -190,6 +223,22 @@ class LogVars {
     LogVars(const LogVars&) = delete;
     LogVars& operator=(const LogVars&) = delete;
     Status Init();
+
+    int commit_index() const {
+        return commit_index_;
+    }
+
+    void set_commit_index(int commit_index) {
+        commit_index_ = commit_index;
+    }
+
+    const Log& log() const {
+        return log_;
+    }
+
+    Log& mutable_log() {
+        return log_;
+    }
 
     jsonxx::json64 ToJson() const;
     std::string ToString() const;
@@ -213,21 +262,31 @@ class Raft {
     void OnRequestVote(const vraft_rpc::RequestVote &request, vraft_rpc::RequestVoteReply &reply);
     Status RequestVote(const vraft_rpc::RequestVote &request, const std::string &address);
     Status OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply);
-    Status RequestVotePeers();
-
     void OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::AppendEntriesReply &reply);
     Status AppendEntries(const vraft_rpc::AppendEntries &request, const std::string &address);
     Status OnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &reply);
+
+    Status RequestVotePeers();
     Status AppendEntriesPeers();
-
     void PrintId() const;
+    State CurrentState() const;
+    int64_t CurrentTerm() const;
+    bool HasLeader() const;
 
-    State state() const {
-        return server_vars_.state();
+    const ServerVars& server_vars() const {
+        return server_vars_;
     }
 
-    bool HasLeader() const {
-        return (leader_ != 0);
+    const CandidateVars& candidate_vars() const {
+        return candidate_vars_;
+    }
+
+    const LeaderVars& leader_vars() const {
+        return leader_vars_;
+    }
+
+    const LogVars& log_vars() const {
+        return log_vars_;
     }
 
   private:
@@ -236,15 +295,12 @@ class Raft {
     void VoteForTerm(int64_t term, uint64_t node_id);
     void VoteForSelf();
     void UpdateTerm(int64_t term);
+    void AdvanceCommitIndex();
 
     void Follower2Candidate();
     void Candidate2Leader();
     void Leader2Follower();
     void Candidate2Follower();
-
-    void ResetF2CTimer();
-    void ClearF2CTimer();
-    void EqFollower2Candidate();
 
     void ResetElectionTimer();
     void ClearElectionTimer();
@@ -276,7 +332,6 @@ class Raft {
     LogVars log_vars_;
     uint64_t leader_;
 
-    int follower2candidate_timer_;
     int election_timer_;
     int heartbeat_timer_;
 };

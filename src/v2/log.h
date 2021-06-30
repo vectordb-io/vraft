@@ -32,8 +32,16 @@ class Entry {
         return term_;
     }
 
+    void set_term(int64_t term) {
+        term_ = term;
+    }
+
     const std::string& cmd() const {
         return cmd_;
+    }
+
+    void set_cmd(const std::string &cmd) {
+        cmd_ = cmd;
     }
 
     jsonxx::json64 ToJson() const;
@@ -58,7 +66,7 @@ class Log {
     Status GetEntry(int index, Entry &entry) const;
     Status AppendEntry(const Entry &entry);
     Status TruncateEntries(int from_index);
-    int Size() const;
+    int Len() const;
 
     jsonxx::json64 ToJson() const;
     std::string ToString() const;
