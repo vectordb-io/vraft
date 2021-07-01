@@ -12,7 +12,6 @@ Timer::~Timer() {
 
 Status
 Timer::Start() {
-    LOG(INFO) << "timer thread start ...";
     //running_ = true;
     thread_ = std::make_unique<std::thread>(&Timer::MainFunc, this);
     return Status::OK();
@@ -140,6 +139,21 @@ Timer::Stop(int timerfd) {
 
     auto ret = timerfd_settime(timerfd, 0, &new_value, nullptr);
     assert(ret == 0);
+}
+
+Status
+Timer::TimeLeft(int timerfd, time_t &tv_sec, long &tv_nsec) const {
+    struct itimerspec curr_value;
+    int r = timerfd_gettime(timerfd, &curr_value);
+    if (r != 0) {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "timer fd:%d", timerfd);
+        return Status::NotFound(buf);
+    }
+    tv_sec = curr_value.it_value.tv_sec;
+    tv_nsec = curr_value.it_value.tv_nsec;
+
+    return Status::OK();
 }
 
 Status

@@ -26,15 +26,22 @@ OBJS_LOG_TEST2=log_test2.o log.o status.o vraft_rpc.pb.o
 LIBS_LOG_TEST2=-lglog -lprotobuf -lgrpc++ -lgrpc -lpthread -lleveldb
 LFLAGS_LOG_TEST2=-L/usr/local/lib
 
+OBJS_TIMER_TEST=timer_test.o timer.o status.o 
+LIBS_TIMER_TEST=-lglog -lprotobuf -lgrpc++ -lgrpc -lpthread -lleveldb
+LFLAGS_TIMER_TEST=-L/usr/local/lib
+
 cs: vraft_server vraft_client
 	@echo ""
 	@echo "success, go go go!"
 	@echo ""
 
-test: thread_pool_test config_test log_test log_test2
+test: thread_pool_test config_test log_test log_test2 timer_test
 	@echo ""
 	@echo "make $<"
 	@echo ""
+
+timer_test: $(OBJS_TIMER_TEST)
+	$(CC) $^ -o $@ $(LIBS_TIMER_TEST) $(LFLAGS_TIMER_TEST)
 
 log_test2: $(OBJS_LOG_TEST2)
 	$(CC) $^ -o $@ $(LIBS_LOG_TEST2) $(LFLAGS_LOG_TEST2)
@@ -73,6 +80,7 @@ clean:
 	rm -rf config_test
 	rm -rf log_test
 	rm -rf log_test2
+	rm -rf timer_test
 
 cleanall: clean
 	rm -f vraft_rpc.pb.*

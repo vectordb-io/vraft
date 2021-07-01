@@ -65,6 +65,7 @@ class Timer {
     Status ResetRunEvery(int timerfd, int milliseconds);
 
     void Stop(int timerfd);
+    Status TimeLeft(int timerfd, time_t &tv_sec, long &tv_nsec) const;
 
   private:
     int SetTimer(TimerCallBack func, struct itimerspec &new_value);

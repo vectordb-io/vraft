@@ -321,6 +321,7 @@ class Raft {
     void TraceOnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &msg, const std::string &address) const;
     void TraceLog(const std::string &log_flag, const std::string func_name) const;
 
+    jsonxx::json64 TimerToJson(int timerfd) const;
     jsonxx::json64 ToJson() const;
     std::string ToString() const;
     std::string ToStringPretty() const;
@@ -333,7 +334,10 @@ class Raft {
     uint64_t leader_;
 
     int election_timer_;
+    int election_random_ms_;
+
     int heartbeat_timer_;
+    int heartbeat_random_ms_;
 };
 
 }  // namespace vraft

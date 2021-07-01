@@ -373,7 +373,9 @@ Raft::Raft()
      log_vars_(Config::GetInstance().path() + "/log"),
      leader_(0),
      election_timer_(-1),
-     heartbeat_timer_(-1) {
+     election_random_ms_(0),
+     heartbeat_timer_(-1),
+     heartbeat_random_ms_(0) {
 }
 
 Raft::~Raft() {
@@ -847,18 +849,18 @@ Raft::Candidate2Follower() {
 
 void
 Raft::ResetElectionTimer() {
-    int timer_ms = util::random_int(Config::GetInstance().election_timeout(),
-                                    2 * Config::GetInstance().election_timeout());
+    election_random_ms_ = util::random_int(Config::GetInstance().election_timeout(),
+                                           2 * Config::GetInstance().election_timeout());
     if (-1 == election_timer_) {
         election_timer_= Env::GetInstance().timer()->RunAfter(
-                             std::bind(&Raft::EqElect, this), timer_ms);
+                             std::bind(&Raft::EqElect, this), election_random_ms_);
         if (election_timer_!= -1) {
             char buf[128];
-            snprintf(buf, sizeof(buf), "election_timer_:%d, timer_ms:%d", election_timer_, timer_ms);
+            snprintf(buf, sizeof(buf), "election_timer_:%d, election_random_ms_:%d", election_timer_, election_random_ms_);
             LOG(INFO) << buf;
         }
     } else {
-        auto s = Env::GetInstance().timer()->ResetRunAfter(election_timer_, timer_ms);
+        auto s = Env::GetInstance().timer()->ResetRunAfter(election_timer_, election_random_ms_);
         if (!s.ok()) {
             LOG(INFO) << s.ToString();
             assert(0);
@@ -880,13 +882,13 @@ Raft::EqElect() {
 
 void
 Raft::ResetHeartbeatTimer() {
-    int timer_ms = Config::GetInstance().heartbeat_timeout();
+    int heartbeat_random_ms_ = Config::GetInstance().heartbeat_timeout();
     if (-1 == heartbeat_timer_) {
         heartbeat_timer_ = Env::GetInstance().timer()->RunEvery(
-                               std::bind(&Raft::EqAppendEntriesPeers, this), timer_ms);
+                               std::bind(&Raft::EqAppendEntriesPeers, this), heartbeat_random_ms_);
         assert(heartbeat_timer_ != -1);
     } else {
-        auto s = Env::GetInstance().timer()->ResetRunEvery(heartbeat_timer_, timer_ms);
+        auto s = Env::GetInstance().timer()->ResetRunEvery(heartbeat_timer_, heartbeat_random_ms_);
         assert(s.ok());
     }
 }
@@ -978,6 +980,27 @@ Raft::TraceLog(const std::string &log_flag, const std::string func_name) const {
 }
 
 jsonxx::json64
+Raft::TimerToJson(int timerfd) const {
+    jsonxx::json64 j;
+
+    struct itimerspec curr_value;
+    int r = timerfd_gettime(timerfd, &curr_value);
+    if (r == 0) {
+        ;
+    } else {
+        memset(&curr_value, 0, sizeof(curr_value));
+    }
+
+    j["timerfd"] = timerfd;
+    j["it_interval"]["sec"] = curr_value.it_interval.tv_sec;
+    j["it_interval"]["nsec"] = curr_value.it_interval.tv_nsec;
+    j["it_value"]["sec"] = curr_value.it_value.tv_sec;
+    j["it_value"]["nsec"] = curr_value.it_value.tv_nsec;
+
+    return j;
+}
+
+jsonxx::json64
 Raft::ToJson() const {
     jsonxx::json64 j, jret;
     j["server_vars"] = server_vars_.ToJson();
@@ -987,6 +1010,11 @@ Raft::ToJson() const {
 
     NodeId nid(leader_);
     j["leader"] = nid.ToJson();
+
+    j["election_timer"] = TimerToJson(election_timer_);
+    j["election_random_ms"] = election_random_ms_;
+    j["heartbeat_timer"] = TimerToJson(heartbeat_timer_);
+    j["heartbeat_random_ms"] = heartbeat_random_ms_;
 
     jret["Raft"] = j;
     return jret;
