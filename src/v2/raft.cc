@@ -420,6 +420,22 @@ Raft::Start() {
 void
 Raft::OnClientRequest(const vraft_rpc::ClientRequest &request, void *async_flag) {
 
+    if (CurrentState() != STATE_LEADER) {
+        vraft_rpc::ClientRequestReply reply;
+        reply.set_code(10);
+        std::string err_msg = "not leader";
+        reply.set_msg(err_msg);
+        NodeId nid(leader_);
+        reply.set_leader_hint(nid.address());
+        Env::GetInstance().AsyncClientRequestReply(reply, async_flag);
+    } else {
+        Entry entry(CurrentTerm(), request.cmd());
+        auto s = log_vars_.mutable_log().AppendEntry(entry);
+        assert(s.ok());
+
+        s = AppendEntriesPeers();
+        assert(s.ok());
+    }
 }
 
 void
@@ -481,17 +497,18 @@ Raft::OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply) {
     }
     assert(reply.term() == CurrentTerm());
 
-    candidate_vars_.mutable_votes_responded().Add(reply);
-    if (reply.vote_granted()) {
-        candidate_vars_.mutable_votes_granted().Vote(reply);
-        if (candidate_vars_.mutable_votes_granted().Majority()) {
-            if (!candidate_vars_.mutable_votes_granted().to_leader()) {
-                Candidate2Leader();
-                candidate_vars_.mutable_votes_granted().set_to_leader();
+    if (CurrentState() == STATE_CANDIDATE) {
+        candidate_vars_.mutable_votes_responded().Add(reply);
+        if (reply.vote_granted()) {
+            candidate_vars_.mutable_votes_granted().Vote(reply);
+            if (candidate_vars_.mutable_votes_granted().Majority()) {
+                if (!candidate_vars_.mutable_votes_granted().to_leader()) {
+                    Candidate2Leader();
+                    candidate_vars_.mutable_votes_granted().set_to_leader();
+                }
             }
         }
     }
-
     return Status::OK();
 }
 
@@ -547,6 +564,7 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
             log_ok) {
 
         leader_ = request.node_id();
+        ResetElectionTimer();
 
         int index = request.prev_log_index() + 1;
         Entry tmp_entry;
@@ -737,9 +755,12 @@ Raft::HasLeader() const {
 void
 Raft::BeFollower() {
     TraceLog("BeFollower", __func__);
-    server_vars_.set_state(STATE_FOLLOWER);
-    //leader_ = 0;
 
+    if (server_vars_.state() == STATE_LEADER) {
+        leader_ = 0;
+    }
+
+    server_vars_.set_state(STATE_FOLLOWER);
     ClearHeartbeatTimer();
     ResetElectionTimer();
 }

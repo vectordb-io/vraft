@@ -29,6 +29,7 @@ class Env {
     Status AsyncPing(const vraft_rpc::Ping &request, const std::string &address, PingFinishCallBack cb);
     Status AsyncRequestVote(const vraft_rpc::RequestVote &request, const std::string &address, RequestVoteFinishCallBack cb);
     Status AsyncAppendEntries(const vraft_rpc::AppendEntries &request, const std::string &address, AppendEntriesFinishCallBack cb);
+    Status AsyncClientRequestReply(const vraft_rpc::ClientRequestReply &reply, void *call);
 
     // storage
     Status CurrentTerm(int64_t &term) const;

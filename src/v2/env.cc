@@ -30,6 +30,12 @@ Env::AsyncAppendEntries(const vraft_rpc::AppendEntries &request, const std::stri
 }
 
 Status
+Env::AsyncClientRequestReply(const vraft_rpc::ClientRequestReply &reply, void *call) {
+    auto s = grpc_server_.AsyncClientRequestReply(reply, call);
+    return s;
+}
+
+Status
 Env::CurrentTerm(int64_t &term) const {
     auto s = storage_.CurrentTerm(term);
     return s;
