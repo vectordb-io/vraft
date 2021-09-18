@@ -870,8 +870,8 @@ Raft::Candidate2Follower() {
 
 void
 Raft::ResetElectionTimer() {
-    election_random_ms_ = util::random_int(Config::GetInstance().election_timeout(),
-                                           2 * Config::GetInstance().election_timeout());
+    election_random_ms_ = util::RandomInt(Config::GetInstance().election_timeout(),
+                                          2 * Config::GetInstance().election_timeout());
     if (-1 == election_timer_) {
         election_timer_= Env::GetInstance().timer()->RunAfter(
                              std::bind(&Raft::EqElect, this), election_random_ms_);

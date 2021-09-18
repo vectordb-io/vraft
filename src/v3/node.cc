@@ -101,7 +101,7 @@ Node::PingPeers() {
 
 void
 Node::Sleep(int min, int max) const {
-    int timeout_ms = util::random_int(min, max);
+    int timeout_ms = util::RandomInt(min, max);
     LOG(INFO) << "sleep " << timeout_ms << " ms";
     std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
 }
