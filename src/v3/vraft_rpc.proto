@@ -35,6 +35,9 @@ message ClientRequest {
   int64 client_id = 1;
   int64 sequence_num = 2;
   string cmd = 3;
+
+  // special command
+  // "__get_state__"
 };
 
 message ClientRequestReply {

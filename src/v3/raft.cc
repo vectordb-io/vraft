@@ -371,7 +371,7 @@ LogVars::ToStringPretty() const {
 Raft::Raft()
     :candidate_vars_(Config::GetInstance().Quorum()),
      log_vars_(Config::GetInstance().path() + "/log"),
-     leader_(0),
+     leader_cache_(0),
      election_timer_(-1),
      election_random_ms_(0),
      heartbeat_timer_(-1),
@@ -420,12 +420,21 @@ Raft::Start() {
 void
 Raft::OnClientRequest(const vraft_rpc::ClientRequest &request, void *async_flag) {
 
+    if (request.cmd() == "__get_state__") {
+        vraft_rpc::ClientRequestReply reply;
+        reply.set_code(0);
+        std::string err_msg = "__get_state__ ok";
+        reply.set_response(ToStringPretty());
+        Env::GetInstance().AsyncClientRequestReply(reply, async_flag);
+    }
+
+
     if (CurrentState() != STATE_LEADER) {
         vraft_rpc::ClientRequestReply reply;
         reply.set_code(10);
         std::string err_msg = "not leader";
         reply.set_msg(err_msg);
-        NodeId nid(leader_);
+        NodeId nid(leader_cache_);
         reply.set_leader_hint(nid.address());
         Env::GetInstance().AsyncClientRequestReply(reply, async_flag);
     } else {
@@ -563,7 +572,7 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
             CurrentState() == STATE_FOLLOWER &&
             log_ok) {
 
-        leader_ = request.node_id();
+        leader_cache_ = request.node_id();
         ResetElectionTimer();
 
         int index = request.prev_log_index() + 1;
@@ -749,7 +758,7 @@ Raft::CurrentTerm() const {
 
 bool
 Raft::HasLeader() const {
-    return (leader_ != 0);
+    return (leader_cache_ != 0);
 }
 
 void
@@ -757,12 +766,12 @@ Raft::BeFollower() {
     TraceLog("BeFollower", __func__);
 
     if (server_vars_.state() == STATE_LEADER) {
-        leader_ = 0;
+        leader_cache_ = 0;
     }
 
     server_vars_.set_state(STATE_FOLLOWER);
     ClearHeartbeatTimer();
-    ResetElectionTimer();
+    //ResetElectionTimer();
 }
 
 void
@@ -835,7 +844,7 @@ Raft::Candidate2Leader() {
 
     if (server_vars_.state() == STATE_CANDIDATE) {
         server_vars_.set_state(STATE_LEADER);
-        leader_ = Node::GetInstance().id().code();
+        leader_cache_ = Node::GetInstance().id().code();
 
         for (auto &kv : leader_vars_.mutable_next_index()) {
             kv.second = Node::GetInstance().raft().log_vars().log().Len() + 1;
@@ -1024,18 +1033,20 @@ Raft::TimerToJson(int timerfd) const {
 jsonxx::json64
 Raft::ToJson() const {
     jsonxx::json64 j, jret;
-    j["server_vars"] = server_vars_.ToJson();
-    j["candidate_vars"] = candidate_vars_.ToJson();
-    j["leader_vars"] = leader_vars_.ToJson();
-    j["log_vars"] = log_vars_.ToJson();
+    j["vars"]["server_vars"] = server_vars_.ToJson();
+    j["vars"]["candidate_vars"] = candidate_vars_.ToJson();
+    j["vars"]["leader_vars"] = leader_vars_.ToJson();
+    j["vars"]["log_vars"] = log_vars_.ToJson();
 
-    NodeId nid(leader_);
-    j["leader"] = nid.ToJson();
+    NodeId nid(leader_cache_);
+    j["leader_cache"] = nid.ToJson();
 
-    j["election_timer"] = TimerToJson(election_timer_);
-    j["election_random_ms"] = election_random_ms_;
-    j["heartbeat_timer"] = TimerToJson(heartbeat_timer_);
-    j["heartbeat_random_ms"] = heartbeat_random_ms_;
+    j["node_id"] = Node::GetInstance().id().ToJson();
+
+    j["timer"]["election_timer"] = TimerToJson(election_timer_);
+    j["timer"]["election_random_ms"] = election_random_ms_;
+    j["timer"]["heartbeat_timer"] = TimerToJson(heartbeat_timer_);
+    j["timer"]["heartbeat_random_ms"] = heartbeat_random_ms_;
 
     jret["Raft"] = j;
     return jret;

@@ -331,7 +331,7 @@ class Raft {
     CandidateVars candidate_vars_;
     LeaderVars leader_vars_;
     LogVars log_vars_;
-    uint64_t leader_;
+    uint64_t leader_cache_;
 
     int election_timer_;
     int election_random_ms_;

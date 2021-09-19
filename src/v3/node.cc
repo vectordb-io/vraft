@@ -36,7 +36,7 @@ Node::Start() {
         vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Node::PingPeers, this), 3000);
     }
 
-    vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Raft::PrintId, &raft_), 1000);
+    //vraft::Env::GetInstance().timer()->RunEvery(std::bind(&vraft::Raft::PrintId, &raft_), 1000);
 
     auto s = raft_.Start();
     assert(s.ok());
