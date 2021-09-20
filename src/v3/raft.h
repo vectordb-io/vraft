@@ -267,7 +267,7 @@ class Raft {
     Status OnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &reply);
 
     Status RequestVotePeers();
-    Status AppendEntriesPeers();
+    Status AppendEntriesPeers(void *async_flag);
     void PrintId() const;
     State CurrentState() const;
     int64_t CurrentTerm() const;
@@ -290,12 +290,14 @@ class Raft {
     }
 
   private:
-    void BeFollower();
+    void BecomeFollower();
+    void BecomeLeader();
     void Elect();
+
     void VoteForTerm(int64_t term, uint64_t node_id);
     void VoteForSelf();
     void UpdateTerm(int64_t term);
-    void AdvanceCommitIndex();
+    void MaybeAdvanceCommitIndex();
 
     void Follower2Candidate();
     void Candidate2Leader();
@@ -304,11 +306,13 @@ class Raft {
 
     void ResetElectionTimer();
     void ClearElectionTimer();
-    void EqElect();
+    void EqElectionTimeout();
+    void ElectionTimeout();
 
     void ResetHeartbeatTimer();
     void ClearHeartbeatTimer();
-    void EqAppendEntriesPeers();
+    void EqHeartbeatTimeout();
+    void HeartbeatTimeout();
 
     // for debug
     void TraceRequestVote(const vraft_rpc::RequestVote &msg, const std::string &address) const;
@@ -333,9 +337,11 @@ class Raft {
     LogVars log_vars_;
     uint64_t leader_cache_;
 
+    bool enable_election_timer_;
     int election_timer_;
     int election_random_ms_;
 
+    bool enable_heartbeat_timer_;
     int heartbeat_timer_;
     int heartbeat_random_ms_;
 };

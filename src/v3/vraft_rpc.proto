@@ -35,9 +35,11 @@ message ClientRequest {
   int64 client_id = 1;
   int64 sequence_num = 2;
   string cmd = 3;
+  string param = 4;
 
-  // special command
-  // "__get_state__"
+  // cmd: 
+  // "get_state"
+  // "put_entry"
 };
 
 message ClientRequestReply {
