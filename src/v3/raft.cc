@@ -616,7 +616,7 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
 
             reply.set_term(CurrentTerm());
             reply.set_success(true);
-            reply.set_match_index(request.prev_log_index() + 1);
+            reply.set_match_index(request.prev_log_index() + request.entries_size());
             reply.set_node_id(Node::GetInstance().id().code());
             reply.set_async_flag(request.async_flag());
 
@@ -729,10 +729,10 @@ Raft::AppendEntriesPeers(void *async_flag) {
     TraceLog("AppendEntriesPeers", __func__);
     assert(server_vars_.state() == STATE_LEADER);
 
-    vraft_rpc::AppendEntries request;
-    request.set_term(CurrentTerm());
-    request.set_node_id(Node::GetInstance().id().code());
     for (auto &hp : Config::GetInstance().peers()) {
+        vraft_rpc::AppendEntries request;
+        request.set_term(CurrentTerm());
+        request.set_node_id(Node::GetInstance().id().code());
         NodeId nid(hp.ToString());
 
         int next_index;

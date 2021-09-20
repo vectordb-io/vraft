@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         request.set_param(param);
 
     } else {
-        std::cout << "cmd: " << cmd << " not supported" << std::endl;
+        Usage();
         exit(-1);
     }
 
@@ -87,7 +87,7 @@ int main(int argc, char **argv) {
         std::cout << "response: " << reply.response() << std::endl;
         std::cout << "leader_hint: " << reply.leader_hint() << std::endl;
     } else {
-        std::cout << s.error_message();
+        std::cout << s.error_message() << std::endl;
     }
 
     return 0;
