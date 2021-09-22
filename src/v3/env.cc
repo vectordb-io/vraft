@@ -64,7 +64,7 @@ Env::Init() {
     Status s;
 
     if (!util::DirOK(Config::GetInstance().path())) {
-        util::Mkdir(Config::GetInstance().path());
+        util::RecurMakeDir(Config::GetInstance().path());
     }
 
     s = storage_.Init();

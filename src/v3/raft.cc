@@ -135,15 +135,15 @@ PersistedTerm::PersistedTerm()
 Status
 PersistedTerm::Init() {
     auto s = Env::GetInstance().CurrentTerm(term_);
-    if (s.IsNotFound()) {
+    if (s.ok()) {
+
+    } else if (s.IsNotFound()) {
         term_ = 1;
         auto s1 = Env::GetInstance().PersistCurrentTerm(term_);
         assert(s1.ok());
     } else {
-        if (!s.ok()) {
-            LOG(INFO) << s.ToString();
-            assert(0);
-        }
+        LOG(INFO) << s.ToString();
+        assert(0);
     }
     return Status::OK();
 }
@@ -177,15 +177,15 @@ PersistedVoteFor::PersistedVoteFor()
 Status
 PersistedVoteFor::Init() {
     auto s = Env::GetInstance().VoteFor(node_id_);
-    if (s.IsNotFound()) {
+    if (s.ok()) {
+
+    } else if (s.IsNotFound()) {
         node_id_ = 0;
         auto s1 = Env::GetInstance().PersistVoteFor(node_id_);
         assert(s1.ok());
     } else {
-        if (!s.ok()) {
-            LOG(INFO) << s.ToString();
-            assert(0);
-        }
+        LOG(INFO) << s.ToString();
+        assert(0);
     }
     return Status::OK();
 }
@@ -343,7 +343,7 @@ Status
 LogVars::Init() {
     auto s = log_.Init();
     assert(s.ok());
-
+    commit_index_ = 0;
     return Status::OK();
 }
 
@@ -371,9 +371,11 @@ LogVars::ToStringPretty() const {
 Raft::Raft()
     :candidate_vars_(Config::GetInstance().Quorum()),
      log_vars_(Config::GetInstance().path() + "/log"),
-     leader_(0),
+     leader_cache_(0),
+     enable_election_timer_(false),
      election_timer_(-1),
      election_random_ms_(0),
+     enable_heartbeat_timer_(false),
      heartbeat_timer_(-1),
      heartbeat_random_ms_(0) {
 }
@@ -413,28 +415,38 @@ Raft::Init() {
 Status
 Raft::Start() {
     LOG(INFO) << "raft start ...";
-    BeFollower();
+    BecomeFollower();
     return Status::OK();
 }
 
 void
 Raft::OnClientRequest(const vraft_rpc::ClientRequest &request, void *async_flag) {
 
-    if (CurrentState() != STATE_LEADER) {
+    if (request.cmd() == "get_state") {
         vraft_rpc::ClientRequestReply reply;
-        reply.set_code(10);
-        std::string err_msg = "not leader";
-        reply.set_msg(err_msg);
-        NodeId nid(leader_);
-        reply.set_leader_hint(nid.address());
+        reply.set_code(0);
+        std::string err_msg = "get_state ok";
+        reply.set_response(ToStringPretty());
         Env::GetInstance().AsyncClientRequestReply(reply, async_flag);
-    } else {
-        Entry entry(CurrentTerm(), request.cmd());
-        auto s = log_vars_.mutable_log().AppendEntry(entry);
-        assert(s.ok());
 
-        s = AppendEntriesPeers();
-        assert(s.ok());
+    } else if (request.cmd() == "put_entry") {
+
+        if (CurrentState() != STATE_LEADER) {
+            vraft_rpc::ClientRequestReply reply;
+            reply.set_code(10);
+            std::string err_msg = "not leader";
+            reply.set_msg(err_msg);
+            NodeId nid(leader_cache_);
+            reply.set_leader_hint(nid.address());
+            Env::GetInstance().AsyncClientRequestReply(reply, async_flag);
+        } else {
+            Entry entry(CurrentTerm(), request.param());
+            auto s = log_vars_.mutable_log().AppendEntry(entry);
+            assert(s.ok());
+
+            s = AppendEntriesPeers(async_flag);
+            assert(s.ok());
+        }
     }
 }
 
@@ -492,9 +504,12 @@ Raft::OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply) {
         return Status::OK();
     }
 
+    // no need this code, because if I receive reply.term, then I must have sent for that term.
+    /*
     if (reply.term() > CurrentTerm()) {
         UpdateTerm(reply.term());
     }
+    */
     assert(reply.term() == CurrentTerm());
 
     if (CurrentState() == STATE_CANDIDATE) {
@@ -512,7 +527,6 @@ Raft::OnRequestVoteReply(const vraft_rpc::RequestVoteReply &reply) {
     return Status::OK();
 }
 
-
 void
 Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::AppendEntriesReply &reply) {
     NodeId node_id(request.node_id());
@@ -523,13 +537,17 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
     }
     assert(request.term() <= CurrentTerm());
 
+    if (request.term() == CurrentTerm()) {
+        leader_cache_ = request.node_id();
+        ResetElectionTimer();
+    }
+
     if (request.entries_size() > 0) {
         assert(request.entries_size() == 1);
     }
 
     int local_prev_log_term;
-    if (request.prev_log_index() > 0 &&
-            request.prev_log_index() <= log_vars_.log().Len()) {
+    if (request.prev_log_index() > 0 && request.prev_log_index() <= log_vars_.log().Len()) {
         Entry entry;
         auto s = log_vars_.log().GetEntry(request.prev_log_index(), entry);
         assert(s.ok());
@@ -549,13 +567,16 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
         reply.set_success(false);
         reply.set_match_index(0);
         reply.set_node_id(Node::GetInstance().id().code());
+        reply.set_async_flag(request.async_flag());
+
+        TraceAppendEntriesReply(reply, node_id.address());
         return;
     }
 
     // return to follower state
     if (request.term() == CurrentTerm() &&
             CurrentState() == STATE_CANDIDATE) {
-        BeFollower();
+        BecomeFollower();
     }
 
     // accept request
@@ -563,53 +584,55 @@ Raft::OnAppendEntries(const vraft_rpc::AppendEntries &request, vraft_rpc::Append
             CurrentState() == STATE_FOLLOWER &&
             log_ok) {
 
-        leader_ = request.node_id();
-        ResetElectionTimer();
-
-        int index = request.prev_log_index() + 1;
-        Entry tmp_entry;
-        bool tmp_flag;
-
-        //conflict: remove 1 entry
-        tmp_flag = request.entries_size() > 0 &&
-                   log_vars_.log().Len() >= request.prev_log_index();
-        if (tmp_flag) {
-            auto s = log_vars_.log().GetEntry(index, tmp_entry);
+        bool match_success = false;
+        if (request.prev_log_index() == 0 && log_vars_.log().Len() == 0) {
+            match_success = true;
+        }
+        if (request.prev_log_index() > 0 && log_vars_.log().Len() >= request.prev_log_index()) {
+            Entry tmp_entry;
+            auto s = log_vars_.log().GetEntry(request.prev_log_index(), tmp_entry);
             assert(s.ok());
+            if (request.prev_log_term() == tmp_entry.term()) {
+                match_success = true;
+            }
         }
 
-        if (tmp_flag &&
-                tmp_entry.term() != request.entries(0).term()) {
-            int from_index = log_vars_.log().Len();
-            auto s = log_vars_.mutable_log().TruncateEntries(from_index);
-            assert(s.ok());
-        }
+        if (match_success) {
 
-        // no conflict: append entry
-        if (request.entries_size() > 0 &&
-                log_vars_.log().Len() == request.prev_log_index()) {
-            Entry append_entry;
-            Pb2Entry(request.entries(0), append_entry);
-            auto s = log_vars_.mutable_log().AppendEntry(append_entry);
-            assert(s.ok());
-        }
+            // delete conflict entries
+            if (log_vars_.log().Len() > request.prev_log_index()) {
+                int from_index = request.prev_log_index() + 1;
+                auto s = log_vars_.mutable_log().TruncateEntries(from_index);
+                assert(s.ok());
+            }
 
-        // already done with request
-        tmp_flag = request.entries_size() > 0 &&
-                   log_vars_.log().Len() >= request.prev_log_index();
-        if (tmp_flag) {
-            auto s = log_vars_.log().GetEntry(index, tmp_entry);
-            assert(s.ok());
-        }
+            // append one entry
+            if (request.entries_size() > 0) {
+                Entry append_entry;
+                Pb2Entry(request.entries(0), append_entry);
+                auto s = log_vars_.mutable_log().AppendEntry(append_entry);
+                assert(s.ok());
+            }
 
-        if (request.entries_size() == 0 ||
-                (tmp_flag && tmp_entry.term() == request.entries(0).term())) {
-            log_vars_.set_commit_index(request.commit_index());
-            AdvanceCommitIndex();
             reply.set_term(CurrentTerm());
             reply.set_success(true);
             reply.set_match_index(request.prev_log_index() + request.entries_size());
             reply.set_node_id(Node::GetInstance().id().code());
+            reply.set_async_flag(request.async_flag());
+
+        } else {
+
+            reply.set_term(CurrentTerm());
+            reply.set_success(false);
+            reply.set_match_index(0);
+            reply.set_node_id(Node::GetInstance().id().code());
+            reply.set_async_flag(request.async_flag());
+        }
+
+        if (request.commit_index() > log_vars_.commit_index()) {
+            if (request.commit_index() <= log_vars_.log().Len()) {
+                log_vars_.set_commit_index(request.commit_index());
+            }
         }
     }
 
@@ -641,9 +664,12 @@ Raft::OnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &reply) {
         return Status::OK();
     }
 
+    // no need this code, because if I receive reply.term, then I must have sent for that term.
+    /*
     if (reply.term() > CurrentTerm()) {
         UpdateTerm(reply.term());
     }
+    */
     assert(reply.term() == CurrentTerm());
 
     NodeId nid(reply.node_id());
@@ -655,10 +681,22 @@ Raft::OnAppendEntriesReply(const vraft_rpc::AppendEntriesReply &reply) {
         auto it2 = leader_vars_.mutable_match_index().find(nid.code());
         assert(it2 != leader_vars_.mutable_match_index().end());
         it2->second = reply.match_index();
+
+        MaybeAdvanceCommitIndex();
+
     } else {
         auto it1 = leader_vars_.mutable_next_index().find(nid.code());
         assert(it1 != leader_vars_.mutable_next_index().end());
         it1->second = std::max(it1->second - 1, 1);
+    }
+
+    void *client_call = reinterpret_cast<void*>(reply.async_flag());
+    if (client_call) {
+        vraft_rpc::ClientRequestReply reply;
+        reply.set_code(0);
+        std::string err_msg = "__append_entries__ ok";
+        reply.set_response(ToStringPretty());
+        Env::GetInstance().AsyncClientRequestReply(reply, client_call);
     }
 
     return Status::OK();
@@ -687,14 +725,14 @@ Raft::RequestVotePeers() {
 }
 
 Status
-Raft::AppendEntriesPeers() {
+Raft::AppendEntriesPeers(void *async_flag) {
     TraceLog("AppendEntriesPeers", __func__);
     assert(server_vars_.state() == STATE_LEADER);
 
-    vraft_rpc::AppendEntries request;
-    request.set_term(CurrentTerm());
-    request.set_node_id(Node::GetInstance().id().code());
     for (auto &hp : Config::GetInstance().peers()) {
+        vraft_rpc::AppendEntries request;
+        request.set_term(CurrentTerm());
+        request.set_node_id(Node::GetInstance().id().code());
         NodeId nid(hp.ToString());
 
         int next_index;
@@ -703,26 +741,35 @@ Raft::AppendEntriesPeers() {
         next_index = it->second;
 
         int prev_log_index = next_index - 1;
-        int64_t prev_log_term = 0;
+        int64_t prev_log_term;
         if (prev_log_index > 0) {
             Entry entry;
             auto s = log_vars_.log().GetEntry(prev_log_index, entry);
             assert(s.ok());
             prev_log_term = entry.term();
+        } else {
+            prev_log_term = 0;
         }
-        int last_entry_index = std::min(log_vars_.log().Len(), next_index);
 
-        if (next_index <= log_vars_.log().Len()) {
+        int last_entry_index = std::min(log_vars_.log().Len(), next_index);
+        for (int log_index = next_index; log_index <= last_entry_index; log_index++) {
             Entry send_entry;
-            auto s = log_vars_.log().GetEntry(prev_log_index, send_entry);
-            assert(s.ok());
-            vraft_rpc::Entry *pentry = request.add_entries();
-            pentry->set_term(send_entry.term());
-            pentry->set_cmd(send_entry.cmd());
+            auto s = log_vars_.log().GetEntry(log_index, send_entry);
+            if (s.ok()) {
+                vraft_rpc::Entry *pentry = request.add_entries();
+                pentry->set_term(send_entry.term());
+                pentry->set_cmd(send_entry.cmd());
+            } else if (s.IsNotFound()) {
+
+            } else {
+                assert(0);
+            }
         }
+
         request.set_prev_log_index(prev_log_index);
         request.set_prev_log_term(prev_log_term);
         request.set_commit_index(std::min(log_vars_.commit_index(), last_entry_index));
+        request.set_async_flag(reinterpret_cast<uint64_t>(async_flag));
 
         auto s = AppendEntries(request, hp.ToString());
         assert(s.ok());
@@ -749,15 +796,15 @@ Raft::CurrentTerm() const {
 
 bool
 Raft::HasLeader() const {
-    return (leader_ != 0);
+    return (leader_cache_ != 0);
 }
 
 void
-Raft::BeFollower() {
-    TraceLog("BeFollower", __func__);
+Raft::BecomeFollower() {
+    TraceLog("BecomeFollower", __func__);
 
     if (server_vars_.state() == STATE_LEADER) {
-        leader_ = 0;
+        leader_cache_ = 0;
     }
 
     server_vars_.set_state(STATE_FOLLOWER);
@@ -781,6 +828,25 @@ Raft::Elect() {
     VoteForSelf();
     RequestVotePeers();
     ResetElectionTimer();
+}
+
+void
+Raft::BecomeLeader() {
+    server_vars_.set_state(STATE_LEADER);
+    leader_cache_ = Node::GetInstance().id().code();
+
+    for (auto &kv : leader_vars_.mutable_next_index()) {
+        kv.second = Node::GetInstance().raft().log_vars().log().Len() + 1;
+    }
+
+    for (auto &kv : leader_vars_.mutable_match_index()) {
+        kv.second = 0;
+    }
+
+    ClearElectionTimer();
+    ResetHeartbeatTimer();
+    auto s = AppendEntriesPeers(nullptr);
+    assert(s.ok());
 }
 
 void
@@ -810,14 +876,14 @@ Raft::UpdateTerm(int64_t term) {
 
     if (term > server_vars_.current_term().get()) {
         server_vars_.mutable_current_term().set(term);
-        BeFollower();
+        BecomeFollower();
         server_vars_.mutable_vote_for().Clear();
     }
 }
 
 void
-Raft::AdvanceCommitIndex() {
-    TraceLog("AdvanceCommitIndex", __func__);
+Raft::MaybeAdvanceCommitIndex() {
+    TraceLog("MaybeAdvanceCommitIndex", __func__);
 }
 
 void
@@ -834,21 +900,7 @@ Raft::Candidate2Leader() {
     assert(candidate_vars_.votes_granted().Majority());
 
     if (server_vars_.state() == STATE_CANDIDATE) {
-        server_vars_.set_state(STATE_LEADER);
-        leader_ = Node::GetInstance().id().code();
-
-        for (auto &kv : leader_vars_.mutable_next_index()) {
-            kv.second = Node::GetInstance().raft().log_vars().log().Len() + 1;
-        }
-
-        for (auto &kv : leader_vars_.mutable_match_index()) {
-            kv.second = 0;
-        }
-
-        ClearElectionTimer();
-        ResetHeartbeatTimer();
-        auto s = AppendEntriesPeers();
-        assert(s.ok());
+        BecomeLeader();
     }
 }
 
@@ -857,7 +909,7 @@ Raft::Leader2Follower() {
     TraceLog("Leader3Follower", __func__);
 
     assert(server_vars_.state() == STATE_LEADER);
-    BeFollower();
+    BecomeFollower();
 }
 
 void
@@ -865,16 +917,16 @@ Raft::Candidate2Follower() {
     TraceLog("Candidate2Follower", __func__);
 
     assert(server_vars_.state() == STATE_CANDIDATE);
-    BeFollower();
+    BecomeFollower();
 }
 
 void
 Raft::ResetElectionTimer() {
-    election_random_ms_ = util::random_int(Config::GetInstance().election_timeout(),
-                                           2 * Config::GetInstance().election_timeout());
+    election_random_ms_ = util::RandomInt(Config::GetInstance().election_timeout(),
+                                          2 * Config::GetInstance().election_timeout());
     if (-1 == election_timer_) {
         election_timer_= Env::GetInstance().timer()->RunAfter(
-                             std::bind(&Raft::EqElect, this), election_random_ms_);
+                             std::bind(&Raft::EqElectionTimeout, this), election_random_ms_);
         if (election_timer_!= -1) {
             char buf[128];
             snprintf(buf, sizeof(buf), "election_timer_:%d, election_random_ms_:%d", election_timer_, election_random_ms_);
@@ -887,18 +939,28 @@ Raft::ResetElectionTimer() {
             assert(0);
         }
     }
+
+    enable_election_timer_ = true;
 }
 
 void
 Raft::ClearElectionTimer() {
+    enable_election_timer_ = false;
     if (-1 != election_timer_) {
         Env::GetInstance().timer()->Stop(election_timer_);
     }
 }
 
 void
-Raft::EqElect() {
-    Env::GetInstance().thread_pool()->ProduceOne(std::bind(&Raft::Elect, this));
+Raft::EqElectionTimeout() {
+    Env::GetInstance().thread_pool()->ProduceOne(std::bind(&Raft::ElectionTimeout, this));
+}
+
+void
+Raft::ElectionTimeout() {
+    if (enable_election_timer_) {
+        Elect();
+    }
 }
 
 void
@@ -906,26 +968,35 @@ Raft::ResetHeartbeatTimer() {
     int heartbeat_random_ms_ = Config::GetInstance().heartbeat_timeout();
     if (-1 == heartbeat_timer_) {
         heartbeat_timer_ = Env::GetInstance().timer()->RunEvery(
-                               std::bind(&Raft::EqAppendEntriesPeers, this), heartbeat_random_ms_);
+                               std::bind(&Raft::EqHeartbeatTimeout, this), heartbeat_random_ms_);
         assert(heartbeat_timer_ != -1);
     } else {
         auto s = Env::GetInstance().timer()->ResetRunEvery(heartbeat_timer_, heartbeat_random_ms_);
         assert(s.ok());
     }
+
+    enable_heartbeat_timer_ = true;
 }
 
 void
-Raft::EqAppendEntriesPeers() {
-    Env::GetInstance().thread_pool()->ProduceOne(std::bind(&Raft::AppendEntriesPeers, this));
+Raft::EqHeartbeatTimeout() {
+    Env::GetInstance().thread_pool()->ProduceOne(std::bind(&Raft::HeartbeatTimeout, this));
 }
 
 void
 Raft::ClearHeartbeatTimer() {
+    enable_heartbeat_timer_ = false;
     if (-1 != heartbeat_timer_) {
         Env::GetInstance().timer()->Stop(heartbeat_timer_);
     }
 }
 
+void
+Raft::HeartbeatTimeout() {
+    if (enable_heartbeat_timer_) {
+        AppendEntriesPeers(nullptr);
+    }
+}
 
 // for debug -------------
 void
@@ -1024,18 +1095,20 @@ Raft::TimerToJson(int timerfd) const {
 jsonxx::json64
 Raft::ToJson() const {
     jsonxx::json64 j, jret;
-    j["server_vars"] = server_vars_.ToJson();
-    j["candidate_vars"] = candidate_vars_.ToJson();
-    j["leader_vars"] = leader_vars_.ToJson();
-    j["log_vars"] = log_vars_.ToJson();
+    j["vars"]["server_vars"] = server_vars_.ToJson();
+    j["vars"]["candidate_vars"] = candidate_vars_.ToJson();
+    j["vars"]["leader_vars"] = leader_vars_.ToJson();
+    j["vars"]["log_vars"] = log_vars_.ToJson();
 
-    NodeId nid(leader_);
-    j["leader"] = nid.ToJson();
+    NodeId nid(leader_cache_);
+    j["leader_cache"] = nid.ToJson();
 
-    j["election_timer"] = TimerToJson(election_timer_);
-    j["election_random_ms"] = election_random_ms_;
-    j["heartbeat_timer"] = TimerToJson(heartbeat_timer_);
-    j["heartbeat_random_ms"] = heartbeat_random_ms_;
+    //j["node_id"] = Node::GetInstance().id().ToJson();
+
+    j["timer"]["election_timer"] = TimerToJson(election_timer_);
+    j["timer"]["election_random_ms"] = election_random_ms_;
+    j["timer"]["heartbeat_timer"] = TimerToJson(heartbeat_timer_);
+    j["timer"]["heartbeat_random_ms"] = heartbeat_random_ms_;
 
     jret["Raft"] = j;
     return jret;
