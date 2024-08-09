@@ -36,10 +36,10 @@ void SignalHandler(int signal) {
 
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
-    remu->Check();
-
     case vraft::kTestState0: {
       remu->Print();
+      remu->Check();
+
       // remu->Log();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
@@ -57,6 +57,7 @@ void RemuTick(vraft::Timer *timer) {
 
       break;
     }
+
     case vraft::kTestStateEnd: {
       std::cout << "exit ..." << std::endl;
       remu->Stop();
@@ -154,8 +155,56 @@ TEST_F(RemuTest, Elect5) {
   std::fflush(nullptr);
 }
 
+TEST_F(RemuTest, Elect4) {
+  GenerateConfig(remu->configs, 3);
+  remu->Create();
+  remu->Start();
+
+  {
+    vraft::EventLoopSPtr l = loop;
+    std::thread t([l]() { l->Loop(); });
+    l->WaitStarted();
+    t.join();
+  }
+
+  std::cout << "join thread... \n";
+  std::fflush(nullptr);
+}
+
 TEST_F(RemuTest, Elect3) {
   GenerateConfig(remu->configs, 2);
+  remu->Create();
+  remu->Start();
+
+  {
+    vraft::EventLoopSPtr l = loop;
+    std::thread t([l]() { l->Loop(); });
+    l->WaitStarted();
+    t.join();
+  }
+
+  std::cout << "join thread... \n";
+  std::fflush(nullptr);
+}
+
+TEST_F(RemuTest, Elect2) {
+  GenerateConfig(remu->configs, 1);
+  remu->Create();
+  remu->Start();
+
+  {
+    vraft::EventLoopSPtr l = loop;
+    std::thread t([l]() { l->Loop(); });
+    l->WaitStarted();
+    t.join();
+  }
+
+  std::cout << "join thread... \n";
+  std::fflush(nullptr);
+}
+
+TEST_F(RemuTest, Elect1) {
+  GenerateConfig(remu->configs, 0);
   remu->Create();
   remu->Start();
 

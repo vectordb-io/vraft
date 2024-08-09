@@ -63,6 +63,8 @@ void RemuTick(vraft::Timer *timer) {
           vraft::current_state = vraft::kTestState2;
         }
       }
+
+      break;
     }
 
     case vraft::kTestState2: {

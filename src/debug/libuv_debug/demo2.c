@@ -117,7 +117,7 @@ void timer_cb(uv_timer_t *handle) {
 }
 
 void on_message(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
-  //server_t *server = (server_t *)(stream->data);
+  // server_t *server = (server_t *)(stream->data);
 
   if (nread > 0) {
     fprintf(stderr, "%p recv [%s] \n", stream, buf->base);

@@ -321,11 +321,14 @@ nlohmann::json Raft::ToJsonTiny() {
 
 std::string Raft::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;
+  std::string state_str = std::string(StateToStr(state_));
+  if (!started_) {
+    state_str += "(x)";
+  }
+  j[config_mgr_.Current().me.ToString()][0] = state_str;
   if (tiny) {
-    j[config_mgr_.Current().me.ToString()][0] = std::string(StateToStr(state_));
     j[config_mgr_.Current().me.ToString()][1] = ToJsonTiny();
   } else {
-    j[config_mgr_.Current().me.ToString()][0] = std::string(StateToStr(state_));
     j[config_mgr_.Current().me.ToString()][1] = ToJson();
   }
 
