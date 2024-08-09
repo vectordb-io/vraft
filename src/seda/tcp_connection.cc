@@ -72,7 +72,7 @@ void BufWriteComplete(UvWrite *req, int status) {
   WriteReq *wr = reinterpret_cast<WriteReq *>(req);
 
   uint64_t elapse = (Clock::NSec() - wr->ts);
-  vraft_logger.FInfo("BufWriteComplete finish, elapse:%lu ns", elapse);
+  vraft_logger.FDebug("buf-write-complete finish, elapse:%lu ns", elapse);
 
   conn->allocator().Free(wr->buf.base);
   conn->allocator().Free(wr);
@@ -203,7 +203,12 @@ int32_t TcpConnection::BufSend(const char *buf, ssize_t size) {
 void TcpConnection::OnMessage(const char *buf, ssize_t size) {
   AssertInLoopThread();
 
+  uint64_t append_begin = Clock::NSec();
   input_buf_.Append(buf, size);
+  uint64_t append_end = Clock::NSec();
+  uint64_t elapse = append_end - append_begin;
+  vraft_logger.FDebug("input-buffer append elapse:%lu ns", elapse);
+
   if (on_message_cb_) {
     on_message_cb_(shared_from_this(), &input_buf_);
   } else {

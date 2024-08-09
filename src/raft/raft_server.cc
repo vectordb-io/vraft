@@ -35,7 +35,7 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
   vraft_logger.FDebug("recv buf data:%s",
                       StrToHexStr(buf->BeginRead(), print_bytes).c_str());
 
-  if (buf->ReadableBytes() >= static_cast<int32_t>(sizeof(MsgHeader))) {
+  while (buf->ReadableBytes() >= static_cast<int32_t>(sizeof(MsgHeader))) {
     int32_t body_bytes = buf->PeekInt32();
     vraft_logger.FTrace(
         "raft-server recv msg, readable-bytes:%d, body_bytes:%d",
@@ -169,31 +169,6 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
             conn->CopySend(value.c_str(), value.size());
           }
-#if 0
-          {
-            // reply
-            vstore::VstoreGetReply reply;
-            reply.uid = UniqId(&reply);
-
-            if (rv == 0) {
-              reply.value = value;
-            } else {
-              reply.value = "error";
-            }
-
-            std::string body_str;
-            int32_t bytes = msg.ToString(body_str);
-
-            MsgHeader header;
-            header.body_bytes = bytes;
-            header.type = kVstoreGetReply;
-            std::string header_str;
-            header.ToString(header_str);
-
-            header_str.append(std::move(body_str));
-            conn->CopySend(header_str.c_str(), header_str.size());
-          }
-#endif
 
           break;
         }
@@ -203,6 +178,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
       }
     }
   }
+
+  vraft_logger.FTrace("raft-server after process msg, readable-bytes:%d",
+                      buf->ReadableBytes());
 }
 
 void RaftServer::Init() {
