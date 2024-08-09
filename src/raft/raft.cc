@@ -79,7 +79,7 @@ int32_t Raft::Start() {
   tracer.PrepareEvent(kEventStart, "raft start");
 
   // create sm
-  if (create_sm_) {
+  if (create_sm_ && !sm_) {
     sm_ = create_sm_(sm_path_);
     assert(sm_);
   }
@@ -123,7 +123,9 @@ int32_t Raft::Stop() {
   tracer.PrepareEvent(kEventStop, "raft stop");
 
   started_ = false;
-  timer_mgr_.Close();
+  timer_mgr_.Stop();
+
+  sm_.reset();
 
   tracer.PrepareState1();
   tracer.Finish();

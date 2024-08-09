@@ -38,6 +38,7 @@ void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     case vraft::kTestState0: {
       remu->Print();
+      remu->Check();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
         if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
@@ -57,6 +58,7 @@ void RemuTick(vraft::Timer *timer) {
 
     case vraft::kTestState1: {
       remu->Print();
+      remu->Check();
       for (auto ptr : remu->raft_servers) {
         if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
           ptr->raft()->Stop();
@@ -69,6 +71,7 @@ void RemuTick(vraft::Timer *timer) {
 
     case vraft::kTestState2: {
       remu->Print();
+      remu->Check();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
         if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
@@ -79,6 +82,40 @@ void RemuTick(vraft::Timer *timer) {
       if (leader_num == 1) {
         static int32_t leader_tick2 = 5;
         if (leader_tick2-- == 0) {
+          vraft::current_state = vraft::kTestState3;
+        }
+      }
+
+      break;
+    }
+
+    case vraft::kTestState3: {
+      remu->Print();
+      remu->Check();
+      for (auto ptr : remu->raft_servers) {
+        if (!ptr->raft()->started()) {
+          int32_t rv = ptr->raft()->Start();
+          ASSERT_EQ(rv, 0);
+        }
+      }
+      vraft::current_state = vraft::kTestState4;
+
+      break;
+    }
+
+    case vraft::kTestState4: {
+      remu->Print();
+      remu->Check();
+      int32_t leader_num = 0;
+      for (auto ptr : remu->raft_servers) {
+        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+          leader_num++;
+        }
+      }
+
+      if (leader_num == 1) {
+        static int32_t leader_tick4 = 5;
+        if (leader_tick4-- == 0) {
           vraft::current_state = vraft::kTestStateEnd;
         }
       }
@@ -87,10 +124,14 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestStateEnd: {
+      remu->Print();
+      remu->Check();
+
       std::cout << "exit ..." << std::endl;
       remu->Stop();
       loop->Stop();
     }
+    
     default:
       break;
   }

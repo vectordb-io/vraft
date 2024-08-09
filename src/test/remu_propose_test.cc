@@ -44,6 +44,7 @@ void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     case vraft::kTestState0: {
       remu->Print();
+      remu->Check();
       // remu->Log();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
@@ -58,9 +59,11 @@ void RemuTick(vraft::Timer *timer) {
 
       break;
     }
+
     case vraft::kTestState1: {
       static int value_num = 5;
       remu->Print();
+      remu->Check();
       for (auto &rs : remu->raft_servers) {
         auto sptr = rs->raft();
         if (sptr && sptr->state() == vraft::LEADER) {
@@ -85,6 +88,7 @@ void RemuTick(vraft::Timer *timer) {
     case vraft::kTestState2: {
       timer->RepeatDecr();
       remu->Print();
+      remu->Check();
       if (timer->repeat_counter() == 0) {
         vraft::current_state = vraft::kTestStateEnd;
       }
@@ -93,10 +97,14 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestStateEnd: {
+      remu->Print();
+      remu->Check();
+
       std::cout << "exit ..." << std::endl;
       remu->Stop();
       loop->Stop();
     }
+    
     default:
       break;
   }
@@ -153,7 +161,7 @@ class RemuTest : public ::testing::Test {
     param.cb = RemuTick;
     param.data = nullptr;
     param.name = "remu-timer";
-    param.repeat_times = 10;
+    param.repeat_times = 5;
     loop->AddTimer(param);
 
     // important !!

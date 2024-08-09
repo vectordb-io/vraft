@@ -59,10 +59,14 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestStateEnd: {
+      remu->Print();
+      remu->Check();
+
       std::cout << "exit ..." << std::endl;
       remu->Stop();
       loop->Stop();
     }
+    
     default:
       break;
   }
