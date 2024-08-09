@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "allocator.h"
+#include "clock.h"
 #include "eventloop.h"
 #include "hostport.h"
 #include "vraft_logger.h"
@@ -69,6 +70,10 @@ void BufWriteComplete(UvWrite *req, int status) {
 
   assert(status == 0);
   WriteReq *wr = reinterpret_cast<WriteReq *>(req);
+
+  uint64_t elapse = (Clock::NSec() - wr->ts);
+  vraft_logger.FInfo("BufWriteComplete finish, elapse:%lu ns", elapse);
+
   conn->allocator().Free(wr->buf.base);
   conn->allocator().Free(wr);
 
@@ -165,6 +170,7 @@ int32_t TcpConnection::CopySend(const char *buf, ssize_t size) {
   memcpy(send_buf, buf, size);
 
   WriteReq *write_req = (WriteReq *)allocator_.Malloc(sizeof(WriteReq));
+  write_req->ts = Clock::NSec();
   write_req->buf =
       UvBufInit(const_cast<char *>(send_buf), static_cast<unsigned int>(size));
   UvWrite2(reinterpret_cast<UvWrite *>(write_req),
