@@ -95,6 +95,8 @@ int32_t Raft::OnAppendEntries(struct AppendEntries &msg) {
     reply.dest = msg.src;
     reply.term = meta_.term();
     reply.uid = UniqId(&reply);
+    reply.send_ts = Clock::NSec();
+    reply.elapse = 0;
     reply.success = false;
     reply.last_log_index = LastIndex();
     reply.req_pre_index = msg.pre_log_index;
@@ -367,6 +369,8 @@ int32_t Raft::SendAppendEntries(uint64_t dest, Tracer *tracer) {
   msg.dest = RaftAddr(dest);
   msg.term = meta_.term();
   msg.uid = UniqId(&msg);
+  msg.send_ts = Clock::NSec();
+  msg.elapse = 0;
   msg.pre_log_index = pre_index;
   msg.pre_log_term = pre_term;
 

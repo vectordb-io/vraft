@@ -80,6 +80,8 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
     reply.dest = msg.src;
     reply.term = meta_.term();
     reply.uid = UniqId(&reply);
+    reply.send_ts = Clock::NSec();
+    reply.elapse = 0;
     reply.granted =
         (msg.term == meta_.term() && meta_.vote() == msg.src.ToU64());
     reply.req_term = msg.term;
@@ -171,6 +173,8 @@ int32_t Raft::SendRequestVote(uint64_t dest, Tracer *tracer) {
   msg.dest = RaftAddr(dest);
   msg.term = meta_.term();
   msg.uid = UniqId(&msg);
+  msg.send_ts = Clock::NSec();
+  msg.elapse = 0;
 
   msg.last_log_index = LastIndex();
   msg.last_log_term = LastTerm();

@@ -21,6 +21,8 @@ int32_t Raft::OnInstallSnapshot(struct InstallSnapshot &msg) {
     reply.dest = msg.src;
     reply.term = meta_.term();
     reply.uid = UniqId(&reply);
+    reply.send_ts = Clock::NSec();
+    reply.elapse = 0;
     reply.stored = 0;
 
     // temp variable used behind, define here due to "goto", make compiler happy
@@ -228,6 +230,8 @@ int32_t Raft::SendInstallSnapshot(uint64_t dest, Tracer *tracer) {
   msg.dest = RaftAddr(dest);
   msg.term = meta_.term();
   msg.uid = UniqId(&msg);
+  msg.send_ts = Clock::NSec();
+  msg.elapse = 0;
 
   if (!snapshot_mgr_.snapshots[dest].reader_ && create_reader_) {
     snapshot_mgr_.snapshots[dest].reader_ =

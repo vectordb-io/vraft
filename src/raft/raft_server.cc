@@ -27,6 +27,8 @@ void RaftServer::OnConnection(const vraft::TcpConnectionSPtr &conn) {
 
 void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
                            vraft::Buffer *buf) {
+  uint64_t recv_ns = Clock::NSec();
+  uint64_t diff_ms = 0;
   vraft_logger.FTrace("raft-server recv msg, readable-bytes:%d",
                       buf->ReadableBytes());
   int32_t print_bytes = buf->ReadableBytes() > 100 ? 100 : buf->ReadableBytes();
@@ -50,8 +52,8 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
       switch (header.type) {
         case kPropose: {
           Propose msg;
-          int32_t rv = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(rv > 0);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
           buf->Retrieve(body_bytes);
           raft_->OnPropose(msg, conn);
           break;
@@ -59,8 +61,10 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
         case kPing: {
           Ping msg;
-          bool b = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(b);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnPing(msg);
           break;
@@ -68,8 +72,10 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
         case kPingReply: {
           PingReply msg;
-          bool b = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(b);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnPingReply(msg);
           break;
@@ -77,8 +83,10 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
         case kRequestVote: {
           RequestVote msg;
-          bool b = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(b);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnRequestVote(msg);
           break;
@@ -86,8 +94,10 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
         case kRequestVoteReply: {
           RequestVoteReply msg;
-          bool b = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(b);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnRequestVoteReply(msg);
           break;
@@ -97,6 +107,8 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           AppendEntries msg;
           int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
           assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnAppendEntries(msg);
           break;
@@ -104,8 +116,10 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
         case kAppendEntriesReply: {
           AppendEntriesReply msg;
-          bool b = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(b);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnAppendEntriesReply(msg);
           break;
@@ -115,6 +129,8 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           InstallSnapshot msg;
           int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
           assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnInstallSnapshot(msg);
           break;
@@ -122,8 +138,10 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
 
         case kInstallSnapshotReply: {
           InstallSnapshotReply msg;
-          bool b = msg.FromString(buf->BeginRead(), body_bytes);
-          assert(b);
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
           raft_->OnInstallSnapshotReply(msg);
           break;
