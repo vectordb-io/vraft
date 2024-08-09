@@ -27,6 +27,12 @@ void RemuLogState(std::string key) {
   }
 }
 
+void RemuPrint() {
+  if (remu) {
+    remu->Print(false, false);
+  }
+}
+
 void SignalHandler(int signal) {
   std::cout << "recv signal " << strsignal(signal) << std::endl;
   std::cout << "exit ..." << std::endl;
@@ -34,11 +40,16 @@ void SignalHandler(int signal) {
   loop->Stop();
 }
 
+void PrintAndCheck() {
+  printf("--- %s ---\n", TestState2Str(vraft::current_state).c_str());
+  remu->Print();
+  remu->Check();
+}
+
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     case vraft::kTestState0: {
-      remu->Print();
-      remu->Check();
+      PrintAndCheck();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
         if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
@@ -47,42 +58,48 @@ void RemuTick(vraft::Timer *timer) {
       }
 
       if (leader_num == 1) {
-        static int32_t leader_tick = 5;
-        if (leader_tick-- == 0) {
-          vraft::current_state = vraft::kTestState1;
-        }
+        timer->set_repeat_times(5);
+        vraft::current_state = vraft::kTestState1;
       }
 
       break;
     }
 
     case vraft::kTestState1: {
-      remu->Print();
-      remu->Check();
-      for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
-          ptr->raft()->Stop();
-          vraft::current_state = vraft::kTestState2;
+      PrintAndCheck();
+      for (auto &rs : remu->raft_servers) {
+        auto sptr = rs->raft();
+        if (sptr && sptr->state() == vraft::LEADER && sptr->started()) {
+          char value_buf[128];
+          snprintf(value_buf, sizeof(value_buf), "value_%s",
+                   vraft::NsToString2(vraft::Clock::NSec()).c_str());
+          int32_t rv = sptr->Propose(std::string(value_buf), nullptr);
+          if (rv == 0) {
+            printf("%s propose value: %s\n\n", sptr->Me().ToString().c_str(),
+                   value_buf);
+          }
+          timer->RepeatDecr();
         }
       }
 
+      if (timer->repeat_counter() == 0) {
+        timer->set_repeat_times(3);
+        vraft::current_state = vraft::kTestState2;
+      }
       break;
     }
 
     case vraft::kTestState2: {
-      remu->Print();
-      remu->Check();
-      int32_t leader_num = 0;
-      for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
-          leader_num++;
-        }
-      }
+      PrintAndCheck();
 
-      if (leader_num == 1) {
-        static int32_t leader_tick2 = 5;
-        if (leader_tick2-- == 0) {
+      static bool goto4 = false;
+      timer->RepeatDecr();
+      if (timer->repeat_counter() == 0) {
+        if (!goto4) {
           vraft::current_state = vraft::kTestState3;
+          goto4 = true;
+        } else {
+          vraft::current_state = vraft::kTestState4;
         }
       }
 
@@ -90,42 +107,44 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestState3: {
-      remu->Print();
-      remu->Check();
+      PrintAndCheck();
       for (auto ptr : remu->raft_servers) {
-        if (!ptr->raft()->started()) {
-          int32_t rv = ptr->raft()->Start();
-          ASSERT_EQ(rv, 0);
+        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+          ptr->raft()->Stop();
+          vraft::current_state = vraft::kTestState0;
         }
       }
-      vraft::current_state = vraft::kTestState4;
 
       break;
     }
 
     case vraft::kTestState4: {
-      remu->Print();
-      remu->Check();
-      int32_t leader_num = 0;
+      PrintAndCheck();
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
-          leader_num++;
+        if (!ptr->raft()->started()) {
+          int32_t rv = ptr->raft()->Start();
+          ASSERT_EQ(rv, 0);
+          timer->set_repeat_times(5);
+          vraft::current_state = vraft::kTestState5;
         }
       }
 
-      if (leader_num == 1) {
-        static int32_t leader_tick4 = 5;
-        if (leader_tick4-- == 0) {
-          vraft::current_state = vraft::kTestStateEnd;
-        }
+      break;
+    }
+
+    case vraft::kTestState5: {
+      PrintAndCheck();
+
+      timer->RepeatDecr();
+      if (timer->repeat_counter() == 0) {
+        vraft::current_state = vraft::kTestStateEnd;
       }
 
       break;
     }
 
     case vraft::kTestStateEnd: {
-      remu->Print();
-      remu->Check();
+      PrintAndCheck();
 
       std::cout << "exit ..." << std::endl;
       remu->Stop();
@@ -188,7 +207,7 @@ class RemuTest : public ::testing::Test {
     param.cb = RemuTick;
     param.data = nullptr;
     param.name = "remu-timer";
-    param.repeat_times = 10;
+    param.repeat_times = 5;
     loop->AddTimer(param);
 
     // important !!

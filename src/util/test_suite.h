@@ -25,6 +25,35 @@ enum TestState {
   kTestStateEnd,
 };
 
+inline std::string TestState2Str(TestState state) {
+  switch (state) {
+    case kTestState0:
+      return "kTestState0";
+    case kTestState1:
+      return "kTestState1";
+    case kTestState2:
+      return "kTestState2";
+    case kTestState3:
+      return "kTestState3";
+    case kTestState4:
+      return "kTestState4";
+    case kTestState5:
+      return "kTestState5";
+    case kTestState6:
+      return "kTestState6";
+    case kTestState7:
+      return "kTestState7";
+    case kTestState8:
+      return "kTestState8";
+    case kTestState9:
+      return "kTestState9";
+    case kTestStateEnd:
+      return "kTestStateEnd";
+    default:
+      return "UnknowState";
+  }
+}
+
 struct StateChange {
   TestState next;
   CondFunc func;

@@ -74,6 +74,7 @@ TPL_TEST_SRCS := src/test/tpl_test.cc $(COMMON_SRCS)
 REMU_ELECT_TEST_SRCS := src/test/remu_elect_test.cc $(COMMON_SRCS)
 REMU_ELECT2_TEST_SRCS := src/test/remu_elect2_test.cc $(COMMON_SRCS)
 REMU_PROPOSE_TEST_SRCS := src/test/remu_propose_test.cc $(COMMON_SRCS)
+REMU_PROPOSE2_TEST_SRCS := src/test/remu_propose2_test.cc $(COMMON_SRCS)
 REMU_SM_TEST_SRCS := src/test/remu_sm_test.cc $(COMMON_SRCS)
 REMU_SM2_TEST_SRCS := src/test/remu_sm2_test.cc $(COMMON_SRCS)
 HOSTPORT_TEST_SRCS := src/test/hostport_test.cc $(COMMON_SRCS)
@@ -150,6 +151,7 @@ TPL_TEST_OBJECTS := $(TPL_TEST_SRCS:.cc=.o)
 REMU_ELECT_TEST_OBJECTS := $(REMU_ELECT_TEST_SRCS:.cc=.o)
 REMU_ELECT2_TEST_OBJECTS := $(REMU_ELECT2_TEST_SRCS:.cc=.o)
 REMU_PROPOSE_TEST_OBJECTS := $(REMU_PROPOSE_TEST_SRCS:.cc=.o)
+REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
 REMU_SM_TEST_OBJECTS := $(REMU_SM_TEST_SRCS:.cc=.o)
 REMU_SM2_TEST_OBJECTS := $(REMU_SM2_TEST_SRCS:.cc=.o)
 HOSTPORT_TEST_OBJECTS := $(HOSTPORT_TEST_SRCS:.cc=.o)
@@ -209,6 +211,7 @@ TEST += raft_test
 TEST += remu_elect_test
 TEST += remu_elect2_test
 TEST += remu_propose_test 
+TEST += remu_propose2_test
 TEST += remu_sm_test 
 TEST += remu_sm2_test
 TEST += hostport_test
@@ -363,6 +366,9 @@ remu_elect2_test: $(REMU_ELECT2_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_propose_test: $(REMU_PROPOSE_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_propose2_test: $(REMU_PROPOSE2_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_sm_test: $(REMU_SM_TEST_OBJECTS)

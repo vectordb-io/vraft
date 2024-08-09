@@ -104,7 +104,7 @@ void RemuTick(vraft::Timer *timer) {
       remu->Stop();
       loop->Stop();
     }
-    
+
     default:
       break;
   }
