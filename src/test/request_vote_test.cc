@@ -20,6 +20,8 @@ TEST(RequestVote, test) {
   msg.dest = dest;
   msg.term = 77;
   msg.uid = vraft::UniqId(&msg);
+  msg.send_ts = 100;
+  msg.elapse = 200;
   msg.last_log_term = 88;
   msg.last_log_index = 99;
 
@@ -49,6 +51,8 @@ TEST(RequestVote, test) {
   ASSERT_EQ(msg.uid, msg2.uid);
   ASSERT_EQ(msg.last_log_term, msg2.last_log_term);
   ASSERT_EQ(msg.last_log_index, msg2.last_log_index);
+  ASSERT_EQ(msg.send_ts, msg2.send_ts);
+  ASSERT_EQ(msg.elapse, msg2.elapse);
 }
 
 int main(int argc, char **argv) {

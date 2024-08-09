@@ -17,6 +17,8 @@ struct RequestVote : public Message {
   RaftAddr dest;  // uint64_t
   RaftTerm term;
   uint32_t uid;
+  uint64_t send_ts;  // nanosecond
+  uint64_t elapse;   // microsecond
 
   RaftIndex last_log_index;
   RaftTerm last_log_term;
@@ -38,6 +40,8 @@ inline int32_t RequestVote::MaxBytes() {
   size += sizeof(uint64_t);
   size += sizeof(term);
   size += sizeof(uid);
+  size += sizeof(send_ts);
+  size += sizeof(elapse);
   size += sizeof(last_log_term);
   size += sizeof(last_log_index);
   return size;
@@ -75,6 +79,14 @@ inline int32_t RequestVote::ToString(const char *ptr, int32_t len) {
   EncodeFixed32(p, uid);
   p += sizeof(uid);
   size += sizeof(uid);
+
+  EncodeFixed64(p, send_ts);
+  p += sizeof(send_ts);
+  size += sizeof(send_ts);
+
+  EncodeFixed64(p, elapse);
+  p += sizeof(elapse);
+  size += sizeof(elapse);
 
   EncodeFixed32(p, last_log_index);
   p += sizeof(last_log_index);
@@ -115,6 +127,14 @@ inline int32_t RequestVote::FromString(const char *ptr, int32_t len) {
   p += sizeof(uid);
   size += sizeof(uid);
 
+  send_ts = DecodeFixed64(p);
+  p += sizeof(send_ts);
+  size += sizeof(send_ts);
+
+  elapse = DecodeFixed64(p);
+  p += sizeof(elapse);
+  size += sizeof(elapse);
+
   last_log_index = DecodeFixed32(p);
   p += sizeof(last_log_index);
   size += sizeof(last_log_index);
@@ -134,6 +154,8 @@ inline nlohmann::json RequestVote::ToJson() {
   j[0]["uid"] = U32ToHexStr(uid);
   j[1]["last"] = last_log_index;
   j[1]["last-term"] = last_log_term;
+  j[2]["send_ts"] = send_ts;
+  j[2]["elapse"] = elapse;
   return j;
 }
 
@@ -145,6 +167,8 @@ inline nlohmann::json RequestVote::ToJsonTiny() {
   j["last"] = last_log_index;
   j["ltm"] = last_log_term;
   j["uid"] = U32ToHexStr(uid);
+  j["send"] = send_ts;
+  j["elapse"] = elapse;
   return j;
 }
 

@@ -18,6 +18,8 @@ struct InstallSnapshot {
   RaftAddr dest;  // uint64_t
   RaftTerm term;
   uint32_t uid;
+  uint64_t send_ts;  // nanosecond
+  uint64_t elapse;   // microsecond
 
   RaftIndex last_index;
   RaftTerm last_term;
@@ -43,6 +45,8 @@ inline int32_t InstallSnapshot::MaxBytes() {
   size += sizeof(uint64_t);
   size += sizeof(term);
   size += sizeof(uid);
+  size += sizeof(send_ts);
+  size += sizeof(elapse);
   size += sizeof(last_index);
   size += sizeof(last_term);
   size += sizeof(offset);
@@ -83,6 +87,14 @@ inline int32_t InstallSnapshot::ToString(const char *ptr, int32_t len) {
   EncodeFixed32(p, uid);
   p += sizeof(uid);
   size += sizeof(uid);
+
+  EncodeFixed64(p, send_ts);
+  p += sizeof(send_ts);
+  size += sizeof(send_ts);
+
+  EncodeFixed64(p, elapse);
+  p += sizeof(elapse);
+  size += sizeof(elapse);
 
   EncodeFixed32(p, last_index);
   p += sizeof(last_index);
@@ -139,6 +151,14 @@ inline int32_t InstallSnapshot::FromString(const char *ptr, int32_t len) {
   p += sizeof(uid);
   size += sizeof(uid);
 
+  send_ts = DecodeFixed64(p);
+  p += sizeof(send_ts);
+  size += sizeof(send_ts);
+
+  elapse = DecodeFixed64(p);
+  p += sizeof(elapse);
+  size += sizeof(elapse);
+
   last_index = DecodeFixed32(p);
   p += sizeof(last_index);
   size += sizeof(last_index);
@@ -181,7 +201,12 @@ inline nlohmann::json InstallSnapshot::ToJson() {
   j[1]["last_term"] = last_term;
   j[1]["offset"] = offset;
   j[2]["data_size"] = data.size();
+
   j[3]["done"] = done;
+
+  j[4]["send_ts"] = send_ts;
+  j[4]["elapse"] = elapse;
+
   return j;
 }
 

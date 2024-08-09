@@ -17,6 +17,8 @@ struct RequestVoteReply : public Message {
   RaftAddr dest;  // uint64_t
   RaftTerm term;
   uint32_t uid;
+  uint64_t send_ts;  // nanosecond
+  uint64_t elapse;   // microsecond
 
   bool granted;  // uint8_t
 
@@ -35,8 +37,16 @@ struct RequestVoteReply : public Message {
 };
 
 inline int32_t RequestVoteReply::MaxBytes() {
-  return sizeof(uint64_t) + sizeof(uint64_t) + sizeof(term) + sizeof(uid) +
-         sizeof(uint8_t) + sizeof(req_term);
+  int32_t size = 0;
+  size += sizeof(uint64_t);
+  size += sizeof(uint64_t);
+  size += sizeof(term);
+  size += sizeof(uid);
+  size += sizeof(send_ts);
+  size += sizeof(elapse);
+  size += sizeof(uint8_t);
+  size += sizeof(req_term);
+  return size;
 }
 
 inline int32_t RequestVoteReply::ToString(std::string &s) {
@@ -71,6 +81,14 @@ inline int32_t RequestVoteReply::ToString(const char *ptr, int32_t len) {
   EncodeFixed32(p, uid);
   p += sizeof(uid);
   size += sizeof(uid);
+
+  EncodeFixed64(p, send_ts);
+  p += sizeof(send_ts);
+  size += sizeof(send_ts);
+
+  EncodeFixed64(p, elapse);
+  p += sizeof(elapse);
+  size += sizeof(elapse);
 
   EncodeFixed8(p, granted);
   p += sizeof(granted);
@@ -111,6 +129,14 @@ inline int32_t RequestVoteReply::FromString(const char *ptr, int32_t len) {
   p += sizeof(uid);
   size += sizeof(uid);
 
+  send_ts = DecodeFixed64(p);
+  p += sizeof(send_ts);
+  size += sizeof(send_ts);
+
+  elapse = DecodeFixed64(p);
+  p += sizeof(elapse);
+  size += sizeof(elapse);
+
   granted = DecodeFixed8(p);
   p += sizeof(uint8_t);
   size += sizeof(uint8_t);
@@ -130,6 +156,8 @@ inline nlohmann::json RequestVoteReply::ToJson() {
   j[0]["uid"] = U32ToHexStr(uid);
   j[1]["grant"] = granted;
   j[1]["req-term"] = req_term;
+  j[2]["send_ts"] = send_ts;
+  j[2]["elapse"] = elapse;
   return j;
 }
 
@@ -141,6 +169,8 @@ inline nlohmann::json RequestVoteReply::ToJsonTiny() {
   j["gr"] = granted;
   j["rtm"] = req_term;
   j["uid"] = U32ToHexStr(uid);
+  j["send"] = send_ts;
+  j["elapse"] = elapse;
   return j;
 }
 

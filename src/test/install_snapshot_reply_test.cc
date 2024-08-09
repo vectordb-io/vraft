@@ -20,6 +20,8 @@ TEST(InstallSnapshotReply, InstallSnapshotReply) {
   msg.dest = dest;
   msg.term = 100;
   msg.uid = vraft::UniqId(&msg);
+  msg.send_ts = 100;
+  msg.elapse = 200;
   msg.stored = 66;
   msg.req_term = 77;
 
@@ -49,6 +51,8 @@ TEST(InstallSnapshotReply, InstallSnapshotReply) {
   ASSERT_EQ(msg.uid, msg2.uid);
   ASSERT_EQ(msg.stored, msg2.stored);
   ASSERT_EQ(msg.req_term, msg2.req_term);
+  ASSERT_EQ(msg.send_ts, msg2.send_ts);
+  ASSERT_EQ(msg.elapse, msg2.elapse);
 }
 
 int main(int argc, char **argv) {

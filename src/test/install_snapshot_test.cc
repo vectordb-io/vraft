@@ -20,6 +20,8 @@ TEST(InstallSnapshot, InstallSnapshot) {
   msg.dest = dest;
   msg.term = 100;
   msg.uid = vraft::UniqId(&msg);
+  msg.send_ts = 100;
+  msg.elapse = 200;
 
   msg.last_index = 66;
   msg.last_term = 77;
@@ -51,6 +53,8 @@ TEST(InstallSnapshot, InstallSnapshot) {
   ASSERT_EQ(msg.dest.ToU64(), msg2.dest.ToU64());
   ASSERT_EQ(msg.term, msg2.term);
   ASSERT_EQ(msg.uid, msg2.uid);
+  ASSERT_EQ(msg.send_ts, msg2.send_ts);
+  ASSERT_EQ(msg.elapse, msg2.elapse);
 
   ASSERT_EQ(msg.last_index, msg2.last_index);
   ASSERT_EQ(msg.last_term, msg2.last_term);
