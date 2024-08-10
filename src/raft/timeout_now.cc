@@ -1,8 +1,8 @@
-#include "request_vote.h"
+#include "timeout_now.h"
 
 namespace vraft {
 
-int32_t RequestVote::MaxBytes() {
+int32_t TimeoutNow::MaxBytes() {
   int32_t size = 0;
   size += sizeof(uint64_t);
   size += sizeof(uint64_t);
@@ -12,10 +12,11 @@ int32_t RequestVote::MaxBytes() {
   size += sizeof(elapse);
   size += sizeof(last_log_term);
   size += sizeof(last_log_index);
+  size += sizeof(uint8_t);  // bool force;
   return size;
 }
 
-int32_t RequestVote::ToString(std::string &s) {
+int32_t TimeoutNow::ToString(std::string &s) {
   s.clear();
   int32_t max_bytes = MaxBytes();
   char *ptr = reinterpret_cast<char *>(DefaultAllocator().Malloc(max_bytes));
@@ -25,7 +26,7 @@ int32_t RequestVote::ToString(std::string &s) {
   return size;
 }
 
-int32_t RequestVote::ToString(const char *ptr, int32_t len) {
+int32_t TimeoutNow::ToString(const char *ptr, int32_t len) {
   char *p = const_cast<char *>(ptr);
   int32_t size = 0;
   uint64_t u64 = 0;
@@ -64,15 +65,19 @@ int32_t RequestVote::ToString(const char *ptr, int32_t len) {
   p += sizeof(last_log_term);
   size += sizeof(last_log_term);
 
+  EncodeFixed8(p, force);
+  p += sizeof(force);
+  size += sizeof(force);
+
   assert(size <= len);
   return size;
 }
 
-int32_t RequestVote::FromString(std::string &s) {
+int32_t TimeoutNow::FromString(std::string &s) {
   return FromString(s.c_str(), s.size());
 }
 
-int32_t RequestVote::FromString(const char *ptr, int32_t len) {
+int32_t TimeoutNow::FromString(const char *ptr, int32_t len) {
   char *p = const_cast<char *>(ptr);
   uint64_t u64 = 0;
   int32_t size = 0;
@@ -111,10 +116,18 @@ int32_t RequestVote::FromString(const char *ptr, int32_t len) {
   p += sizeof(last_log_term);
   size += sizeof(last_log_term);
 
+  {
+    uint8_t u8;
+    u8 = DecodeFixed64(p);
+    p += sizeof(u8);
+    size += sizeof(u8);
+    force = u8;
+  }
+
   return size;
 }
 
-nlohmann::json RequestVote::ToJson() {
+nlohmann::json TimeoutNow::ToJson() {
   nlohmann::json j;
   j[0]["src"] = src.ToString();
   j[0]["dest"] = dest.ToString();
@@ -122,12 +135,13 @@ nlohmann::json RequestVote::ToJson() {
   j[0]["uid"] = U32ToHexStr(uid);
   j[1]["last"] = last_log_index;
   j[1]["last-term"] = last_log_term;
+  j[1]["force"] = force;
   j[2]["send_ts"] = send_ts;
   j[2]["elapse"] = elapse;
   return j;
 }
 
-nlohmann::json RequestVote::ToJsonTiny() {
+nlohmann::json TimeoutNow::ToJsonTiny() {
   nlohmann::json j;
   j["src"] = src.ToString();
   j["dst"] = dest.ToString();
@@ -137,15 +151,16 @@ nlohmann::json RequestVote::ToJsonTiny() {
   j["uid"] = U32ToHexStr(uid);
   j["send"] = send_ts;
   j["elapse"] = elapse;
+  j["fce"] = force;
   return j;
 }
 
-std::string RequestVote::ToJsonString(bool tiny, bool one_line) {
+std::string TimeoutNow::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;
   if (tiny) {
-    j["rv"] = ToJsonTiny();
+    j["ton"] = ToJsonTiny();
   } else {
-    j["request-vote"] = ToJson();
+    j["timeout-now"] = ToJson();
   }
 
   if (one_line) {

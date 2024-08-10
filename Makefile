@@ -67,6 +67,7 @@ UTIL_TEST_SRCS := src/test/util_test.cc $(COMMON_SRCS)
 JSON_TEST_SRCS := src/test/json_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_TEST_SRCS := src/test/request_vote_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_REPLY_TEST_SRCS := src/test/request_vote_reply_test.cc $(COMMON_SRCS)
+TIMEOUT_NOW_TEST_SRCS := src/test/timeout_now_test.cc $(COMMON_SRCS)
 APPEND_ENTRIES_TEST_SRCS := src/test/append_entries_test.cc $(COMMON_SRCS)
 CODING_TEST_SRCS := src/test/coding_test.cc $(COMMON_SRCS)
 APPEND_ENTRIES_REPLY_TEST_SRCS := src/test/append_entries_reply_test.cc $(COMMON_SRCS)
@@ -146,6 +147,7 @@ UTIL_TEST_OBJECTS := $(UTIL_TEST_SRCS:.cc=.o)
 JSON_TEST_OBJECTS := $(JSON_TEST_SRCS:.cc=.o)
 REQUEST_VOTE_TEST_OBJECTS := $(REQUEST_VOTE_TEST_SRCS:.cc=.o)
 REQUEST_VOTE_REPLY_TEST_OBJECTS := $(REQUEST_VOTE_REPLY_TEST_SRCS:.cc=.o)
+TIMEOUT_NOW_TEST_OBJECTS := $(TIMEOUT_NOW_TEST_SRCS:.cc=.o)
 APPEND_ENTRIES_TEST_OBJECTS := $(APPEND_ENTRIES_TEST_SRCS:.cc=.o)
 CODING_TEST_OBJECTS := $(CODING_TEST_SRCS:.cc=.o)
 APPEND_ENTRIES_REPLY_TEST_OBJECTS := $(APPEND_ENTRIES_REPLY_TEST_SRCS:.cc=.o)
@@ -209,6 +211,7 @@ TEST += util_test
 TEST += json_test 
 TEST += request_vote_test 
 TEST += request_vote_reply_test 
+TEST += timeout_now_test 
 TEST += append_entries_test 
 TEST += coding_test 
 TEST += append_entries_reply_test 
@@ -351,7 +354,10 @@ request_vote_test: $(REQUEST_VOTE_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@	
 
 request_vote_reply_test: $(REQUEST_VOTE_REPLY_TEST_OBJECTS)
-	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@		
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+timeout_now_test: $(TIMEOUT_NOW_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@	
 
 append_entries_test: $(APPEND_ENTRIES_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@	

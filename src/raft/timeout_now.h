@@ -1,5 +1,5 @@
-#ifndef VRAFT_REQUEST_VOTE_H_
-#define VRAFT_REQUEST_VOTE_H_
+#ifndef VRAFT_TIMEOUT_NOW_H_
+#define VRAFT_TIMEOUT_NOW_H_
 
 #include <stdint.h>
 
@@ -12,7 +12,7 @@
 
 namespace vraft {
 
-struct RequestVote : public Message {
+struct TimeoutNow : public Message {
   RaftAddr src;   // uint64_t
   RaftAddr dest;  // uint64_t
   RaftTerm term;
@@ -22,6 +22,7 @@ struct RequestVote : public Message {
 
   RaftIndex last_log_index;
   RaftTerm last_log_term;
+  bool force;  // uint8_t
 
   int32_t MaxBytes() override;
   int32_t ToString(std::string &s) override;
