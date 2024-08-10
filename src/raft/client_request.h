@@ -1,5 +1,5 @@
-#ifndef VRAFT_PROPOSE_H_
-#define VRAFT_PROPOSE_H_
+#ifndef VRAFT_CLIENT_REQUEST_H_
+#define VRAFT_CLIENT_REQUEST_H_
 
 #include <string>
 
@@ -12,9 +12,10 @@
 
 namespace vraft {
 
-struct Propose : public Message {
+struct ClientRequest : public Message {
   uint32_t uid;
-  std::string msg;
+  uint32_t cmd;
+  std::string data;
 
   int32_t MaxBytes() override;
   int32_t ToString(std::string &s) override;

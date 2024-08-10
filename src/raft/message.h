@@ -10,6 +10,50 @@
 
 namespace vraft {
 
+enum ClientCmd {
+  kCmdPropose = 0,
+  kCmdLeaderTransfer,
+  kCmdAddServer,
+  kCmdRemoveServer,
+  kCmdError,
+};
+
+inline ClientCmd U32ToClientCmd(uint32_t u32) {
+  ClientCmd start = kCmdPropose;
+  switch (u32 - start) {
+    case kCmdPropose:
+      return kCmdPropose;
+    case kCmdLeaderTransfer:
+      return kCmdLeaderTransfer;
+    case kCmdAddServer:
+      return kCmdAddServer;
+    case kCmdRemoveServer:
+      return kCmdRemoveServer;
+    default:
+      return kCmdError;
+  }
+}
+
+inline uint32_t ClientCmdToU32(ClientCmd c) {
+  ClientCmd start = kCmdPropose;
+  return (c - start);
+}
+
+inline std::string ClientCmdToStr(ClientCmd c) {
+  switch (c) {
+    case kCmdPropose:
+      return "kCmdPropose";
+    case kCmdLeaderTransfer:
+      return "kCmdLeaderTransfer";
+    case kCmdAddServer:
+      return "kCmdAddServer";
+    case kCmdRemoveServer:
+      return "kCmdRemoveServer";
+    default:
+      return "UnknownClientCmd";
+  }
+}
+
 enum MsgType {
   // raft
   kPropose = 0,
