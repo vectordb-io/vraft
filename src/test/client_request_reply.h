@@ -1,5 +1,5 @@
-#ifndef VRAFT_CLIENT_REQUEST_H_
-#define VRAFT_CLIENT_REQUEST_H_
+#ifndef VRAFT_CLIENT_REQUEST_REPLY_H_
+#define VRAFT_CLIENT_REQUEST_REPLY_H_
 
 #include <string>
 
@@ -12,9 +12,10 @@
 
 namespace vraft {
 
-struct ClientRequest : public Message {
+struct ClientRequestReply : public Message {
   uint32_t uid;
-  ClientCmd cmd;  // uint32_t
+  int32_t code;
+  std::string msg;
   std::string data;
 
   int32_t MaxBytes() override;

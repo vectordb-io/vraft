@@ -1,17 +1,19 @@
-#include "client_request.h"
+#include "client_request_reply.h"
 
 namespace vraft {
 
-int32_t ClientRequest::MaxBytes() {
+int32_t ClientRequestReply::MaxBytes() {
   int32_t sz = 0;
   sz += sizeof(uid);
-  sz += sizeof(uint32_t);  // ClientCmd cmd;
+  sz += sizeof(code);
+  sz += 2 * sizeof(int32_t);
+  sz += msg.size();
   sz += 2 * sizeof(int32_t);
   sz += data.size();
   return sz;
 }
 
-int32_t ClientRequest::ToString(std::string &s) {
+int32_t ClientRequestReply::ToString(std::string &s) {
   s.clear();
   int32_t max_bytes = MaxBytes();
   char *ptr = reinterpret_cast<char *>(DefaultAllocator().Malloc(max_bytes));
@@ -21,7 +23,7 @@ int32_t ClientRequest::ToString(std::string &s) {
   return size;
 }
 
-int32_t ClientRequest::ToString(const char *ptr, int32_t len) {
+int32_t ClientRequestReply::ToString(const char *ptr, int32_t len) {
   char *p = const_cast<char *>(ptr);
   int32_t size = 0;
 
@@ -32,10 +34,16 @@ int32_t ClientRequest::ToString(const char *ptr, int32_t len) {
   }
 
   {
-    uint32_t u32 = ClientCmdToU32(cmd);
-    EncodeFixed32(p, u32);
-    size += sizeof(u32);
-    p += sizeof(u32);
+    EncodeFixed32(p, code);
+    size += sizeof(code);
+    p += sizeof(code);
+  }
+
+  {
+    Slice sls(msg.c_str(), msg.size());
+    char *p2 = EncodeString2(p, len - size, sls);
+    size += (p2 - p);
+    p = p2;
   }
 
   {
@@ -49,11 +57,11 @@ int32_t ClientRequest::ToString(const char *ptr, int32_t len) {
   return size;
 }
 
-int32_t ClientRequest::FromString(std::string &s) {
+int32_t ClientRequestReply::FromString(std::string &s) {
   return FromString(s.c_str(), s.size());
 }
 
-int32_t ClientRequest::FromString(const char *ptr, int32_t len) {
+int32_t ClientRequestReply::FromString(const char *ptr, int32_t len) {
   char *p = const_cast<char *>(ptr);
   int32_t size = 0;
 
@@ -64,10 +72,20 @@ int32_t ClientRequest::FromString(const char *ptr, int32_t len) {
   }
 
   {
-    uint32_t u32 = DecodeFixed32(p);
-    p += sizeof(u32);
-    size += sizeof(u32);
-    cmd = U32ToClientCmd(u32);
+    code = DecodeFixed32(p);
+    p += sizeof(code);
+    size += sizeof(code);
+  }
+
+  {
+    Slice result;
+    Slice input(p, len - size);
+    int32_t sz = DecodeString2(&input, &result);
+    if (sz > 0) {
+      msg.clear();
+      msg.append(result.data(), result.size());
+      size += sz;
+    }
   }
 
   {
@@ -84,22 +102,23 @@ int32_t ClientRequest::FromString(const char *ptr, int32_t len) {
   return size;
 }
 
-nlohmann::json ClientRequest::ToJson() {
+nlohmann::json ClientRequestReply::ToJson() {
   nlohmann::json j;
   j["uid"] = U32ToHexStr(uid);
-  j["cmd"] = ClientCmdToStr(cmd);
-  j["data"] = StrToHexStr(data.c_str(), data.size());
+  j["code"] = U32ToHexStr(code);
+  j["msg"] = msg;
+  j["data"] = data;
   return j;
 }
 
-nlohmann::json ClientRequest::ToJsonTiny() { return ToJson(); }
+nlohmann::json ClientRequestReply::ToJsonTiny() { return ToJson(); }
 
-std::string ClientRequest::ToJsonString(bool tiny, bool one_line) {
+std::string ClientRequestReply::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;
   if (tiny) {
-    j["cr"] = ToJsonTiny();
+    j["crr"] = ToJsonTiny();
   } else {
-    j["client-request"] = ToJson();
+    j["client-request-reply"] = ToJson();
   }
 
   if (one_line) {

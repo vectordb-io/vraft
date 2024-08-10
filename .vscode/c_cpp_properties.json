@@ -1,0 +1,30 @@
+{
+    "configurations": [
+        {
+            "name": "Linux", // 或者根据你的服务器操作系统调整为 Windows/Mac
+            "includePath": [
+                "/home/mhlee/Work/dev/vraft/src/raft",
+                "/home/mhlee/Work/dev/vraft/src/seda",
+                "/home/mhlee/Work/dev/vraft/src/util",
+                "/home/mhlee/Work/dev/vraft/src/example",
+                "/home/mhlee/Work/dev/vraft/src/vmeta",
+                "/home/mhlee/Work/dev/vraft/src/vstore",
+                "/home/mhlee/Work/dev/vraft/src/vpaxos",
+                "/home/mhlee/Work/dev/vraft/src/vectordb",
+                "/home/mhlee/Work/dev/vraft/third_party/spdlog/include",
+                "/home/mhlee/Work/dev/vraft/third_party/annoy/src",
+                "/home/mhlee/Work/dev/vraft/third_party/cxxopts/include",
+                "/home/mhlee/Work/dev/vraft/third_party/googletest/googletest/include",
+                "/home/mhlee/Work/dev/vraft/third_party/leveldb/include",
+                "/home/mhlee/Work/dev/vraft/third_party/libuv/include",
+                "/home/mhlee/Work/dev/vraft/third_party/nlohmann_json/single_include"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++", // 或者你所使用的其他编译器
+            "cStandard": "c11", // 或 c99 等
+            "cppStandard": "c++14", // 或 c++11、c++14、c++20 等
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}
