@@ -64,6 +64,7 @@ CLIENT_REQUEST_REPLY_TEST_SRCS := src/test/client_request_reply_test.cc $(COMMON
 RAFT_LOG_TEST_SRCS := src/test/raft_log_test.cc $(COMMON_SRCS)
 SOLID_DATA_TEST_SRCS := src/test/solid_data_test.cc $(COMMON_SRCS)
 UTIL_TEST_SRCS := src/test/util_test.cc $(COMMON_SRCS)
+RAFT_ADDR_TEST_SRCS := src/test/raft_addr_test.cc $(COMMON_SRCS)
 JSON_TEST_SRCS := src/test/json_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_TEST_SRCS := src/test/request_vote_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_REPLY_TEST_SRCS := src/test/request_vote_reply_test.cc $(COMMON_SRCS)
@@ -80,6 +81,7 @@ REMU_PROPOSE_TEST_SRCS := src/test/remu_propose_test.cc $(COMMON_SRCS)
 REMU_PROPOSE2_TEST_SRCS := src/test/remu_propose2_test.cc $(COMMON_SRCS)
 REMU_SM_TEST_SRCS := src/test/remu_sm_test.cc $(COMMON_SRCS)
 REMU_SM2_TEST_SRCS := src/test/remu_sm2_test.cc $(COMMON_SRCS)
+REMU_LEADERTRANSFER_TEST_SRCS := src/test/remu_leadertransfer_test.cc $(COMMON_SRCS)
 HOSTPORT_TEST_SRCS := src/test/hostport_test.cc $(COMMON_SRCS)
 BUFFER_TEST_SRCS := src/test/buffer_test.cc $(COMMON_SRCS)
 EVENTLOOP_TEST_SRCS := src/test/eventloop_test.cc $(COMMON_SRCS)
@@ -144,6 +146,7 @@ PROPOSE_REPLY_TEST_OBJECTS := $(PROPOSE_REPLY_TEST_SRCS:.cc=.o)
 RAFT_LOG_TEST_OBJECTS := $(RAFT_LOG_TEST_SRCS:.cc=.o)
 SOLID_DATA_TEST_OBJECTS := $(SOLID_DATA_TEST_SRCS:.cc=.o)
 UTIL_TEST_OBJECTS := $(UTIL_TEST_SRCS:.cc=.o)
+RAFT_ADDR_TEST_OBJECTS := $(RAFT_ADDR_TEST_SRCS:.cc=.o)
 JSON_TEST_OBJECTS := $(JSON_TEST_SRCS:.cc=.o)
 REQUEST_VOTE_TEST_OBJECTS := $(REQUEST_VOTE_TEST_SRCS:.cc=.o)
 REQUEST_VOTE_REPLY_TEST_OBJECTS := $(REQUEST_VOTE_REPLY_TEST_SRCS:.cc=.o)
@@ -160,6 +163,7 @@ REMU_PROPOSE_TEST_OBJECTS := $(REMU_PROPOSE_TEST_SRCS:.cc=.o)
 REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
 REMU_SM_TEST_OBJECTS := $(REMU_SM_TEST_SRCS:.cc=.o)
 REMU_SM2_TEST_OBJECTS := $(REMU_SM2_TEST_SRCS:.cc=.o)
+REMU_LEADERTRANSFER_TEST_OBJECTS := $(REMU_LEADERTRANSFER_TEST_SRCS:.cc=.o)
 HOSTPORT_TEST_OBJECTS := $(HOSTPORT_TEST_SRCS:.cc=.o)
 BUFFER_TEST_OBJECTS := $(BUFFER_TEST_SRCS:.cc=.o)
 EVENTLOOP_TEST_OBJECTS := $(EVENTLOOP_TEST_SRCS:.cc=.o)
@@ -208,6 +212,7 @@ TEST += client_request_reply_test
 TEST += raft_log_test 
 TEST += solid_data_test 
 TEST += util_test 
+TEST += raft_addr_test 
 TEST += json_test 
 TEST += request_vote_test 
 TEST += request_vote_reply_test 
@@ -223,6 +228,7 @@ TEST += remu_propose_test
 TEST += remu_propose2_test
 TEST += remu_sm_test 
 TEST += remu_sm2_test
+TEST += remu_leadertransfer_test
 TEST += hostport_test
 TEST += buffer_test
 TEST += eventloop_test
@@ -347,6 +353,9 @@ solid_data_test: $(SOLID_DATA_TEST_OBJECTS)
 util_test: $(UTIL_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
+raft_addr_test: $(RAFT_ADDR_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
 json_test: $(JSON_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
@@ -393,6 +402,9 @@ remu_sm_test: $(REMU_SM_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_sm2_test: $(REMU_SM2_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_leadertransfer_test: $(REMU_LEADERTRANSFER_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 hostport_test: $(HOSTPORT_TEST_OBJECTS)

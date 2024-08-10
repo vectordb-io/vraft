@@ -147,6 +147,17 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           break;
         }
 
+        case kTimeoutNow: {
+          TimeoutNow msg;
+          int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
+          assert(bytes > 0);
+          diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
+          msg.elapse = diff_ms;
+          buf->Retrieve(body_bytes);
+          raft_->OnTimeoutNow(msg);
+          break;
+        }
+
         // vstore
         case kVstoreGet: {
           vstore::VstoreGet msg;

@@ -13,12 +13,13 @@ class RaftAddr final {
  public:
   RaftAddr(uint32_t ip, uint16_t port, int16_t id);
   RaftAddr(std::string ip_str, uint16_t port, int16_t id);
-  RaftAddr(uint64_t u64 = 0);
+  explicit RaftAddr(uint64_t u64 = 0);
   ~RaftAddr();
 
   RaftAddr(const RaftAddr &t) = default;
   RaftAddr &operator=(const RaftAddr &t) = default;
 
+  bool FromString(const std::string s);  // 127.0.0.1:9988#0
   uint64_t ToU64();
   void FromU64(uint64_t u64);
   std::string ToString() const;
@@ -46,6 +47,26 @@ inline RaftAddr::RaftAddr(std::string ip_str, uint16_t port, int16_t id)
 }
 
 inline RaftAddr::RaftAddr(uint64_t u64) { FromU64(u64, ip_, port_, id_); }
+
+// 127.0.0.1:9988#0
+inline bool RaftAddr::FromString(const std::string s) {
+  std::vector<std::string> result;
+  Split(s, '#', result);
+  assert(result.size() == 2);
+
+  // id
+  sscanf(result[1].c_str(), "%hd", &id_);
+
+  std::vector<std::string> ipport;
+  Split(result[0], ':', ipport);
+
+  // port
+  sscanf(ipport[1].c_str(), "%hu", &port_);
+
+  // ip32
+  bool b = HostNameToIpU32(ipport[0], ip_);
+  return b;
+}
 
 inline RaftAddr::~RaftAddr() {}
 

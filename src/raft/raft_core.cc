@@ -128,58 +128,6 @@ void HeartBeat(Timer *timer) {
 }
 
 /********************************************************************************************
-\* Leader i receives a client request to add v to the log.
-ClientRequest(i, v) ==
-    /\ state[i] = Leader
-    /\ LET entry == [term  |-> currentTerm[i],
-                     value |-> v]
-           newLog == Append(log[i], entry)
-       IN  log' = [log EXCEPT ![i] = newLog]
-    /\ UNCHANGED <<messages, serverVars, candidateVars,
-                   leaderVars, commitIndex>>
-********************************************************************************************/
-int32_t Raft::Propose(std::string value, Functor cb) {
-  if (assert_loop_) {
-    assert_loop_();
-  }
-
-  Tracer tracer(this, true, tracer_cb_);
-  tracer.PrepareState0();
-  char buf[128];
-  snprintf(buf, sizeof(buf), "propose value, length:%lu", value.size());
-  tracer.PrepareEvent(kEventOther, std::string(buf));
-
-  int32_t rv = 0;
-  AppendEntry entry;
-
-  if (state_ != LEADER) {
-    rv = -1;
-    goto end;
-  }
-
-  entry.term = meta_.term();
-  entry.type = kData;
-  entry.value = value;
-  rv = log_.AppendOne(entry, &tracer);
-  assert(rv == 0);
-
-  MaybeCommit(&tracer);
-  if (config_mgr_.Current().peers.size() > 0) {
-    for (auto &peer : config_mgr_.Current().peers) {
-      rv = SendAppendEntries(peer.ToU64(), &tracer);
-      assert(rv == 0);
-
-      timer_mgr_.AgainHeartBeat(peer.ToU64());
-    }
-  }
-
-end:
-  tracer.PrepareState1();
-  tracer.Finish();
-  return rv;
-}
-
-/********************************************************************************************
 \* The term of the last entry in a log, or 0 if the log is empty.
 LastTerm(xlog) == IF Len(xlog) = 0 THEN 0 ELSE xlog[Len(xlog)].term
 ********************************************************************************************/
@@ -268,7 +216,7 @@ void Raft::BecomeLeader(Tracer *tracer) {
 
   assert(state_ == CANDIDATE);
   state_ = LEADER;
-  leader_ = Me().ToU64();
+  leader_ = Me();
 
   // stop election timer
   timer_mgr_.StopElection();

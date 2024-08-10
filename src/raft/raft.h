@@ -7,6 +7,7 @@
 #include "append_entries.h"
 #include "append_entries_reply.h"
 #include "checker.h"
+#include "client_request.h"
 #include "config.h"
 #include "config_manager.h"
 #include "index_manager.h"
@@ -24,6 +25,7 @@
 #include "snapshot_manager.h"
 #include "solid_data.h"
 #include "state_machine.h"
+#include "timeout_now.h"
 #include "timer.h"
 #include "timer_manager.h"
 #include "tracer.h"
@@ -55,11 +57,12 @@ class Raft final {
   int32_t Stop();
   void Init();
 
-  // propose
+  // client request
   int32_t Propose(std::string value, Functor cb);
+  int32_t LeaderTransfer(RaftAddr &dest);
+  int32_t LeaderTransferFirstPeer();
 
   // on message
-  int32_t OnPropose(struct Propose &msg, vraft::TcpConnectionSPtr conn);
   int32_t OnPing(struct Ping &msg);
   int32_t OnPingReply(struct PingReply &msg);
   int32_t OnRequestVote(struct RequestVote &msg);
@@ -68,6 +71,11 @@ class Raft final {
   int32_t OnAppendEntriesReply(struct AppendEntriesReply &msg);
   int32_t OnInstallSnapshot(struct InstallSnapshot &msg);
   int32_t OnInstallSnapshotReply(struct InstallSnapshotReply &msg);
+  int32_t OnTimeoutNow(struct TimeoutNow &msg);
+
+  int32_t OnPropose(struct Propose &msg, vraft::TcpConnectionSPtr conn);
+  int32_t OnClientRequest(struct ClientRequest &msg,
+                          vraft::TcpConnectionSPtr conn);
 
   // send message
   int32_t SendPing(uint64_t dest, Tracer *tracer);
@@ -77,6 +85,7 @@ class Raft final {
   int32_t SendRequestVoteReply(RequestVoteReply &msg, Tracer *tracer);
   int32_t SendAppendEntriesReply(AppendEntriesReply &msg, Tracer *tracer);
   int32_t SendInstallSnapshotReply(InstallSnapshotReply &msg, Tracer *tracer);
+  int32_t SendTimeoutNow(uint64_t dest, bool force, Tracer *tracer);
 
   // utils
   int16_t Id() { return config_mgr_.Current().me.id(); }

@@ -66,6 +66,7 @@ enum MsgType {
   kAppendEntriesReply,
   kInstallSnapshot,
   kInstallSnapshotReply,
+  kTimeoutNow,
 
   // vstore
   kVstoreGet,

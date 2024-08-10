@@ -179,9 +179,11 @@ int32_t Raft::InitConfig() {
     json_file.close();
 
     RaftConfig rc;
-    rc.me = RaftAddr(j["config_manager"]["me"][0]);
+    uint64_t u64 = j["config_manager"]["me"][0];
+    rc.me = RaftAddr(u64);
     for (auto &peer : j["config_manager"]["peers"]) {
-      rc.peers.push_back(RaftAddr(peer[0]));
+      u64 = peer[0];
+      rc.peers.push_back(RaftAddr(u64));
     }
     config_mgr_.SetCurrent(rc);
 
