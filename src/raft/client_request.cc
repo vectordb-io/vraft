@@ -78,6 +78,7 @@ int32_t ClientRequest::FromString(const char *ptr, int32_t len) {
       data.clear();
       data.append(result.data(), result.size());
       size += sz;
+      p += sz;
     }
   }
 

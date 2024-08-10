@@ -85,6 +85,7 @@ int32_t ClientRequestReply::FromString(const char *ptr, int32_t len) {
       msg.clear();
       msg.append(result.data(), result.size());
       size += sz;
+      p += sz;
     }
   }
 
@@ -96,6 +97,7 @@ int32_t ClientRequestReply::FromString(const char *ptr, int32_t len) {
       data.clear();
       data.append(result.data(), result.size());
       size += sz;
+      p += sz;
     }
   }
 
@@ -105,7 +107,7 @@ int32_t ClientRequestReply::FromString(const char *ptr, int32_t len) {
 nlohmann::json ClientRequestReply::ToJson() {
   nlohmann::json j;
   j["uid"] = U32ToHexStr(uid);
-  j["code"] = U32ToHexStr(code);
+  j["code"] = code;
   j["msg"] = msg;
   j["data"] = data;
   return j;
