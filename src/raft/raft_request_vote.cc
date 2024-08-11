@@ -84,6 +84,8 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
     reply.elapse = 0;
     reply.granted =
         (msg.term == meta_.term() && meta_.vote() == msg.src.ToU64());
+    reply.log_ok = log_ok;
+    reply.pre_vote = msg.pre_vote;
     reply.req_term = msg.term;
     SendRequestVoteReply(reply, &tracer);
 
