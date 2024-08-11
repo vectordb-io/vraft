@@ -96,7 +96,7 @@ class Raft final {
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
   void Print(bool tiny, bool one_line);
-  void DoElect(Tracer *tracer);
+  void DoRequestVote(Tracer *tracer);
   void DoPreVote(Tracer *tracer);
 
   // get set
@@ -113,6 +113,8 @@ class Raft final {
   void set_print_screen(bool print_screen);
   bool enable_pre_vote() const;
   void set_enable_pre_vote(bool enable_pre_vote);
+  bool leader_transfer() const;
+  void set_leader_transfer(bool leader_transfer);
   StateMachineSPtr sm();
 
  private:
@@ -175,6 +177,7 @@ class Raft final {
 
   bool print_screen_;
   bool enable_pre_vote_;
+  bool leader_transfer_;
 
   friend void Tick(Timer *timer);
   friend void Elect(Timer *timer);
@@ -216,6 +219,12 @@ inline bool Raft::enable_pre_vote() const { return enable_pre_vote_; }
 
 inline void Raft::set_enable_pre_vote(bool enable_pre_vote) {
   enable_pre_vote_ = enable_pre_vote;
+}
+
+inline bool Raft::leader_transfer() const { return leader_transfer_; }
+
+inline void Raft::set_leader_transfer(bool leader_transfer) {
+  leader_transfer_ = leader_transfer;
 }
 
 inline StateMachineSPtr Raft::sm() { return sm_; }

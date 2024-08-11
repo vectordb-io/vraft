@@ -8,7 +8,7 @@ PeerManager::~PeerManager() {}
 
 void PeerManager::Reset(const std::vector<RaftAddr> &peers) {
   items.clear();
-  PeerItem item = {false, false};
+  PeerItem item = {false};
   for (auto addr : peers) {
     items[addr.ToU64()] = item;
   }
@@ -17,7 +17,6 @@ void PeerManager::Reset(const std::vector<RaftAddr> &peers) {
 void PeerManager::Clear() {
   for (auto &v : items) {
     v.second.pre_voting = false;
-    v.second.leader_transfer = false;
   }
 }
 
@@ -26,7 +25,6 @@ nlohmann::json PeerManager::ToJson() {
   for (auto peer : items) {
     RaftAddr addr(peer.first);
     j[addr.ToString()]["pre-voting"] = peer.second.pre_voting;
-    j[addr.ToString()]["leader-transfer"] = peer.second.leader_transfer;
   }
   return j;
 }
@@ -36,7 +34,6 @@ nlohmann::json PeerManager::ToJsonTiny() {
   for (auto peer : items) {
     RaftAddr addr(peer.first);
     j[addr.ToString()]["pvting"] = peer.second.pre_voting;
-    j[addr.ToString()]["transfer"] = peer.second.leader_transfer;
   }
   return j;
 }

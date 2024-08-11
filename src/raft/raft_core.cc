@@ -30,14 +30,14 @@ void Elect(Timer *timer) {
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
-  r->DoElect(&tracer);
+  r->DoRequestVote(&tracer);
 
   tracer.PrepareEvent(kEventTimer, "election-timer timeout");
   tracer.PrepareState1();
   tracer.Finish();
 }
 
-void Raft::DoElect(Tracer *tracer) {
+void Raft::DoRequestVote(Tracer *tracer) {
   meta_.IncrTerm();
   state_ = STATE_CANDIDATE;
   leader_ = RaftAddr(0);

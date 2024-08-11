@@ -65,7 +65,8 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       send_(nullptr),
       make_timer_(nullptr),
       print_screen_(false),
-      enable_pre_vote_(true) {
+      enable_pre_vote_(false),
+      leader_transfer_(false) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
 }
 
@@ -289,6 +290,7 @@ nlohmann::json Raft::ToJson() {
   j["state"] = std::string(StateToStr(state_));
   j["print"] = print_screen_;
   j["pre-vote"] = enable_pre_vote_;
+  j["transfer"] = leader_transfer_;
   j["run"] = started_;
   if (leader_.ToU64() == 0) {
     j["leader"] = 0;
@@ -319,6 +321,7 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["elect_ms"][1] = timer_mgr_.next_election_ms();
   j[0][2]["print"] = print_screen_;
   j[0][2]["pre-vote"] = enable_pre_vote_;
+  j[0][2]["transfer"] = leader_transfer_;
 
   for (auto dest : config_mgr_.Current().peers) {
     std::string key;
@@ -333,7 +336,6 @@ nlohmann::json Raft::ToJsonTiny() {
 
     // vote_mgr_
     j[0][3][key][2]["pre-voting"] = peer_mgr_.items[dest.ToU64()].pre_voting;
-    j[0][3][key][2]["transfer"] = peer_mgr_.items[dest.ToU64()].leader_transfer;
   }
 
   j[1] = PointerToHexStr(this);

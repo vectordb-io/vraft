@@ -12,7 +12,6 @@ namespace vraft {
 
 struct PeerItem {
   bool pre_voting;
-  bool leader_transfer;
 };
 
 class PeerManager final {
