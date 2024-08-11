@@ -7,6 +7,7 @@
 #include "raft_server.h"
 #include "util.h"
 #include "vraft_logger.h"
+#include "vstore_sm.h"
 
 namespace vraft {
 
@@ -26,6 +27,7 @@ int32_t Raft::OnClientRequest(struct ClientRequest &msg,
         rv = Propose(msg.data, nullptr);
         break;
       }
+
       case kCmdLeaderTransfer: {
         RaftAddr dest;
         bool b = dest.FromString(msg.data);
@@ -36,12 +38,35 @@ int32_t Raft::OnClientRequest(struct ClientRequest &msg,
         }
         break;
       }
+
       case kCmdAddServer: {
         break;
       }
+
       case kCmdRemoveServer: {
         break;
       }
+
+      case kCmdGet: {
+        vstore::VstoreSm *sm = reinterpret_cast<vstore::VstoreSm *>(sm_.get());
+        assert(sm);
+        std::string value;
+        rv = sm->Get(msg.data, value);
+
+        {
+          // reply
+          if (rv == -2) {
+            value = "not found";
+          } else if (rv == -1) {
+            value = "error";
+          }
+
+          conn->CopySend(value.c_str(), value.size());
+        }
+
+        break;
+      }
+
       default:
         break;
     }

@@ -34,11 +34,11 @@ void Tick(Timer *timer) {
     r->SendPing(dest_addr.ToU64(), nullptr);
   }
 
-#if 0
-  printf("%s %s\n", NsToString(Clock::NSec()).c_str(),
-         r->ToJsonString(true, true).c_str());
-  fflush(nullptr);
-#endif
+  if (r->print_screen()) {
+    printf("%s %s\n", NsToString(Clock::NSec()).c_str(),
+           r->ToJsonString(true, true).c_str());
+    fflush(nullptr);
+  }
 }
 
 // if path is empty, use rc to initialize,
@@ -63,7 +63,8 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       snapshot_mgr_(rc.peers),
       timer_mgr_(rc.peers),
       send_(nullptr),
-      make_timer_(nullptr) {
+      make_timer_(nullptr),
+      print_screen_(false) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
 }
 

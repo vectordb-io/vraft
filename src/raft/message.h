@@ -15,6 +15,10 @@ enum ClientCmd {
   kCmdLeaderTransfer,
   kCmdAddServer,
   kCmdRemoveServer,
+
+  // vstore
+  kCmdGet,
+
   kCmdError,
 };
 
@@ -29,6 +33,8 @@ inline ClientCmd U32ToClientCmd(uint32_t u32) {
       return kCmdAddServer;
     case kCmdRemoveServer:
       return kCmdRemoveServer;
+    case kCmdGet:
+      return kCmdGet;
     default:
       return kCmdError;
   }
@@ -55,9 +61,8 @@ inline std::string ClientCmdToStr(ClientCmd c) {
 }
 
 enum MsgType {
-  // raft
-  kPropose = 0,
-  kProposeReply,
+  kClientRequet,
+  kClientRequetReply,
   kPing,
   kPingReply,
   kRequestVote,
@@ -67,10 +72,6 @@ enum MsgType {
   kInstallSnapshot,
   kInstallSnapshotReply,
   kTimeoutNow,
-
-  // vstore
-  kVstoreGet,
-  kVstoreGetReply,
 
   kMsgNum,
 };

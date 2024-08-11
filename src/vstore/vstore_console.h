@@ -24,6 +24,7 @@ class VstoreConsole : public vraft::Console {
   int32_t Execute() override;
   void OnMessage(const vraft::TcpConnectionSPtr &conn,
                  vraft::Buffer *buf) override;
+  std::string HelpString() override;
 
   void Clear();
 

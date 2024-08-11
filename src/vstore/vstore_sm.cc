@@ -1,5 +1,6 @@
 #include "vstore_sm.h"
 
+#include "kv.h"
 #include "leveldb/write_batch.h"
 #include "raft_log.h"
 
@@ -42,10 +43,16 @@ int32_t VstoreSm::Apply(vraft::LogEntry *entry, vraft::RaftAddr addr) {
               leveldb::Slice(buf, sizeof(uint64_t)));
   }
 
+#if 0
   std::vector<std::string> kv;
   vraft::Split(entry->append_entry.value, ':', kv);
   assert(kv.size() == 2);
   batch.Put(leveldb::Slice(kv[0]), leveldb::Slice(kv[1]));
+#endif
+
+  vraft::KV kv;
+  kv.FromString(entry->append_entry.value);
+  batch.Put(leveldb::Slice(kv.key), leveldb::Slice(kv.value));
 
   leveldb::WriteOptions wo;
   wo.sync = true;

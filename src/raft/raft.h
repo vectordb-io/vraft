@@ -16,7 +16,6 @@
 #include "nlohmann/json.hpp"
 #include "ping.h"
 #include "ping_reply.h"
-#include "propose.h"
 #include "raft_addr.h"
 #include "raft_log.h"
 #include "request_vote.h"
@@ -72,8 +71,6 @@ class Raft final {
   int32_t OnInstallSnapshot(struct InstallSnapshot &msg);
   int32_t OnInstallSnapshotReply(struct InstallSnapshotReply &msg);
   int32_t OnTimeoutNow(struct TimeoutNow &msg);
-
-  int32_t OnPropose(struct Propose &msg, vraft::TcpConnectionSPtr conn);
   int32_t OnClientRequest(struct ClientRequest &msg,
                           vraft::TcpConnectionSPtr conn);
 
@@ -107,6 +104,8 @@ class Raft final {
   void set_create_sm(CreateSMFunc func);
   void set_reader_sm(CreateReaderFunc func);
   void set_writer_sm(CreateWriterFunc func);
+  bool print_screen() const;
+  void set_print_screen(bool print_screen);
   StateMachineSPtr sm();
 
  private:
@@ -165,6 +164,7 @@ class Raft final {
   CreateSMFunc create_sm_;
   CreateReaderFunc create_reader_;
   CreateWriterFunc create_writer_;
+  bool print_screen_;
 
   friend void Tick(Timer *timer);
   friend void Elect(Timer *timer);
@@ -194,6 +194,12 @@ inline void Raft::set_reader_sm(CreateReaderFunc func) {
 
 inline void Raft::set_writer_sm(CreateWriterFunc func) {
   create_writer_ = func;
+}
+
+inline bool Raft::print_screen() const { return print_screen_; }
+
+inline void Raft::set_print_screen(bool print_screen) {
+  print_screen_ = print_screen;
 }
 
 inline StateMachineSPtr Raft::sm() { return sm_; }
