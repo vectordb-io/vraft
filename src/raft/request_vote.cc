@@ -65,10 +65,12 @@ int32_t RequestVote::ToString(const char *ptr, int32_t len) {
   p += sizeof(last_log_term);
   size += sizeof(last_log_term);
 
-  uint8_t u8 = leader_transfer;
-  EncodeFixed8(p, u8);
-  p += sizeof(u8);
-  size += sizeof(u8);
+  {
+    uint8_t u8 = leader_transfer;
+    EncodeFixed8(p, u8);
+    p += sizeof(u8);
+    size += sizeof(u8);
+  }
 
   assert(size <= len);
   return size;
@@ -117,11 +119,12 @@ int32_t RequestVote::FromString(const char *ptr, int32_t len) {
   p += sizeof(last_log_term);
   size += sizeof(last_log_term);
 
-  uint8_t u8;
-  u8 = DecodeFixed8(p);
-  p += sizeof(u8);
-  size += sizeof(u8);
-  leader_transfer = u8;
+  {
+    uint8_t u8 = DecodeFixed8(p);
+    p += sizeof(u8);
+    size += sizeof(u8);
+    leader_transfer = u8;
+  }
 
   return size;
 }
