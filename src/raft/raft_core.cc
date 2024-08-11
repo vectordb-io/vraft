@@ -61,6 +61,8 @@ void Raft::DoElect(Tracer *tracer) {
   timer_mgr_.AgainElection();
 }
 
+void Raft::DoPreVote(Tracer *tracer) {}
+
 /********************************************************************************************
 \* Candidate i sends j a RequestVote request.
 RequestVote(i, j) ==

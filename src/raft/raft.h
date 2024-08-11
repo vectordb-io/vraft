@@ -36,7 +36,6 @@ enum State {
   STATE_FOLLOWER = 0,
   STATE_CANDIDATE,
   STATE_LEADER,
-  STATE_PRE_VOTE,
   STATE_STANDBY,
   STATE_ERROR,
 };
@@ -97,6 +96,7 @@ class Raft final {
   std::string ToJsonString(bool tiny, bool one_line);
   void Print(bool tiny, bool one_line);
   void DoElect(Tracer *tracer);
+  void DoPreVote(Tracer *tracer);
 
   // get set
   bool started() const;
@@ -110,6 +110,8 @@ class Raft final {
   void set_writer_sm(CreateWriterFunc func);
   bool print_screen() const;
   void set_print_screen(bool print_screen);
+  bool enable_pre_vote() const;
+  void set_enable_pre_vote(bool enable_pre_vote);
   StateMachineSPtr sm();
 
  private:
@@ -168,7 +170,9 @@ class Raft final {
   CreateSMFunc create_sm_;
   CreateReaderFunc create_reader_;
   CreateWriterFunc create_writer_;
+
   bool print_screen_;
+  bool enable_pre_vote_;
 
   friend void Tick(Timer *timer);
   friend void Elect(Timer *timer);
@@ -204,6 +208,12 @@ inline bool Raft::print_screen() const { return print_screen_; }
 
 inline void Raft::set_print_screen(bool print_screen) {
   print_screen_ = print_screen;
+}
+
+inline bool Raft::enable_pre_vote() const { return enable_pre_vote_; }
+
+inline void Raft::set_enable_pre_vote(bool enable_pre_vote) {
+  enable_pre_vote_ = enable_pre_vote;
 }
 
 inline StateMachineSPtr Raft::sm() { return sm_; }

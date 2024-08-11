@@ -65,7 +65,8 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       timer_mgr_(rc.peers),
       send_(nullptr),
       make_timer_(nullptr),
-      print_screen_(false) {
+      print_screen_(false),
+      enable_pre_vote_(true) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
 }
 
