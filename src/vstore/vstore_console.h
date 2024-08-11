@@ -32,6 +32,7 @@ class VstoreConsole : public vraft::Console {
   std::string cmd_;
   std::string key_;
   std::string value_;
+  std::string leader_transfer_;
 };
 
 inline VstoreConsole::VstoreConsole(const std::string &name,
