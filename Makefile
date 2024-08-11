@@ -57,8 +57,6 @@ PING_TEST_SRCS := src/test/ping_test.cc $(COMMON_SRCS)
 PING_REPLY_TEST_SRCS := src/test/ping_reply_test.cc $(COMMON_SRCS)
 INSTALL_SNAPSHOT_TEST_SRCS := src/test/install_snapshot_test.cc $(COMMON_SRCS)
 INSTALL_SNAPSHOT_REPLY_TEST_SRCS := src/test/install_snapshot_reply_test.cc $(COMMON_SRCS)
-PROPOSE_TEST_SRCS := src/test/propose_test.cc $(COMMON_SRCS)
-PROPOSE_REPLY_TEST_SRCS := src/test/propose_reply_test.cc $(COMMON_SRCS)
 CLIENT_REQUEST_TEST_SRCS := src/test/client_request_test.cc $(COMMON_SRCS)
 CLIENT_REQUEST_REPLY_TEST_SRCS := src/test/client_request_reply_test.cc $(COMMON_SRCS)
 RAFT_LOG_TEST_SRCS := src/test/raft_log_test.cc $(COMMON_SRCS)
@@ -139,10 +137,8 @@ PING_TEST_OBJECTS := $(PING_TEST_SRCS:.cc=.o)
 PING_REPLY_TEST_OBJECTS := $(PING_REPLY_TEST_SRCS:.cc=.o)
 INSTALL_SNAPSHOT_TEST_OBJECTS := $(INSTALL_SNAPSHOT_TEST_SRCS:.cc=.o)
 INSTALL_SNAPSHOT_REPLY_TEST_OBJECTS := $(INSTALL_SNAPSHOT_REPLY_TEST_SRCS:.cc=.o)
-PROPOSE_TEST_OBJECTS := $(PROPOSE_TEST_SRCS:.cc=.o)
 CLIENT_REQUEST_TEST_OBJECTS := $(CLIENT_REQUEST_TEST_SRCS:.cc=.o)
 CLIENT_REQUEST_REPLY_TEST_OBJECTS := $(CLIENT_REQUEST_REPLY_TEST_SRCS:.cc=.o)
-PROPOSE_REPLY_TEST_OBJECTS := $(PROPOSE_REPLY_TEST_SRCS:.cc=.o)
 RAFT_LOG_TEST_OBJECTS := $(RAFT_LOG_TEST_SRCS:.cc=.o)
 SOLID_DATA_TEST_OBJECTS := $(SOLID_DATA_TEST_SRCS:.cc=.o)
 UTIL_TEST_OBJECTS := $(UTIL_TEST_SRCS:.cc=.o)
@@ -205,8 +201,6 @@ TEST += ping_test
 TEST += ping_reply_test 
 TEST += install_snapshot_test 
 TEST += install_snapshot_reply_test 
-TEST += propose_test
-TEST += propose_reply_test
 TEST += client_request_test
 TEST += client_request_reply_test
 TEST += raft_log_test 
@@ -330,12 +324,6 @@ install_snapshot_test: $(INSTALL_SNAPSHOT_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 install_snapshot_reply_test: $(INSTALL_SNAPSHOT_REPLY_TEST_OBJECTS)
-	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
-
-propose_test: $(PROPOSE_TEST_OBJECTS)
-	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
-
-propose_reply_test: $(PROPOSE_REPLY_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 client_request_test: $(CLIENT_REQUEST_TEST_OBJECTS)

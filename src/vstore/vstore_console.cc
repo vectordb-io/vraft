@@ -28,7 +28,7 @@ int32_t VstoreConsole::Parse(const std::string &cmd_line) {
     value_ = result[2];
   }
 
-  if (cmd_ == "leader-transfer" && result.size() == 2) {
+  if (cmd_ == "leader" && result.size() == 2) {
     leader_transfer_ = result[1];
   }
 
@@ -80,7 +80,7 @@ int32_t VstoreConsole::Execute() {
     header_str.append(std::move(body_str));
     Send(header_str);
 
-  } else if (cmd_ == "leader-transfer") {
+  } else if (cmd_ == "leader") {
     vraft::ClientRequest msg;
     msg.uid = UniqId(&msg);
     msg.cmd = vraft::kCmdLeaderTransfer;
@@ -123,7 +123,7 @@ std::string VstoreConsole::HelpString() {
   help_str.append("help \n");
   help_str.append("set kk vv \n");
   help_str.append("get kk \n");
-  help_str.append("leader-transfer 127.0.0.1:9001#0 \n");
+  help_str.append("leader 127.0.0.1:9001#0 \n");
   return help_str;
 }
 
