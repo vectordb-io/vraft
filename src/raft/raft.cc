@@ -19,8 +19,6 @@ const char *StateToStr(enum State state) {
       return "CANDIDATE";
     case STATE_LEADER:
       return "LEADER";
-    case STATE_PRE_VOTE:
-      return "PRE-VOTE";
     case STATE_STANDBY:
       return "STANDBY";
     default:
@@ -286,6 +284,8 @@ nlohmann::json Raft::ToJson() {
   j["commit"] = commit_;
   j["last_apply"] = last_apply_;
   j["state"] = std::string(StateToStr(state_));
+  j["print"] = print_screen_;
+  j["pre-vote"] = enable_pre_vote_;
   j["run"] = started_;
   if (leader_.ToU64() == 0) {
     j["leader"] = 0;
@@ -314,6 +314,8 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["run"] = started_;
   j[0][2]["elect_ms"][0] = timer_mgr_.last_election_ms();
   j[0][2]["elect_ms"][1] = timer_mgr_.next_election_ms();
+  j[0][2]["print"] = print_screen_;
+  j[0][2]["pre-vote"] = enable_pre_vote_;
 
   for (auto dest : config_mgr_.Current().peers) {
     std::string key;
