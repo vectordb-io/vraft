@@ -30,31 +30,35 @@ void Elect(Timer *timer) {
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
-  r->meta_.IncrTerm();
-  r->state_ = STATE_CANDIDATE;
-  r->leader_ = RaftAddr(0);
-
-  // reset candidate state, vote-manager
-  r->vote_mgr_.Clear();
-
-  // vote for myself
-  r->meta_.SetVote(r->Me().ToU64());
-
-  // only myself, become leader
-  if (r->vote_mgr_.QuorumAll(r->IfSelfVote())) {
-    r->BecomeLeader(&tracer);
-    return;
-  }
+  r->DoElect(&tracer);
 
   tracer.PrepareEvent(kEventTimer, "election-timer timeout");
   tracer.PrepareState1();
   tracer.Finish();
+}
+
+void Raft::DoElect(Tracer *tracer) {
+  meta_.IncrTerm();
+  state_ = STATE_CANDIDATE;
+  leader_ = RaftAddr(0);
+
+  // reset candidate state, vote-manager
+  vote_mgr_.Clear();
+
+  // vote for myself
+  meta_.SetVote(Me().ToU64());
+
+  // only myself, become leader
+  if (vote_mgr_.QuorumAll(IfSelfVote())) {
+    BecomeLeader(tracer);
+    return;
+  }
 
   // start request-vote
-  r->timer_mgr_.StartRequestVote();
+  timer_mgr_.StartRequestVote();
 
   // reset election timer
-  r->timer_mgr_.AgainElection();
+  timer_mgr_.AgainElection();
 }
 
 /********************************************************************************************

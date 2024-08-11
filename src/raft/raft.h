@@ -96,6 +96,7 @@ class Raft final {
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
   void Print(bool tiny, bool one_line);
+  void DoElect(Tracer *tracer);
 
   // get set
   bool started() const;
