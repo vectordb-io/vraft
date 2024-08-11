@@ -23,6 +23,7 @@ struct RequestVote : public Message {
   RaftIndex last_log_index;
   RaftTerm last_log_term;
   bool leader_transfer;  // uint8_t
+  bool pre_vote;         // uint8_t
 
   int32_t MaxBytes() override;
   int32_t ToString(std::string &s) override;

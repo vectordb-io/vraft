@@ -25,6 +25,7 @@ TEST(RequestVote, test) {
   msg.last_log_term = 88;
   msg.last_log_index = 99;
   msg.leader_transfer = true;
+  msg.pre_vote = true;
 
   std::string msg_str;
   int32_t bytes = msg.ToString(msg_str);
@@ -55,6 +56,7 @@ TEST(RequestVote, test) {
   ASSERT_EQ(msg.send_ts, msg2.send_ts);
   ASSERT_EQ(msg.elapse, msg2.elapse);
   ASSERT_EQ(msg.leader_transfer, msg2.leader_transfer);
+  ASSERT_EQ(msg.pre_vote, msg2.pre_vote);
 }
 
 int main(int argc, char **argv) {
