@@ -24,7 +24,7 @@ void RemuTick(vraft::Timer *timer) {
       r->Print();
       int32_t leader_num = 0;
       for (auto ptr : r->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER) {
           leader_num++;
         }
       }

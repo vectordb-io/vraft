@@ -164,7 +164,7 @@ int32_t Raft::OnInstallSnapshotReply(struct InstallSnapshotReply &msg) {
       goto end;
     }
 
-    assert((state_ == LEADER));
+    assert((state_ == STATE_LEADER));
 
     if (msg.term > meta_.term()) {
       StepDown(msg.term, &tracer);

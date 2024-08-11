@@ -68,7 +68,7 @@ void RemuTick(vraft::Timer *timer) {
       // remu->Log();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER) {
           leader_num++;
         }
       }
@@ -84,7 +84,7 @@ void RemuTick(vraft::Timer *timer) {
       remu->Print();
       for (auto &rs : remu->raft_servers) {
         auto sptr = rs->raft();
-        if (sptr && sptr->state() == vraft::LEADER) {
+        if (sptr && sptr->state() == vraft::STATE_LEADER) {
           char value_buf[128];
           snprintf(value_buf, sizeof(value_buf), "value_%s",
                    vraft::NsToString2(vraft::Clock::NSec()).c_str());

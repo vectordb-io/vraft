@@ -31,7 +31,7 @@ int32_t Raft::OnTimeoutNow(struct TimeoutNow &msg) {
     if (!msg.force && !my_log_enough) {
       ;
     } else {
-      if (state_ == FOLLOWER) {
+      if (state_ == STATE_FOLLOWER) {
         timer_mgr_.StartElection();
       }
     }

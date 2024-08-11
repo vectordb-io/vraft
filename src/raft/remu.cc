@@ -57,7 +57,7 @@ void Remu::Check() {
 void Remu::CheckLeader() {
   std::unordered_map<RaftTerm, RaftAddr> leader_map;
   for (auto &raft_server : raft_servers) {
-    if (raft_server->raft()->state() == LEADER) {
+    if (raft_server->raft()->state() == STATE_LEADER) {
       RaftTerm term = raft_server->raft()->Term();
       RaftAddr addr = raft_server->raft()->Me();
       auto it = leader_map.find(term);

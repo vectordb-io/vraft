@@ -103,7 +103,7 @@ int32_t Raft::Propose(std::string value, Functor cb) {
   int32_t rv = 0;
   AppendEntry entry;
 
-  if (state_ != LEADER) {
+  if (state_ != STATE_LEADER) {
     rv = -1;
     goto end;
   }
@@ -139,7 +139,7 @@ int32_t Raft::LeaderTransfer(RaftAddr &dest) {
   tracer.PrepareState0();
 
   int32_t rv = 0;
-  if (state_ != LEADER) {
+  if (state_ != STATE_LEADER) {
     vraft_logger.Error("%s leader transfer error, not leader",
                        Me().ToString().c_str());
     rv = -1;

@@ -33,9 +33,12 @@
 namespace vraft {
 
 enum State {
-  FOLLOWER = 0,
-  CANDIDATE,
-  LEADER,
+  STATE_FOLLOWER = 0,
+  STATE_CANDIDATE,
+  STATE_LEADER,
+  STATE_PRE_VOTE,
+  STATE_STANDBY,
+  STATE_ERROR,
 };
 
 const char *StateToStr(enum State state);

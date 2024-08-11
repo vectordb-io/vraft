@@ -13,17 +13,18 @@ namespace vraft {
 
 const char *StateToStr(enum State state) {
   switch (state) {
-    case FOLLOWER:
+    case STATE_FOLLOWER:
       return "FOLLOWER";
-      break;
-    case CANDIDATE:
+    case STATE_CANDIDATE:
       return "CANDIDATE";
-      break;
-    case LEADER:
+    case STATE_LEADER:
       return "LEADER";
-      break;
+    case STATE_PRE_VOTE:
+      return "PRE-VOTE";
+    case STATE_STANDBY:
+      return "STANDBY";
     default:
-      assert(0);
+      return "STATE-ERROR";
   }
 }
 
@@ -50,7 +51,7 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       meta_path_(path + "/meta"),
       log_path_(path + "/rlog"),
       sm_path_(path + "/sm"),
-      state_(FOLLOWER),
+      state_(STATE_FOLLOWER),
       commit_(0),
       last_apply_(0),
       log_(path + "/rlog"),

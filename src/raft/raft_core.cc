@@ -25,13 +25,13 @@ Timeout(i) == /\ state[i] \in {Follower, Candidate}
 ********************************************************************************************/
 void Elect(Timer *timer) {
   Raft *r = reinterpret_cast<Raft *>(timer->data());
-  assert(r->state_ == FOLLOWER || r->state_ == CANDIDATE);
+  assert(r->state_ == STATE_FOLLOWER || r->state_ == STATE_CANDIDATE);
 
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
   r->meta_.IncrTerm();
-  r->state_ = CANDIDATE;
+  r->state_ = STATE_CANDIDATE;
   r->leader_ = RaftAddr(0);
 
   // reset candidate state, vote-manager
@@ -72,7 +72,7 @@ RequestVote(i, j) ==
 ********************************************************************************************/
 void RequestVoteRpc(Timer *timer) {
   Raft *r = reinterpret_cast<Raft *>(timer->data());
-  assert(r->state_ == CANDIDATE);
+  assert(r->state_ == STATE_CANDIDATE);
 
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
@@ -114,7 +114,7 @@ AppendEntries(i, j) ==
 ********************************************************************************************/
 void HeartBeat(Timer *timer) {
   Raft *r = reinterpret_cast<Raft *>(timer->data());
-  assert(r->state_ == LEADER);
+  assert(r->state_ == STATE_LEADER);
 
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
@@ -175,11 +175,11 @@ void Raft::StepDown(RaftTerm new_term, Tracer *tracer) {
     meta_.SetTerm(new_term);
     meta_.SetVote(0);
     leader_ = RaftAddr(0);
-    state_ = FOLLOWER;
+    state_ = STATE_FOLLOWER;
 
   } else {  // equal term
-    if (state_ != FOLLOWER) {
-      state_ = FOLLOWER;
+    if (state_ != STATE_FOLLOWER) {
+      state_ = STATE_FOLLOWER;
     }
   }
 
@@ -214,8 +214,8 @@ void Raft::BecomeLeader(Tracer *tracer) {
     tracer->PrepareEvent(kEventOther, "become leader");
   }
 
-  assert(state_ == CANDIDATE);
-  state_ = LEADER;
+  assert(state_ == STATE_CANDIDATE);
+  state_ = STATE_LEADER;
   leader_ = Me();
 
   // stop election timer
@@ -258,7 +258,7 @@ AdvanceCommitIndex(i) ==
     /\ UNCHANGED <<messages, serverVars, candidateVars, leaderVars, log>>
 ********************************************************************************************/
 void Raft::MaybeCommit(Tracer *tracer) {
-  assert(state_ == LEADER);
+  assert(state_ == STATE_LEADER);
   uint64_t new_commit = index_mgr_.MajorityMax(LastIndex());
   if (commit_ >= new_commit) {
     return;

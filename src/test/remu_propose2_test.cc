@@ -52,7 +52,8 @@ void RemuTick(vraft::Timer *timer) {
       PrintAndCheck();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
           leader_num++;
         }
       }
@@ -69,7 +70,7 @@ void RemuTick(vraft::Timer *timer) {
       PrintAndCheck();
       for (auto &rs : remu->raft_servers) {
         auto sptr = rs->raft();
-        if (sptr && sptr->state() == vraft::LEADER && sptr->started()) {
+        if (sptr && sptr->state() == vraft::STATE_LEADER && sptr->started()) {
           char value_buf[128];
           snprintf(value_buf, sizeof(value_buf), "value_%s",
                    vraft::NsToString2(vraft::Clock::NSec()).c_str());
@@ -109,7 +110,8 @@ void RemuTick(vraft::Timer *timer) {
     case vraft::kTestState3: {
       PrintAndCheck();
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
           ptr->raft()->Stop();
           vraft::current_state = vraft::kTestState0;
         }

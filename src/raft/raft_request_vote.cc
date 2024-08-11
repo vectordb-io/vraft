@@ -154,7 +154,7 @@ int32_t Raft::OnRequestVoteReply(struct RequestVoteReply &msg) {
         // get vote
         vote_mgr_.GetVote(msg.src.ToU64());
 
-        if (vote_mgr_.Majority(IfSelfVote()) && state_ == CANDIDATE) {
+        if (vote_mgr_.Majority(IfSelfVote()) && state_ == STATE_CANDIDATE) {
           BecomeLeader(&tracer);
         }
       }

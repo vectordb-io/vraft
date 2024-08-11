@@ -41,7 +41,8 @@ void RemuTick(vraft::Timer *timer) {
       remu->Check();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
           leader_num++;
         }
       }
@@ -60,7 +61,8 @@ void RemuTick(vraft::Timer *timer) {
       remu->Print();
       remu->Check();
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
           ptr->raft()->Stop();
           vraft::current_state = vraft::kTestState2;
         }
@@ -74,7 +76,8 @@ void RemuTick(vraft::Timer *timer) {
       remu->Check();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
           leader_num++;
         }
       }
@@ -108,7 +111,8 @@ void RemuTick(vraft::Timer *timer) {
       remu->Check();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::LEADER && ptr->raft()->started()) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
           leader_num++;
         }
       }

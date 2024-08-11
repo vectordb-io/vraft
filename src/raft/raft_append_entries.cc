@@ -281,7 +281,7 @@ int32_t Raft::OnAppendEntriesReply(struct AppendEntriesReply &msg) {
       goto end;
     }
 
-    assert((state_ == LEADER));
+    assert((state_ == STATE_LEADER));
 
     if (msg.term > meta_.term()) {
       StepDown(msg.term, &tracer);
