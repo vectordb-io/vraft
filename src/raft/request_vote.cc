@@ -12,6 +12,7 @@ int32_t RequestVote::MaxBytes() {
   size += sizeof(elapse);
   size += sizeof(last_log_term);
   size += sizeof(last_log_index);
+  size += sizeof(uint8_t);  // bool leader_transfer;
   return size;
 }
 
@@ -64,6 +65,11 @@ int32_t RequestVote::ToString(const char *ptr, int32_t len) {
   p += sizeof(last_log_term);
   size += sizeof(last_log_term);
 
+  uint8_t u8 = leader_transfer;
+  EncodeFixed8(p, u8);
+  p += sizeof(u8);
+  size += sizeof(u8);
+
   assert(size <= len);
   return size;
 }
@@ -111,6 +117,12 @@ int32_t RequestVote::FromString(const char *ptr, int32_t len) {
   p += sizeof(last_log_term);
   size += sizeof(last_log_term);
 
+  uint8_t u8;
+  u8 = DecodeFixed8(p);
+  p += sizeof(u8);
+  size += sizeof(u8);
+  leader_transfer = u8;
+
   return size;
 }
 
@@ -122,6 +134,7 @@ nlohmann::json RequestVote::ToJson() {
   j[0]["uid"] = U32ToHexStr(uid);
   j[1]["last"] = last_log_index;
   j[1]["last-term"] = last_log_term;
+  j[1]["leader-transfer"] = leader_transfer;
   j[2]["send_ts"] = send_ts;
   j[2]["elapse"] = elapse;
   return j;
@@ -134,6 +147,7 @@ nlohmann::json RequestVote::ToJsonTiny() {
   j["tm"] = term;
   j["last"] = last_log_index;
   j["ltm"] = last_log_term;
+  j["ldtrs"] = leader_transfer;
   j["uid"] = U32ToHexStr(uid);
   j["send"] = send_ts;
   j["elapse"] = elapse;
