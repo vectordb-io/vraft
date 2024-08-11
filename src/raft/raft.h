@@ -14,6 +14,7 @@
 #include "install_snapshot.h"
 #include "install_snapshot_reply.h"
 #include "nlohmann/json.hpp"
+#include "peer_manager.h"
 #include "ping.h"
 #include "ping_reply.h"
 #include "raft_addr.h"
@@ -163,6 +164,7 @@ class Raft final {
 
   // helper
   TimerManager timer_mgr_;
+  PeerManager peer_mgr_;
   SendFunc send_;
   MakeTimerFunc make_timer_;
   Functor assert_loop_;

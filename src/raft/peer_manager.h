@@ -11,8 +11,8 @@
 namespace vraft {
 
 struct PeerItem {
-  bool pre_voting_;
-  bool leader_transfer_;
+  bool pre_voting;
+  bool leader_transfer;
 };
 
 class PeerManager final {
@@ -30,7 +30,7 @@ class PeerManager final {
   std::string ToJsonString(bool tiny, bool one_line);
 
  public:
-  std::unordered_map<uint64_t, PeerItem> votes;
+  std::unordered_map<uint64_t, PeerItem> items;
 };
 
 }  // namespace vraft

@@ -61,6 +61,7 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       sm_(nullptr),
       snapshot_mgr_(rc.peers),
       timer_mgr_(rc.peers),
+      peer_mgr_(rc.peers),
       send_(nullptr),
       make_timer_(nullptr),
       print_screen_(false),
@@ -193,6 +194,7 @@ int32_t Raft::InitConfig() {
     vote_mgr_.Reset(rc.peers);
     snapshot_mgr_.Reset(rc.peers);
     timer_mgr_.Reset(rc.peers);
+    peer_mgr_.Reset(rc.peers);
 
   } else {
     // write config
@@ -278,6 +280,7 @@ nlohmann::json Raft::ToJson() {
   nlohmann::json j;
   j["index"] = index_mgr_.ToJson();
   j["vote"] = vote_mgr_.ToJson();
+  j["peer"] = peer_mgr_.ToJson();
   j["config"] = config_mgr_.ToJson();
   j["log"] = log_.ToJson();
   j["meta"] = meta_.ToJson();
@@ -320,10 +323,17 @@ nlohmann::json Raft::ToJsonTiny() {
   for (auto dest : config_mgr_.Current().peers) {
     std::string key;
     key.append(dest.ToString());
+    // index_mgr_
     j[0][3][key][0]["match"] = index_mgr_.indices[dest.ToU64()].match;
     j[0][3][key][0]["next"] = index_mgr_.indices[dest.ToU64()].next;
+
+    // vote_mgr_
     j[0][3][key][1]["grant"] = vote_mgr_.votes[dest.ToU64()].grant;
     j[0][3][key][1]["done"] = vote_mgr_.votes[dest.ToU64()].done;
+
+    // vote_mgr_
+    j[0][3][key][2]["pre-voting"] = peer_mgr_.items[dest.ToU64()].pre_voting;
+    j[0][3][key][2]["transfer"] = peer_mgr_.items[dest.ToU64()].leader_transfer;
   }
 
   j[1] = PointerToHexStr(this);
