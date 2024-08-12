@@ -1,19 +1,33 @@
 #!/bin/bash
 
 for file in `ls remu_*_test`; do
-    echo "Running ./$file ..."
-    ./"$file"
+    cmd="./${file}"
+    echo ""
+    echo "++++++++++++------------>>>>> Running ${cmd} ..."
+
+    ${cmd}
     ret=$?
     if [ ${ret} -ne 0 ]; then
-        echo "exit, return ${ret}"
+        echo ""
+        echo "++++++++++++------------>>>>> ${cmd} exit, return ${ret}"
         exit 1
+    else
+        echo ""
+        echo "++++++++++++------------>>>>> ${cmd} ok, return ${ret}"
     fi
 
-    echo "Running ./$file --enable-pre-vote ..."
-    ./"$file" --enable-pre-vote
+    cmd="./${file} --enable-pre-vote"
+    echo ""
+    echo "++++++++++++------------>>>>> Running ${cmd} ..."
+
+    ${cmd}
     ret=$?
     if [ ${ret} -ne 0 ]; then
-        echo "exit, return ${ret}"
+        echo ""
+        echo "++++++++++++------------>>>>> ${cmd} exit, return ${ret}"
         exit 1
+    else
+        echo ""
+        echo "++++++++++++------------>>>>> ${cmd} ok, return ${ret}"
     fi
 done
