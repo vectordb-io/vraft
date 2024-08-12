@@ -23,6 +23,8 @@ class PeerManager final {
 
   void Reset(const std::vector<RaftAddr> &peers);
   void Clear();
+  void ClearPreVoting();
+  void SetPreVoting();
 
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();

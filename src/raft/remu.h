@@ -11,7 +11,8 @@ namespace vraft {
 
 // raft emulator, good!!
 struct Remu {
-  Remu(EventLoopSPtr &l) : loop(l) {}
+  Remu(EventLoopSPtr &l, bool enable_pre_vote = false)
+      : loop(l), enable_pre_vote_(enable_pre_vote) {}
 
   EventLoopWPtr loop;
   std::vector<vraft::Config> configs;
@@ -36,6 +37,9 @@ struct Remu {
   void CheckLog();
   void CheckMeta();
   void CheckIndex();
+
+ private:
+  bool enable_pre_vote_;
 };
 
 }  // namespace vraft

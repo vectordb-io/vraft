@@ -115,6 +115,8 @@ class Raft final {
   void set_enable_pre_vote(bool enable_pre_vote);
   bool leader_transfer() const;
   void set_leader_transfer(bool leader_transfer);
+  bool pre_voting() const;
+  void set_pre_voting(bool pre_voting);
   StateMachineSPtr sm();
 
  private:
@@ -166,7 +168,6 @@ class Raft final {
 
   // helper
   TimerManager timer_mgr_;
-  PeerManager peer_mgr_;
   SendFunc send_;
   MakeTimerFunc make_timer_;
   Functor assert_loop_;
@@ -178,6 +179,7 @@ class Raft final {
   bool print_screen_;
   bool enable_pre_vote_;
   bool leader_transfer_;
+  bool pre_voting_;
 
   friend void Tick(Timer *timer);
   friend void Elect(Timer *timer);
@@ -226,6 +228,10 @@ inline bool Raft::leader_transfer() const { return leader_transfer_; }
 inline void Raft::set_leader_transfer(bool leader_transfer) {
   leader_transfer_ = leader_transfer;
 }
+
+inline bool Raft::pre_voting() const { return pre_voting_; }
+
+inline void Raft::set_pre_voting(bool pre_voting) { pre_voting_ = pre_voting; }
 
 inline StateMachineSPtr Raft::sm() { return sm_; }
 

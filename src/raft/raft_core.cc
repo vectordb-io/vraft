@@ -30,7 +30,14 @@ void Elect(Timer *timer) {
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
-  r->DoRequestVote(&tracer);
+  if (r->enable_pre_vote() && r->Peers().size() > 0) {
+    r->set_pre_voting(true);
+    r->DoPreVote(&tracer);
+
+  } else {
+    r->set_pre_voting(false);
+    r->DoRequestVote(&tracer);
+  }
 
   tracer.PrepareEvent(kEventTimer, "election-timer timeout");
   tracer.PrepareState1();
@@ -61,7 +68,19 @@ void Raft::DoRequestVote(Tracer *tracer) {
   timer_mgr_.AgainElection();
 }
 
-void Raft::DoPreVote(Tracer *tracer) {}
+void Raft::DoPreVote(Tracer *tracer) {
+  state_ = STATE_CANDIDATE;
+  leader_ = RaftAddr(0);
+
+  // reset candidate state, vote-manager
+  vote_mgr_.Clear();
+
+  // start request-vote
+  timer_mgr_.StartRequestVote();
+
+  // reset election timer
+  timer_mgr_.AgainElection();
+}
 
 /********************************************************************************************
 \* Candidate i sends j a RequestVote request.

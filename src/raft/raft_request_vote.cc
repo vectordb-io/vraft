@@ -66,7 +66,9 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
         timer_mgr_.AgainElection();
 
         // vote
-        meta_.SetVote(msg.src.ToU64());
+        if (!msg.pre_vote) {
+          meta_.SetVote(msg.src.ToU64());
+        }
       }
 
     } else {
@@ -146,18 +148,38 @@ int32_t Raft::OnRequestVoteReply(struct RequestVoteReply &msg) {
     } else {  // process
       assert(msg.term == meta_.term());
 
-      // get response
-      vote_mgr_.Done(msg.src.ToU64());
+      if (!msg.pre_vote) {
+        // get response
+        vote_mgr_.Done(msg.src.ToU64());
 
-      // close rpc timer
-      timer_mgr_.StopRequestVote(msg.src.ToU64());
+        // close rpc timer
+        timer_mgr_.StopRequestVote(msg.src.ToU64());
 
-      if (msg.granted) {
-        // get vote
-        vote_mgr_.GetVote(msg.src.ToU64());
+        if (msg.granted) {
+          // get vote
+          vote_mgr_.GetVote(msg.src.ToU64());
 
-        if (vote_mgr_.Majority(IfSelfVote()) && state_ == STATE_CANDIDATE) {
-          BecomeLeader(&tracer);
+          if (vote_mgr_.Majority(IfSelfVote()) && state_ == STATE_CANDIDATE) {
+            BecomeLeader(&tracer);
+          }
+        }
+
+      } else {
+        // close rpc timer
+        timer_mgr_.StopRequestVote(msg.src.ToU64());
+
+        if (msg.log_ok) {
+          // set log ok
+          vote_mgr_.LogOK(msg.src.ToU64());
+
+          if (vote_mgr_.MajorityLogOK(IfSelfVote()) &&
+              state_ == STATE_CANDIDATE && pre_voting_) {
+            // clear pre-voting flag
+            pre_voting_ = false;
+
+            // do real request vote
+            DoRequestVote(&tracer);
+          }
         }
       }
     }
@@ -180,6 +202,9 @@ int32_t Raft::SendRequestVote(uint64_t dest, Tracer *tracer) {
 
   msg.last_log_index = LastIndex();
   msg.last_log_term = LastTerm();
+
+  msg.leader_transfer = leader_transfer_;
+  msg.pre_vote = pre_voting_;
 
   std::string body_str;
   int32_t bytes = msg.ToString(body_str);

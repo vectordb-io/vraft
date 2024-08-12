@@ -13,6 +13,7 @@ namespace vraft {
 struct VoteItem {
   bool grant;
   bool done;
+  bool logok;
 };
 
 class VoteManager final {
@@ -24,10 +25,12 @@ class VoteManager final {
 
   void Reset(const std::vector<RaftAddr> &peers);
   bool Majority(bool my_vote);
+  bool MajorityLogOK(bool my_vote);
   bool QuorumAll(bool my_vote);
   void Clear();
   void GetVote(uint64_t id);
   void Done(uint64_t id);
+  void LogOK(uint64_t id);
 
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();

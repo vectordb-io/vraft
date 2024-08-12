@@ -87,6 +87,7 @@ void Remu::Create() {
     vraft::RaftServerSPtr ptr = std::make_shared<vraft::RaftServer>(sptr, conf);
     ptr->raft()->set_tracer_cb(tracer_cb);
     ptr->raft()->set_create_sm(create_sm);
+    ptr->raft()->set_enable_pre_vote(enable_pre_vote_);
     raft_servers.push_back(ptr);
   }
 }

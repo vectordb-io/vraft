@@ -20,6 +20,7 @@
 vraft::EventLoopSPtr loop;
 vraft::RemuSPtr remu;
 std::string test_path;
+bool enable_pre_vote;
 
 void RemuLogState(std::string key) {
   if (remu) {
@@ -34,13 +35,17 @@ void SignalHandler(int signal) {
   loop->Stop();
 }
 
+void PrintAndCheck() {
+  printf("--- %s ---\n", TestState2Str(vraft::current_state).c_str());
+  remu->Print();
+  remu->Check();
+}
+
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     case vraft::kTestState0: {
-      remu->Print();
-      remu->Check();
+      PrintAndCheck();
 
-      // remu->Log();
       int32_t leader_num = 0;
       for (auto ptr : remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER) {
@@ -59,8 +64,7 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestStateEnd: {
-      remu->Print();
-      remu->Check();
+      PrintAndCheck();
 
       std::cout << "exit ..." << std::endl;
       remu->Stop();
@@ -94,8 +98,6 @@ class RemuTest : public ::testing::Test {
   void SetUp() override {
     std::cout << "setting up test... \n";
     std::fflush(nullptr);
-    // test_path = "/tmp/remu_test_dir_" +
-    // vraft::NsToString2(vraft::Clock::NSec());
     test_path = "/tmp/remu_test_dir";
     std::string cmd = "rm -rf " + test_path;
     system(cmd.c_str());
@@ -114,7 +116,7 @@ class RemuTest : public ::testing::Test {
     int32_t rv = loop->Init();
     ASSERT_EQ(rv, 0);
 
-    remu = std::make_shared<vraft::Remu>(loop);
+    remu = std::make_shared<vraft::Remu>(loop, enable_pre_vote);
     remu->tracer_cb = RemuLogState;
 
     vraft::TimerParam param;
@@ -224,6 +226,12 @@ TEST_F(RemuTest, Elect1) {
 }
 
 int main(int argc, char **argv) {
+  if (argc >= 2 && std::string(argv[1]) == std::string("--enable-pre-vote")) {
+    enable_pre_vote = true;
+  } else {
+    enable_pre_vote = false;
+  }
+
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

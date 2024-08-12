@@ -2,6 +2,7 @@
 
 #include "raft.h"
 #include "timer.h"
+#include "remu.h"
 
 namespace vraft {
 

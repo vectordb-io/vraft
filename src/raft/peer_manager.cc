@@ -14,9 +14,17 @@ void PeerManager::Reset(const std::vector<RaftAddr> &peers) {
   }
 }
 
-void PeerManager::Clear() {
+void PeerManager::Clear() { ClearPreVoting(); }
+
+void PeerManager::ClearPreVoting() {
   for (auto &v : items) {
     v.second.pre_voting = false;
+  }
+}
+
+void PeerManager::SetPreVoting() {
+  for (auto &v : items) {
+    v.second.pre_voting = true;
   }
 }
 
