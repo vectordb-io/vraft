@@ -145,7 +145,15 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
+TEST_F(RemuTest, Elect5) { vraft::RunRemuTest(5); }
+
+TEST_F(RemuTest, Elect4) { vraft::RunRemuTest(4); }
+
 TEST_F(RemuTest, Elect3) { vraft::RunRemuTest(3); }
+
+// only 1 node of 2 cannot elect
+// this case can investigate term-increase while enable pre-vote or not
+// TEST_F(RemuTest, Elect2) { vraft::RunRemuTest(2); }
 
 int main(int argc, char **argv) {
   if (argc >= 2 && std::string(argv[1]) == std::string("--enable-pre-vote")) {

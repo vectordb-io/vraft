@@ -59,7 +59,7 @@ void RemuTick(vraft::Timer *timer) {
       }
 
       if (timer->repeat_counter() == 0) {
-        timer->set_repeat_times(3);
+        timer->set_repeat_times(5);
         vraft::current_state = vraft::kTestState2;
       }
       break;
