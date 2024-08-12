@@ -17,36 +17,14 @@
 #include "util.h"
 #include "vraft_logger.h"
 
-vraft::EventLoopSPtr loop;
-vraft::RemuSPtr remu;
-std::string test_path;
-
-void RemuLogState(std::string key) {
-  if (remu) {
-    remu->Log(key);
-  }
-}
-
-void SignalHandler(int signal) {
-  std::cout << "recv signal " << strsignal(signal) << std::endl;
-  std::cout << "exit ..." << std::endl;
-  loop->RunFunctor(std::bind(&vraft::Remu::Stop, remu.get()));
-  loop->Stop();
-}
-
-void PrintAndCheck() {
-  printf("--- %s ---\n", TestState2Str(vraft::current_state).c_str());
-  remu->Print();
-  remu->Check();
-}
-
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
+    // wait until elect leader
     case vraft::kTestState0: {
-      PrintAndCheck();
+      vraft::PrintAndCheck();
 
       int32_t leader_num = 0;
-      for (auto ptr : remu->raft_servers) {
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           leader_num++;
@@ -61,8 +39,9 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
+    // wait 5s to ensure leader stable
     case vraft::kTestState1: {
-      PrintAndCheck();
+      vraft::PrintAndCheck();
 
       static bool goto_end = false;
       timer->RepeatDecr();
@@ -79,10 +58,11 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
+    // leader transfer
     case vraft::kTestState2: {
-      PrintAndCheck();
+      vraft::PrintAndCheck();
 
-      for (auto ptr : remu->raft_servers) {
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           ptr->raft()->LeaderTransferFirstPeer();
@@ -93,12 +73,13 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
+    // quit
     case vraft::kTestStateEnd: {
-      PrintAndCheck();
+      vraft::PrintAndCheck();
 
       std::cout << "exit ..." << std::endl;
-      remu->Stop();
-      loop->Stop();
+      vraft::gtest_remu->Stop();
+      vraft::gtest_loop->Stop();
     }
 
     default:
@@ -109,138 +90,30 @@ void RemuTick(vraft::Timer *timer) {
 class RemuTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    std::cout << "setting up test... \n";
-    std::fflush(nullptr);
-    // test_path = "/tmp/remu_test_dir_" +
-    // vraft::NsToString2(vraft::Clock::NSec());
-    test_path = "/tmp/remu_test_dir";
-    std::string cmd = "rm -rf " + test_path;
-    system(cmd.c_str());
-
-    vraft::LoggerOptions logger_options{
-        "vraft", false, 1, 8192, vraft::kLoggerTrace, true};
-    std::string log_file = test_path + "/log/remu.log";
-    vraft::vraft_logger.Init(log_file, logger_options);
-
-    std::signal(SIGINT, SignalHandler);
-    vraft::CodingInit();
-
-    assert(!loop);
-    assert(!remu);
-    loop = std::make_shared<vraft::EventLoop>("remu-loop");
-    int32_t rv = loop->Init();
-    ASSERT_EQ(rv, 0);
-
-    remu = std::make_shared<vraft::Remu>(loop);
-    remu->tracer_cb = RemuLogState;
-
-    vraft::TimerParam param;
-    param.timeout_ms = 0;
-    param.repeat_ms = 1000;
-    param.cb = RemuTick;
-    param.data = nullptr;
-    param.name = "remu-timer";
-    param.repeat_times = 10;
-    loop->AddTimer(param);
-
-    // important !!
-    vraft::current_state = vraft::kTestState0;
+    // std::string path = std::string("/tmp/") + __func__;
+    vraft::RemuTestSetUp("/tmp/remu_test_dir", RemuTick);
   }
 
-  void TearDown() override {
-    std::cout << "tearing down test... \n";
-    std::fflush(nullptr);
-
-    remu->Clear();
-    remu.reset();
-    loop.reset();
-    vraft::Logger::ShutDown();
-
-    // system("rm -rf /tmp/remu_test_dir");
-  }
+  void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-TEST_F(RemuTest, Elect5) {
-  GenerateConfig(remu->configs, 4);
-  remu->Create();
-  remu->Start();
+TEST_F(RemuTest, Elect5) { vraft::RunRemuTest(5); }
 
-  {
-    vraft::EventLoopSPtr l = loop;
-    std::thread t([l]() { l->Loop(); });
-    l->WaitStarted();
-    t.join();
-  }
+TEST_F(RemuTest, Elect4) { vraft::RunRemuTest(4); }
 
-  std::cout << "join thread... \n";
-  std::fflush(nullptr);
-}
+TEST_F(RemuTest, Elect3) { vraft::RunRemuTest(3); }
 
-TEST_F(RemuTest, Elect4) {
-  GenerateConfig(remu->configs, 3);
-  remu->Create();
-  remu->Start();
+TEST_F(RemuTest, Elect2) { vraft::RunRemuTest(2); }
 
-  {
-    vraft::EventLoopSPtr l = loop;
-    std::thread t([l]() { l->Loop(); });
-    l->WaitStarted();
-    t.join();
-  }
-
-  std::cout << "join thread... \n";
-  std::fflush(nullptr);
-}
-
-TEST_F(RemuTest, Elect3) {
-  GenerateConfig(remu->configs, 2);
-  remu->Create();
-  remu->Start();
-
-  {
-    vraft::EventLoopSPtr l = loop;
-    std::thread t([l]() { l->Loop(); });
-    l->WaitStarted();
-    t.join();
-  }
-
-  std::cout << "join thread... \n";
-  std::fflush(nullptr);
-}
-
-TEST_F(RemuTest, Elect2) {
-  GenerateConfig(remu->configs, 1);
-  remu->Create();
-  remu->Start();
-
-  {
-    vraft::EventLoopSPtr l = loop;
-    std::thread t([l]() { l->Loop(); });
-    l->WaitStarted();
-    t.join();
-  }
-
-  std::cout << "join thread... \n";
-  std::fflush(nullptr);
-}
-
-TEST_F(RemuTest, Elect1) {
-  GenerateConfig(remu->configs, 0);
-  remu->Create();
-  remu->Start();
-
-  {
-    vraft::EventLoopSPtr l = loop;
-    std::thread t([l]() { l->Loop(); });
-    l->WaitStarted();
-    t.join();
-  }
-
-  std::cout << "join thread... \n";
-  std::fflush(nullptr);
-}
+TEST_F(RemuTest, Elect1) { vraft::RunRemuTest(1); }
 
 int main(int argc, char **argv) {
+  if (argc >= 2 && std::string(argv[1]) == std::string("--enable-pre-vote")) {
+    vraft::gtest_enable_pre_vote = true;
+  } else {
+    vraft::gtest_enable_pre_vote = false;
+  }
+
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

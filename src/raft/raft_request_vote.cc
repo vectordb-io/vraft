@@ -172,8 +172,8 @@ int32_t Raft::OnRequestVoteReply(struct RequestVoteReply &msg) {
           // set log ok
           vote_mgr_.LogOK(msg.src.ToU64());
 
-          if (vote_mgr_.MajorityLogOK(true) &&
-              state_ == STATE_CANDIDATE && pre_voting_) {
+          if (vote_mgr_.MajorityLogOK(true) && state_ == STATE_CANDIDATE &&
+              pre_voting_) {
             // clear pre-voting flag
             pre_voting_ = false;
 
