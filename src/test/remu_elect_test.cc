@@ -58,7 +58,7 @@ void RemuTick(vraft::Timer *timer) {
 class RemuTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    //std::string path = std::string("/tmp/") + __func__;
+    // std::string path = std::string("/tmp/") + __func__;
     vraft::RemuTestSetUp("/tmp/remu_test_dir", RemuTick);
   }
 

@@ -60,8 +60,7 @@ void RemuTestSetUp(std::string path, GTestTickFunc tick_func) {
   std::string cmd = "rm -rf " + gtest_path;
   system(cmd.c_str());
 
-  LoggerOptions logger_options{
-      "vraft", false, 1, 8192, kLoggerTrace, true};
+  LoggerOptions logger_options{"vraft", false, 1, 8192, kLoggerTrace, true};
   std::string log_file = gtest_path + "/log/remu.log";
   vraft_logger.Init(log_file, logger_options);
 
@@ -74,8 +73,7 @@ void RemuTestSetUp(std::string path, GTestTickFunc tick_func) {
   int32_t rv = gtest_loop->Init();
   ASSERT_EQ(rv, 0);
 
-  gtest_remu = std::make_shared<Remu>(
-      gtest_loop, gtest_enable_pre_vote);
+  gtest_remu = std::make_shared<Remu>(gtest_loop, gtest_enable_pre_vote);
   gtest_remu->tracer_cb = RemuLogState;
 
   TimerParam param;
