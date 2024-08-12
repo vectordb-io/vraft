@@ -118,6 +118,7 @@ class Raft final {
   bool pre_voting() const;
   void set_pre_voting(bool pre_voting);
   StateMachineSPtr sm();
+  RaftLog &log();
 
  private:
   bool IfSelfVote();
@@ -234,6 +235,8 @@ inline bool Raft::pre_voting() const { return pre_voting_; }
 inline void Raft::set_pre_voting(bool pre_voting) { pre_voting_ = pre_voting; }
 
 inline StateMachineSPtr Raft::sm() { return sm_; }
+
+inline RaftLog &Raft::log() { return log_; }
 
 }  // namespace vraft
 

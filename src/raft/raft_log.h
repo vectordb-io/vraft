@@ -390,7 +390,7 @@ class RaftLog final {
   RaftIndex First() const { return first_; };
   RaftIndex Last() const { return last_; }
   RaftIndex Append() const { return append_; }
-  RaftIndex LastCheck() const { return last_checksum_; }
+  uint32_t LastCheck() const { return last_checksum_; }
 
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
