@@ -19,6 +19,7 @@
 
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
+    // wait until elect leader, then wait 5s to ensure leader stable
     case vraft::kTestState0: {
       vraft::PrintAndCheck();
 
@@ -40,6 +41,7 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
+    // quit
     case vraft::kTestStateEnd: {
       vraft::PrintAndCheck();
 
@@ -56,6 +58,7 @@ void RemuTick(vraft::Timer *timer) {
 class RemuTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    //std::string path = std::string("/tmp/") + __func__;
     vraft::RemuTestSetUp("/tmp/remu_test_dir", RemuTick);
   }
 
