@@ -22,6 +22,9 @@ bool gtest_enable_pre_vote;
 void RemuLogState(std::string key) {
   if (gtest_remu) {
     gtest_remu->Log(key);
+
+    // check when state change
+    gtest_remu->Check();
   }
 }
 
