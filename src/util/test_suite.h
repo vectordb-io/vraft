@@ -4,6 +4,9 @@
 #include <functional>
 #include <unordered_map>
 
+#include "leveldb/db.h"
+#include "leveldb/write_batch.h"
+#include "state_machine.h"
 #include "timer.h"
 
 namespace vraft {
@@ -21,9 +24,32 @@ void GTestSignalHandler(int signal);
 
 using GTestTickFunc = std::function<void(Timer *)>;
 
-void RemuTestSetUp(std::string path, GTestTickFunc tick_func);
+void RemuTestSetUp(std::string path, GTestTickFunc tick_func,
+                   CreateSMFunc create_sm);
 void RemuTestTearDown();
 void RunRemuTest(int32_t node_num);
+
+//------------------TestSM---------------------------
+
+class TestSM : public vraft::StateMachine {
+ public:
+  TestSM(std::string path);
+  ~TestSM();
+
+  int32_t Restore() override;
+  int32_t Apply(vraft::LogEntry *entry, vraft::RaftAddr addr) override;
+  vraft::RaftIndex LastIndex() override;
+  vraft::RaftTerm LastTerm() override;
+
+  int32_t Get(const std::string &key, std::string &value);
+
+ public:
+  leveldb::DB *db;
+};
+
+//------------------TestSM---------------------------
+
+StateMachineSPtr CreateSM(std::string &path);
 
 //-----------------------------------------
 
