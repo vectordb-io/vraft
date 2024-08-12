@@ -17,30 +17,13 @@
 #include "util.h"
 #include "vraft_logger.h"
 
-vraft::EventLoopSPtr loop;
-vraft::RemuSPtr remu;
-std::string test_path;
-
-void RemuLogState(std::string key) {
-  if (remu) {
-    remu->Log(key);
-  }
-}
-
-void SignalHandler(int signal) {
-  std::cout << "recv signal " << strsignal(signal) << std::endl;
-  std::cout << "exit ..." << std::endl;
-  loop->RunFunctor(std::bind(&vraft::Remu::Stop, remu.get()));
-  loop->Stop();
-}
-
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     case vraft::kTestState0: {
-      remu->Print();
-      remu->Check();
+      vraft::PrintAndCheck();
+
       int32_t leader_num = 0;
-      for (auto ptr : remu->raft_servers) {
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           leader_num++;
@@ -58,9 +41,9 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestState1: {
-      remu->Print();
-      remu->Check();
-      for (auto ptr : remu->raft_servers) {
+      vraft::PrintAndCheck();
+
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           ptr->raft()->Stop();
@@ -72,10 +55,10 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestState2: {
-      remu->Print();
-      remu->Check();
+      vraft::PrintAndCheck();
+
       int32_t leader_num = 0;
-      for (auto ptr : remu->raft_servers) {
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           leader_num++;
@@ -93,9 +76,9 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestState3: {
-      remu->Print();
-      remu->Check();
-      for (auto ptr : remu->raft_servers) {
+      vraft::PrintAndCheck();
+
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (!ptr->raft()->started()) {
           int32_t rv = ptr->raft()->Start();
           ASSERT_EQ(rv, 0);
@@ -107,10 +90,10 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestState4: {
-      remu->Print();
-      remu->Check();
+      vraft::PrintAndCheck();
+
       int32_t leader_num = 0;
-      for (auto ptr : remu->raft_servers) {
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           leader_num++;
@@ -128,12 +111,11 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     case vraft::kTestStateEnd: {
-      remu->Print();
-      remu->Check();
+      vraft::PrintAndCheck();
 
       std::cout << "exit ..." << std::endl;
-      remu->Stop();
-      loop->Stop();
+      vraft::gtest_remu->Stop();
+      vraft::gtest_loop->Stop();
     }
 
     default:
@@ -146,28 +128,26 @@ class RemuTest : public ::testing::Test {
   void SetUp() override {
     std::cout << "setting up test... \n";
     std::fflush(nullptr);
-    // test_path = "/tmp/remu_test_dir_" +
-    // vraft::NsToString2(vraft::Clock::NSec());
-    test_path = "/tmp/remu_test_dir";
-    std::string cmd = "rm -rf " + test_path;
+    vraft::gtest_path = "/tmp/remu_test_dir";
+    std::string cmd = "rm -rf " + vraft::gtest_path;
     system(cmd.c_str());
 
     vraft::LoggerOptions logger_options{
         "vraft", false, 1, 8192, vraft::kLoggerTrace, true};
-    std::string log_file = test_path + "/log/remu.log";
+    std::string log_file = vraft::gtest_path + "/log/remu.log";
     vraft::vraft_logger.Init(log_file, logger_options);
 
-    std::signal(SIGINT, SignalHandler);
+    std::signal(SIGINT, vraft::GTestSignalHandler);
     vraft::CodingInit();
 
-    assert(!loop);
-    assert(!remu);
-    loop = std::make_shared<vraft::EventLoop>("remu-loop");
-    int32_t rv = loop->Init();
+    assert(!vraft::gtest_loop);
+    assert(!vraft::gtest_remu);
+    vraft::gtest_loop = std::make_shared<vraft::EventLoop>("remu-loop");
+    int32_t rv = vraft::gtest_loop->Init();
     ASSERT_EQ(rv, 0);
 
-    remu = std::make_shared<vraft::Remu>(loop);
-    remu->tracer_cb = RemuLogState;
+    vraft::gtest_remu = std::make_shared<vraft::Remu>(vraft::gtest_loop);
+    vraft::gtest_remu->tracer_cb = vraft::RemuLogState;
 
     vraft::TimerParam param;
     param.timeout_ms = 0;
@@ -176,7 +156,7 @@ class RemuTest : public ::testing::Test {
     param.data = nullptr;
     param.name = "remu-timer";
     param.repeat_times = 10;
-    loop->AddTimer(param);
+    vraft::gtest_loop->AddTimer(param);
 
     // important !!
     vraft::current_state = vraft::kTestState0;
@@ -186,40 +166,22 @@ class RemuTest : public ::testing::Test {
     std::cout << "tearing down test... \n";
     std::fflush(nullptr);
 
-    remu->Clear();
-    remu.reset();
-    loop.reset();
+    vraft::gtest_remu->Clear();
+    vraft::gtest_remu.reset();
+    vraft::gtest_loop.reset();
     vraft::Logger::ShutDown();
 
     // system("rm -rf /tmp/remu_test_dir");
   }
 };
 
-#if 0
-TEST_F(RemuTest, Elect5) {
-  GenerateConfig(remu->configs, 4);
-  remu->Create();
-  remu->Start();
-
-  {
-    vraft::EventLoopSPtr l = loop;
-    std::thread t([l]() { l->Loop(); });
-    l->WaitStarted();
-    t.join();
-  }
-
-  std::cout << "join thread... \n";
-  std::fflush(nullptr);
-}
-#endif
-
 TEST_F(RemuTest, Elect3) {
-  GenerateConfig(remu->configs, 2);
-  remu->Create();
-  remu->Start();
+  GenerateConfig(vraft::gtest_remu->configs, 2);
+  vraft::gtest_remu->Create();
+  vraft::gtest_remu->Start();
 
   {
-    vraft::EventLoopSPtr l = loop;
+    vraft::EventLoopSPtr l = vraft::gtest_loop;
     std::thread t([l]() { l->Loop(); });
     l->WaitStarted();
     t.join();

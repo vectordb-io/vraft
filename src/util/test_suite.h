@@ -19,6 +19,12 @@ void PrintAndCheck();
 void GenerateConfig(std::vector<Config> &configs, int32_t peers_num);
 void GTestSignalHandler(int signal);
 
+using GTestTickFunc = std::function<void(Timer *)>;
+
+void RemuTestSetUp(std::string path, GTestTickFunc tick_func);
+void RemuTestTearDown();
+void RunRemuTest(int32_t node_num);
+
 //-----------------------------------------
 
 class Timer;
