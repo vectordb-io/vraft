@@ -110,23 +110,6 @@ void RemuTick(vraft::Timer *timer) {
   }
 }
 
-void GenerateConfig(std::vector<vraft::Config> &configs, int32_t peers_num) {
-  configs.clear();
-  vraft::GetConfig().peers().clear();
-  vraft::GetConfig().set_my_addr(vraft::HostPort("127.0.0.1", 9000));
-  for (int i = 1; i <= peers_num; ++i) {
-    vraft::GetConfig().peers().push_back(
-        vraft::HostPort("127.0.0.1", 9000 + i));
-  }
-  vraft::GetConfig().set_log_level(vraft::kLoggerTrace);
-  vraft::GetConfig().set_enable_debug(true);
-  vraft::GetConfig().set_path(test_path);
-  vraft::GetConfig().set_mode(vraft::kSingleMode);
-
-  vraft::GenerateRotateConfig(configs);
-  std::cout << "generate configs, size:" << configs.size() << std::endl;
-}
-
 class RemuTest : public ::testing::Test {
  protected:
   void SetUp() override {
