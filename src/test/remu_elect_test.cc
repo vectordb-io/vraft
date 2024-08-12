@@ -34,9 +34,25 @@ void RemuTick(vraft::Timer *timer) {
       if (leader_num == 1) {
         timer->RepeatDecr();
         if (timer->repeat_counter() == 0) {
-          vraft::current_state = vraft::kTestStateEnd;
+          vraft::current_state = vraft::kTestState1;
         }
       }
+
+      break;
+    }
+
+    // check log consistant
+    case vraft::kTestState1: {
+      uint32_t checksum =
+          vraft::gtest_remu->raft_servers[0]->raft()->log().LastCheck();
+      printf("====log checksum:%X \n\n", checksum);
+      for (auto &rs : vraft::gtest_remu->raft_servers) {
+        auto sptr = rs->raft();
+        uint32_t checksum2 = sptr->log().LastCheck();
+        ASSERT_EQ(checksum, checksum2);
+      }
+
+      vraft::current_state = vraft::kTestStateEnd;
 
       break;
     }
