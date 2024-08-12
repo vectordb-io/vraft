@@ -147,7 +147,7 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-TEST_F(RemuTest, Elect3) { vraft::RunRemuTest(3); }
+TEST_F(RemuTest, RunNode3) { vraft::RunRemuTest(3); }
 
 int main(int argc, char **argv) {
   if (argc >= 2 && std::string(argv[1]) == std::string("--enable-pre-vote")) {
