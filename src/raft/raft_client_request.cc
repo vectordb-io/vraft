@@ -135,6 +135,10 @@ int32_t Raft::LeaderTransfer(RaftAddr &dest) {
 
   Tracer tracer(this, true, tracer_cb_);
   tracer.PrepareState0();
+  char buf[128];
+  snprintf(buf, sizeof(buf), "%s leader-transfer to:%s",
+           Me().ToString().c_str(), dest.ToString().c_str());
+  tracer.PrepareEvent(kEventOther, std::string(buf));
 
   int32_t rv = 0;
   if (state_ != STATE_LEADER) {

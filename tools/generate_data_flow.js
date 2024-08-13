@@ -34,7 +34,13 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
 
         } else if (eventType === 'event_other' && columns.length === 6 && columns[4] === 'propose-value') {
             const addr = columns[3].replace(/[:#]/g, '_');
-            const event = columns[4];
+            const event = columns[4] + "-" + columns[5];
+            console.log(addr, "->", addr+":", event);
+
+        } else if (eventType === 'event_other' && columns.length === 6 && columns[4] === 'leader-transfer') {
+            const addr = columns[3].replace(/[:#]/g, '_');
+            const addr_to = columns[5].replace(/[:#]/g, '_');
+            const event = columns[4] + "-" + addr_to;
             console.log(addr, "->", addr+":", event);
 
         } else if (eventType === 'event_stop' && columns.length === 5) {

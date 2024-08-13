@@ -12,6 +12,8 @@ cp "${dir}/log/remu.log.global" "${dir}/remu_web"
 #cp "${dir}/log/remu.log.sm" "${dir}/remu_web"
 #cp ${dir}/log/keys.* "${dir}/remu_web" 2>/dev/null
 cp ${dir}/log/*.sm "${dir}/remu_web" 2>/dev/null
+cp ${dir}/log/*.message "${dir}/remu_web" 2>/dev/null
+cp ${dir}/log/*.planttext "${dir}/remu_web" 2>/dev/null
 
 node generate_global.js "${dir}/remu_web/remu.log.global" "${dir}/remu_web/global.html.body" 
 cat ./html/global.html.head "${dir}/remu_web/global.html.body" ./html/global.html.tail > "${dir}/remu_web/global.html"
@@ -31,3 +33,4 @@ done
 #cat ./html/node.html.head "${dir}/remu_web/node.html.body" "${dir}/remu_web/node.html.body2" ./html/node.html.tail > "${dir}/remu_web/node.html"
 #rm "${dir}/remu_web/node.html.body" "${dir}/remu_web/node.html.body2"
 
+node generate_message_flow.js ${dir}/log/remu.log.sm.message > ${dir}/remu_web/message_flow.html
