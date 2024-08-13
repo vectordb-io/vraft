@@ -97,10 +97,13 @@ nlohmann::json ClientRequest::ToJsonTiny() { return ToJson(); }
 
 std::string ClientRequest::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;
+  std::string key = "cr-";
+  key.append(ClientCmdToStr(cmd));
+
   if (tiny) {
-    j["cr"] = ToJsonTiny();
+    j[key] = ToJsonTiny();
   } else {
-    j["client-request"] = ToJson();
+    j[key] = ToJson();
   }
 
   if (one_line) {

@@ -15,10 +15,7 @@ int32_t Raft::OnClientRequest(struct ClientRequest &msg,
                               vraft::TcpConnectionSPtr conn) {
   int32_t rv = 0;
   if (started_) {
-    vraft_logger.Info("%s recv client-request msg:%s", Me().ToString().c_str(),
-                      msg.ToJsonString(true, true).c_str());
-
-    Tracer tracer(this, false, tracer_cb_);
+    Tracer tracer(this, true, tracer_cb_);
     tracer.PrepareState0();
     tracer.PrepareEvent(kEventRecv, msg.ToJsonString(false, true));
 
@@ -97,7 +94,8 @@ int32_t Raft::Propose(std::string value, Functor cb) {
   Tracer tracer(this, true, tracer_cb_);
   tracer.PrepareState0();
   char buf[128];
-  snprintf(buf, sizeof(buf), "propose value, length:%lu", value.size());
+  snprintf(buf, sizeof(buf), "%s propose-value length:%lu",
+           Me().ToString().c_str(), value.size());
   tracer.PrepareEvent(kEventOther, std::string(buf));
 
   int32_t rv = 0;

@@ -164,7 +164,7 @@ std::string StrToHexStr(const char *ptr, int32_t size) {
   char buf[8];
   memset(buf, 0, sizeof(buf));
   for (int32_t i = 0; i < size; ++i) {
-    snprintf(buf, sizeof(buf), "0x%X ", ptr[i]);
+    snprintf(buf, sizeof(buf), "0x%X_", ptr[i]);
     str.append(buf);
   }
   if (str.size() > 0) {

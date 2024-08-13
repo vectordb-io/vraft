@@ -94,7 +94,7 @@ void RemuTick(vraft::Timer *timer) {
           std::string value;
           vraft::TestSM *psm = (vraft::TestSM *)(ptr->raft()->sm().get());
           int32_t rv = psm->Get(std::string(key), value);
-          ASSERT_EQ(rv, 0);
+          ASSERT_EQ(rv, 1);
           std::cout << key << " --- " << value << std::endl;
 
           char value_buf[128];

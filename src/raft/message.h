@@ -48,15 +48,15 @@ inline uint32_t ClientCmdToU32(ClientCmd c) {
 inline std::string ClientCmdToStr(ClientCmd c) {
   switch (c) {
     case kCmdPropose:
-      return "kCmdPropose";
+      return "propose";
     case kCmdLeaderTransfer:
-      return "kCmdLeaderTransfer";
+      return "leader-transfer";
     case kCmdAddServer:
-      return "kCmdAddServer";
+      return "add-server";
     case kCmdRemoveServer:
-      return "kCmdRemoveServer";
+      return "remove-server";
     default:
-      return "UnknownClientCmd";
+      return "unknown-client-cmd";
   }
 }
 

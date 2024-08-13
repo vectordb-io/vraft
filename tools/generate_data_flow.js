@@ -26,14 +26,22 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
             const addr = columns[3].replace(/[:#]/g, '_');
             const event = columns[4];
             console.log(addr, "->", addr+":", event);
+
         } else if (eventType === 'event_start' && columns.length === 5) {
             const addr = columns[3].replace(/[:#]/g, '_');
             const event = columns[4];
             console.log(addr, "->", addr+":", event);
+
+        } else if (eventType === 'event_other' && columns.length === 6 && columns[4] === 'propose-value') {
+            const addr = columns[3].replace(/[:#]/g, '_');
+            const event = columns[4];
+            console.log(addr, "->", addr+":", event);
+
         } else if (eventType === 'event_stop' && columns.length === 5) {
             const addr = columns[3].replace(/[:#]/g, '_');
             const event = columns[4];
             console.log(addr, "->", addr+":", event);
+
         } else if (eventType === 'event_send' && columns.length === 4) {
             try {
                 const jsonStr = columns[3];
