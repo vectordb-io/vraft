@@ -81,6 +81,7 @@ REMU_PROPOSE2_TEST_SRCS := src/test/remu_propose2_test.cc $(COMMON_SRCS)
 REMU_SM_TEST_SRCS := src/test/remu_sm_test.cc $(COMMON_SRCS)
 REMU_SM2_TEST_SRCS := src/test/remu_sm2_test.cc $(COMMON_SRCS)
 REMU_SM3_TEST_SRCS := src/test/remu_sm3_test.cc $(COMMON_SRCS)
+REMU_SM4_TEST_SRCS := src/test/remu_sm4_test.cc $(COMMON_SRCS)
 REMU_LEADERTRANSFER_TEST_SRCS := src/test/remu_leadertransfer_test.cc $(COMMON_SRCS)
 HOSTPORT_TEST_SRCS := src/test/hostport_test.cc $(COMMON_SRCS)
 BUFFER_TEST_SRCS := src/test/buffer_test.cc $(COMMON_SRCS)
@@ -163,6 +164,7 @@ REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
 REMU_SM_TEST_OBJECTS := $(REMU_SM_TEST_SRCS:.cc=.o)
 REMU_SM2_TEST_OBJECTS := $(REMU_SM2_TEST_SRCS:.cc=.o)
 REMU_SM3_TEST_OBJECTS := $(REMU_SM3_TEST_SRCS:.cc=.o)
+REMU_SM4_TEST_OBJECTS := $(REMU_SM4_TEST_SRCS:.cc=.o)
 REMU_LEADERTRANSFER_TEST_OBJECTS := $(REMU_LEADERTRANSFER_TEST_SRCS:.cc=.o)
 HOSTPORT_TEST_OBJECTS := $(HOSTPORT_TEST_SRCS:.cc=.o)
 BUFFER_TEST_OBJECTS := $(BUFFER_TEST_SRCS:.cc=.o)
@@ -228,6 +230,7 @@ TEST += remu_propose2_test
 TEST += remu_sm_test 
 TEST += remu_sm2_test
 TEST += remu_sm3_test
+TEST += remu_sm4_test
 TEST += remu_leadertransfer_test
 TEST += hostport_test
 TEST += buffer_test
@@ -402,6 +405,9 @@ remu_sm2_test: $(REMU_SM2_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_sm3_test: $(REMU_SM3_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_sm4_test: $(REMU_SM4_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_leadertransfer_test: $(REMU_LEADERTRANSFER_TEST_OBJECTS)

@@ -98,6 +98,7 @@ enum TestState {
   kTestState7,
   kTestState8,
   kTestState9,
+  kTestState10,
   kTestStateEnd,
 };
 
