@@ -89,9 +89,29 @@ rl.on('line', (line) => {
       writeStream.write(raft_state)
       writeStream.write(td_end_str);
 
-      writeStream.write(td3_str);
+      writeStream.write(td_str);
       var raft_ptr = json_obj[raftid][1][1];
       writeStream.write(raft_ptr);
+      writeStream.write(td_end_str);
+
+      var pre_voting = json_obj[raftid][1][0][2]['pre-voting'];
+      if (last_ready &&
+          pre_voting != last_json_objs[raftid][1][0][2]['pre-voting']) {
+        writeStream.write(td_change_str);
+      } else {
+        writeStream.write(td_str);
+      }
+      writeStream.write('"pre-voting":' + pre_voting);
+      writeStream.write(td_end_str);
+
+      var transfer = json_obj[raftid][1][0][2]['transfer'];
+      if (last_ready &&
+          transfer != last_json_objs[raftid][1][0][2]['transfer']) {
+        writeStream.write(td_change_str);
+      } else {
+        writeStream.write(td_str);
+      }
+      writeStream.write('"transfer":' + transfer);
       writeStream.write(td_end_str);
 
       writeStream.write('\t</tr>\n');
