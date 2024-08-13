@@ -6,6 +6,7 @@
 
 #include "leveldb/db.h"
 #include "leveldb/write_batch.h"
+#include "nlohmann/json.hpp"
 #include "state_machine.h"
 #include "timer.h"
 
@@ -47,13 +48,17 @@ class TestSM : public vraft::StateMachine {
   uint32_t check_sum() { return check_sum_; }
   std::string all_values() { return all_values_; }
 
+  nlohmann::json ToJson();
+  nlohmann::json ToJsonTiny();
+  std::string ToJsonString(bool tiny, bool one_line);
+
  private:
   int32_t SetApplyCount(int32_t apply_count);
   int32_t GetApplyCount(int32_t &apply_count);
   int32_t SetCheckSum(int32_t check_sum);
   int32_t GetCheckSum(int32_t &check_sum);
   int32_t SetAllValues(const std::string &value);
-  int32_t GetAllValues(std::string &value);
+  int32_t GetAllValues(std::string *value);
 
   int32_t SetI32(const std::string &key, int32_t i32);
   int32_t GetI32(const std::string &key, int32_t &i32);
@@ -62,7 +67,7 @@ class TestSM : public vraft::StateMachine {
   int32_t SetU64(const std::string &key, uint64_t u64);
   int32_t GetU64(const std::string &key, uint64_t &u64);
   int32_t SetKV(const std::string &key, const std::string &value);
-  int32_t GetKV(const std::string &key, std::string &value);
+  int32_t GetKV(const std::string &key, std::string *value);
 
  public:
   leveldb::DB *db;

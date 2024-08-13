@@ -139,12 +139,34 @@ const std::string all_values_key = "ALL_VALUES_KEY";
 const std::string apply_count_key = "APPLY_COUNT_KEY";
 const std::string check_sum_key = "CHECK_SUM_KEY";
 
-TestSM::TestSM(std::string path) : StateMachine(path) {
+TestSM::TestSM(std::string path)
+    : StateMachine(path), db(nullptr), apply_count_(0), check_sum_(0) {
   leveldb::Options o;
   o.create_if_missing = true;
   o.error_if_exists = false;
   leveldb::Status status = leveldb::DB::Open(o, path, &db);
   assert(status.ok());
+
+  int32_t rv = GetI32(apply_count_key, apply_count_);
+  if (rv != 1) {
+    apply_count_ = 0;
+    rv = SetU32(apply_count_key, apply_count_);
+    assert(rv == 0);
+  }
+
+  rv = GetU32(check_sum_key, check_sum_);
+  if (rv != 1) {
+    check_sum_ = 0;
+    rv = SetU32(check_sum_key, check_sum_);
+    assert(rv == 0);
+  }
+
+  rv = GetKV(all_values_key, &all_values_);
+  if (rv != 1) {
+    all_values_ = "";
+    rv = SetKV(all_values_key, all_values_);
+    assert(rv == 0);
+  }
 }
 
 TestSM::~TestSM() { delete db; }
@@ -156,14 +178,7 @@ int32_t TestSM::Restore() {
 }
 
 int32_t TestSM::Get(const std::string &key, std::string &value) {
-  leveldb::ReadOptions ro;
-  leveldb::Status s;
-  s = db->Get(ro, leveldb::Slice(key), &value);
-  if (s.ok()) {
-    return 0;
-  } else {
-    return -1;
-  }
+  return GetKV(key, &value);
 }
 
 // format: key:value
@@ -174,6 +189,7 @@ int32_t TestSM::Apply(LogEntry *entry, RaftAddr addr) {
 
   leveldb::WriteBatch batch;
 
+  // last index
   {
     char buf[sizeof(uint32_t)];
     EncodeFixed32(buf, entry->index);
@@ -181,6 +197,7 @@ int32_t TestSM::Apply(LogEntry *entry, RaftAddr addr) {
               leveldb::Slice(buf, sizeof(uint32_t)));
   }
 
+  // last term
   {
     char buf[sizeof(uint64_t)];
     EncodeFixed64(buf, entry->append_entry.term);
@@ -188,10 +205,40 @@ int32_t TestSM::Apply(LogEntry *entry, RaftAddr addr) {
               leveldb::Slice(buf, sizeof(uint64_t)));
   }
 
-  std::vector<std::string> kv;
-  Split(entry->append_entry.value, ':', kv);
-  assert(kv.size() == 2);
-  batch.Put(leveldb::Slice(kv[0]), leveldb::Slice(kv[1]));
+  // key:value
+  {
+    std::vector<std::string> kv;
+    Split(entry->append_entry.value, ':', kv);
+    assert(kv.size() == 2);
+    batch.Put(leveldb::Slice(kv[0]), leveldb::Slice(kv[1]));
+  }
+
+  // apply_count_
+  {
+    ++apply_count_;
+    char buf[sizeof(uint32_t)];
+    EncodeFixed32(buf, apply_count_);
+    batch.Put(leveldb::Slice(apply_count_key),
+              leveldb::Slice(buf, sizeof(uint32_t)));
+  }
+
+  // check_sum_
+  {
+    uint32_t new_check_sum = Crc32(entry->append_entry.value.c_str(),
+                                   entry->append_entry.value.size());
+    check_sum_ = check_sum_ ^ new_check_sum;
+
+    char buf[sizeof(uint32_t)];
+    EncodeFixed32(buf, check_sum_);
+    batch.Put(leveldb::Slice(check_sum_key),
+              leveldb::Slice(buf, sizeof(uint32_t)));
+  }
+
+  // all_values_
+  {
+    all_values_ = all_values_ + " + " + entry->append_entry.value;
+    batch.Put(leveldb::Slice(all_values_key), leveldb::Slice(all_values_));
+  }
 
   leveldb::WriteOptions wo;
   wo.sync = true;
@@ -202,28 +249,20 @@ int32_t TestSM::Apply(LogEntry *entry, RaftAddr addr) {
 }
 
 RaftIndex TestSM::LastIndex() {
-  leveldb::ReadOptions ro;
-  leveldb::Status s;
-  std::string value;
-  s = db->Get(ro, leveldb::Slice(last_index_key), &value);
-  if (s.ok()) {
-    assert(value.size() == sizeof(uint32_t));
-    uint32_t u32 = DecodeFixed32(value.c_str());
-    return u32;
+  RaftIndex index;
+  int32_t rv = GetU32(last_index_key, index);
+  if (rv == 1) {
+    return index;
   } else {
     return 0;
   }
 }
 
 RaftTerm TestSM::LastTerm() {
-  leveldb::ReadOptions ro;
-  leveldb::Status s;
-  std::string value;
-  s = db->Get(ro, leveldb::Slice(last_term_key), &value);
-  if (s.ok()) {
-    assert(value.size() == sizeof(uint64_t));
-    uint64_t u64 = DecodeFixed64(value.c_str());
-    return u64;
+  RaftTerm term;
+  int32_t rv = GetU64(last_term_key, term);
+  if (rv == 1) {
+    return term;
   } else {
     return 0;
   }
@@ -249,25 +288,165 @@ int32_t TestSM::SetAllValues(const std::string &value) {
   return SetKV(all_values_key, value);
 }
 
-int32_t TestSM::GetAllValues(std::string &value) {
+int32_t TestSM::GetAllValues(std::string *value) {
   return GetKV(all_values_key, value);
 }
 
-int32_t TestSM::SetI32(const std::string &key, int32_t i32) {}
+// return 0: ok
+// return -1: error
+int32_t TestSM::SetI32(const std::string &key, int32_t i32) {
+  leveldb::WriteBatch batch;
+  {
+    char buf[sizeof(i32)];
+    EncodeFixed32(buf, i32);
+    batch.Put(leveldb::Slice(key), leveldb::Slice(buf, sizeof(i32)));
+  }
 
-int32_t TestSM::GetI32(const std::string &key, int32_t &i32) {}
+  leveldb::WriteOptions wo;
+  wo.sync = true;
+  leveldb::Status s = db->Write(wo, &batch);
+  assert(s.ok());
 
-int32_t TestSM::SetU32(const std::string &key, uint32_t u32) {}
+  return 0;
+}
 
-int32_t TestSM::GetU32(const std::string &key, uint32_t &u32) {}
+// return 0: not find
+// return 1: find
+// return -1: error
+int32_t TestSM::GetI32(const std::string &key, int32_t &i32) {
+  leveldb::ReadOptions ro;
+  leveldb::Status s;
+  std::string value;
+  s = db->Get(ro, leveldb::Slice(key), &value);
+  if (s.ok()) {
+    assert(value.size() == sizeof(i32));
+    i32 = DecodeFixed32(value.c_str());
+    return 1;
+  } else if (s.IsNotFound()) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
 
-int32_t TestSM::SetU64(const std::string &key, uint64_t u64) {}
+int32_t TestSM::SetU32(const std::string &key, uint32_t u32) {
+  leveldb::WriteBatch batch;
+  {
+    char buf[sizeof(u32)];
+    EncodeFixed32(buf, u32);
+    batch.Put(leveldb::Slice(key), leveldb::Slice(buf, sizeof(u32)));
+  }
 
-int32_t TestSM::GetU64(const std::string &key, uint64_t &u64) {}
+  leveldb::WriteOptions wo;
+  wo.sync = true;
+  leveldb::Status s = db->Write(wo, &batch);
+  assert(s.ok());
 
-int32_t TestSM::SetKV(const std::string &key, const std::string &value) {}
+  return 0;
+}
 
-int32_t TestSM::GetKV(const std::string &key, std::string &value) {}
+int32_t TestSM::GetU32(const std::string &key, uint32_t &u32) {
+  leveldb::ReadOptions ro;
+  leveldb::Status s;
+  std::string value;
+  s = db->Get(ro, leveldb::Slice(key), &value);
+  if (s.ok()) {
+    assert(value.size() == sizeof(u32));
+    u32 = DecodeFixed32(value.c_str());
+    return 1;
+  } else if (s.IsNotFound()) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
+int32_t TestSM::SetU64(const std::string &key, uint64_t u64) {
+  leveldb::WriteBatch batch;
+  {
+    char buf[sizeof(u64)];
+    EncodeFixed64(buf, u64);
+    batch.Put(leveldb::Slice(key), leveldb::Slice(buf, sizeof(u64)));
+  }
+
+  leveldb::WriteOptions wo;
+  wo.sync = true;
+  leveldb::Status s = db->Write(wo, &batch);
+  assert(s.ok());
+
+  return 0;
+}
+
+int32_t TestSM::GetU64(const std::string &key, uint64_t &u64) {
+  leveldb::ReadOptions ro;
+  leveldb::Status s;
+  std::string value;
+  s = db->Get(ro, leveldb::Slice(key), &value);
+  if (s.ok()) {
+    assert(value.size() == sizeof(u64));
+    u64 = DecodeFixed64(value.c_str());
+    return 1;
+  } else if (s.IsNotFound()) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
+int32_t TestSM::SetKV(const std::string &key, const std::string &value) {
+  leveldb::WriteBatch batch;
+  batch.Put(leveldb::Slice(key), leveldb::Slice(value));
+
+  leveldb::WriteOptions wo;
+  wo.sync = true;
+  leveldb::Status s = db->Write(wo, &batch);
+  assert(s.ok());
+
+  return 0;
+}
+
+int32_t TestSM::GetKV(const std::string &key, std::string *value) {
+  value->clear();
+  leveldb::ReadOptions ro;
+  leveldb::Status s;
+  s = db->Get(ro, leveldb::Slice(key), value);
+  if (s.ok()) {
+    return 1;
+  } else if (s.IsNotFound()) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
+
+nlohmann::json TestSM::ToJson() {
+  nlohmann::json j;
+  j["db"] = PointerToHexStr(db);
+  j["apply_count"] = apply_count_;
+  j["check_sum"] = U32ToHexStr(check_sum_);
+  j["all_values"] = all_values_;
+  j["last_index"] = LastIndex();
+  j["last_term"] = LastTerm();
+  return j;
+}
+
+nlohmann::json TestSM::ToJsonTiny() { return ToJson(); }
+
+std::string TestSM::ToJsonString(bool tiny, bool one_line) {
+  nlohmann::json j;
+
+  if (tiny) {
+    j["TestSM"] = ToJsonTiny();
+  } else {
+    j["TestSM"] = ToJson();
+  }
+
+  if (one_line) {
+    return j.dump();
+  } else {
+    return j.dump(JSON_TAB);
+  }
+}
 
 //------------------TestSM---------------------------
 
