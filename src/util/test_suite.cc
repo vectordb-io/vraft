@@ -4,6 +4,7 @@
 
 #include <csignal>
 
+#include "coding.h"
 #include "common.h"
 #include "eventloop.h"
 #include "raft.h"
@@ -134,6 +135,10 @@ void RunRemuTest(int32_t node_num) {
 const std::string last_index_key = "LAST_INDEX_KEY";
 const std::string last_term_key = "LAST_TERM_KEY";
 
+const std::string all_values_key = "ALL_VALUES_KEY";
+const std::string apply_count_key = "APPLY_COUNT_KEY";
+const std::string check_sum_key = "CHECK_SUM_KEY";
+
 TestSM::TestSM(std::string path) : StateMachine(path) {
   leveldb::Options o;
   o.create_if_missing = true;
@@ -223,6 +228,46 @@ RaftTerm TestSM::LastTerm() {
     return 0;
   }
 }
+
+int32_t TestSM::SetApplyCount(int32_t apply_count) {
+  return SetI32(apply_count_key, apply_count);
+}
+
+int32_t TestSM::GetApplyCount(int32_t &apply_count) {
+  return GetI32(apply_count_key, apply_count);
+}
+
+int32_t TestSM::SetCheckSum(int32_t check_sum) {
+  return SetI32(check_sum_key, check_sum);
+}
+
+int32_t TestSM::GetCheckSum(int32_t &check_sum) {
+  return GetI32(check_sum_key, check_sum);
+}
+
+int32_t TestSM::SetAllValues(const std::string &value) {
+  return SetKV(all_values_key, value);
+}
+
+int32_t TestSM::GetAllValues(std::string &value) {
+  return GetKV(all_values_key, value);
+}
+
+int32_t TestSM::SetI32(const std::string &key, int32_t i32) {}
+
+int32_t TestSM::GetI32(const std::string &key, int32_t &i32) {}
+
+int32_t TestSM::SetU32(const std::string &key, uint32_t u32) {}
+
+int32_t TestSM::GetU32(const std::string &key, uint32_t &u32) {}
+
+int32_t TestSM::SetU64(const std::string &key, uint64_t u64) {}
+
+int32_t TestSM::GetU64(const std::string &key, uint64_t &u64) {}
+
+int32_t TestSM::SetKV(const std::string &key, const std::string &value) {}
+
+int32_t TestSM::GetKV(const std::string &key, std::string &value) {}
 
 //------------------TestSM---------------------------
 

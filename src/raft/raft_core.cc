@@ -39,7 +39,8 @@ void Elect(Timer *timer) {
     r->DoRequestVote(&tracer);
   }
 
-  tracer.PrepareEvent(kEventTimer, "election-timer timeout");
+  std::string str = r->Me().ToString() + std::string(" election-timer timeout");
+  tracer.PrepareEvent(kEventTimer, str);
   tracer.PrepareState1();
   tracer.Finish();
 }
@@ -144,7 +145,9 @@ void HeartBeat(Timer *timer) {
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
-  tracer.PrepareEvent(kEventTimer, "heartbeat-timer timeout");
+  std::string str =
+      r->Me().ToString() + std::string(" heartbeat-timer timeout");
+  tracer.PrepareEvent(kEventTimer, str);
   int32_t rv = r->SendAppendEntries(timer->dest_addr(), &tracer);
   assert(rv == 0);
 

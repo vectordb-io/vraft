@@ -49,3 +49,9 @@ while IFS= read -r line1; do
         fi
     done < "$file_path"
 done < "$file_path"
+
+
+# 生成数据流图
+cat ${dir}/remu.log.sm | grep -E "event_send|event_timer" | grep -v "heartbeat-timer" > ${dir}/temp/remu.log.sm.df.1
+node generate_data_flow.js ${dir}/temp/remu.log.sm.df.1 > ${dir}/temp/remu.log.sm.df.2
+cat ${dir}/temp/remu.log.sm.df.2 | awk 'BEGIN{print "@startuml"}{print $0}END{print "@enduml"}' > ${dir}/remu.log.sm.dataflow

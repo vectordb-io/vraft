@@ -182,10 +182,20 @@ nlohmann::json RequestVoteReply::ToJsonTiny() {
 
 std::string RequestVoteReply::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;
+  std::string key;
+  if (pre_vote) {
+    key.append("pre-");
+  }
   if (tiny) {
-    j["rvr"] = ToJsonTiny();
+    key.append("rvr");
   } else {
-    j["request-vote-reply"] = ToJson();
+    key.append("request-vote-reply");
+  }
+
+  if (tiny) {
+    j[key] = ToJsonTiny();
+  } else {
+    j[key] = ToJson();
   }
 
   if (one_line) {

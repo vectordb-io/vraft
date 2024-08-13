@@ -43,8 +43,34 @@ class TestSM : public vraft::StateMachine {
 
   int32_t Get(const std::string &key, std::string &value);
 
+  int32_t apply_count() { return apply_count_; }
+  uint32_t check_sum() { return check_sum_; }
+  std::string all_values() { return all_values_; }
+
+ private:
+  int32_t SetApplyCount(int32_t apply_count);
+  int32_t GetApplyCount(int32_t &apply_count);
+  int32_t SetCheckSum(int32_t check_sum);
+  int32_t GetCheckSum(int32_t &check_sum);
+  int32_t SetAllValues(const std::string &value);
+  int32_t GetAllValues(std::string &value);
+
+  int32_t SetI32(const std::string &key, int32_t i32);
+  int32_t GetI32(const std::string &key, int32_t &i32);
+  int32_t SetU32(const std::string &key, uint32_t u32);
+  int32_t GetU32(const std::string &key, uint32_t &u32);
+  int32_t SetU64(const std::string &key, uint64_t u64);
+  int32_t GetU64(const std::string &key, uint64_t &u64);
+  int32_t SetKV(const std::string &key, const std::string &value);
+  int32_t GetKV(const std::string &key, std::string &value);
+
  public:
   leveldb::DB *db;
+
+ private:
+  int32_t apply_count_;
+  uint32_t check_sum_;
+  std::string all_values_;
 };
 
 //------------------TestSM---------------------------
