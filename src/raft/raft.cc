@@ -79,7 +79,8 @@ int32_t Raft::Start() {
 
   Tracer tracer(this, true, tracer_cb_);
   tracer.PrepareState0();
-  tracer.PrepareEvent(kEventStart, "raft start");
+  std::string str = Me().ToString() + std::string(" raft-start");
+  tracer.PrepareEvent(kEventStart, str);
 
   // create sm
   if (create_sm_ && !sm_) {
@@ -123,7 +124,8 @@ int32_t Raft::Stop() {
 
   Tracer tracer(this, true, tracer_cb_);
   tracer.PrepareState0();
-  tracer.PrepareEvent(kEventStop, "raft stop");
+  std::string str = Me().ToString() + std::string(" raft-stop");
+  tracer.PrepareEvent(kEventStop, str);
 
   started_ = false;
   timer_mgr_.Stop();
