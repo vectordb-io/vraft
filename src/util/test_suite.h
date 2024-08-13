@@ -124,6 +124,8 @@ inline std::string TestState2Str(TestState state) {
       return "kTestState8";
     case kTestState9:
       return "kTestState9";
+    case kTestState10:
+      return "kTestState10";
     case kTestStateEnd:
       return "kTestStateEnd";
     default:
