@@ -11,7 +11,11 @@ if (args.length < 1) {
 const inputFile = args[0];
 
 // 固定项目边距和节点间距
-const margin = { top: 80, left: 150, bottom: 40 };
+const margin = {
+  top: 80,
+  left: 150,
+  bottom: 40
+};
 const nodeSpacing = 200;
 const messageSpacing = 30;
 
@@ -21,7 +25,7 @@ const data = fs.readFileSync(inputFile, 'utf-8').trim();
 // 解析数据
 const messages = data.split('\n').map(line => {
   const [sender, receiver, message] = line.split(' ');
-  return { sender, receiver, message };
+  return {sender, receiver, message};
 });
 
 // 获取所有唯一的节点
@@ -74,13 +78,16 @@ const generateHtml = (nodes, messages) => `
 <body>
   <svg width="${svgWidth}" height="${svgHeight}"></svg>
   <script>
-    const nodes = ${JSON.stringify(nodes.map((node, idx) => ({ id: node, index: idx })))};
+    const nodes = ${JSON.stringify(nodes.map((node, idx) => ({
+                                               id: node,
+                                               index: idx
+                                             })))};
     const messages = ${JSON.stringify(messages.map((msg, idx) => ({
-      source: msg.sender,
-      target: msg.receiver,
-      message: msg.message,
-      index: idx
-    })))};
+                                                     source: msg.sender,
+                                                     target: msg.receiver,
+                                                     message: msg.message,
+                                                     index: idx
+                                                   })))};
 
     const svg = d3.select("svg");
 
@@ -158,7 +165,8 @@ const generateHtml = (nodes, messages) => `
            .attr("class", "link");
 
         svg.append("text")
-           .attr("x", (${margin.left} + sourceIndex * ${nodeSpacing} + ${margin.left} + targetIndex * ${nodeSpacing}) / 2)
+           .attr("x", (${margin.left} + sourceIndex * ${nodeSpacing} + ${
+    margin.left} + targetIndex * ${nodeSpacing}) / 2)
            .attr("y", y - 5)
            .attr("text-anchor", "middle")
            .attr("class", "label")
