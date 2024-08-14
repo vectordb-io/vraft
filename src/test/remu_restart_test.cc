@@ -30,11 +30,16 @@ void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     // stop first one
     case vraft::kTestState0: {
-      vraft::gtest_remu->raft_servers[(g_server_index++) % node_num]
-          ->raft()
-          ->Stop();
+      vraft::gtest_remu->raft_servers[g_server_index]->raft()->Stop();
       vraft::current_state = vraft::kTestState1;
       timer->set_repeat_times(first_repeat_times);
+
+      std::cout << "stop "
+                << (void *)(vraft::gtest_remu->raft_servers[g_server_index]
+                                ->raft()
+                                .get())
+                << std::endl;
+
       break;
     }
 
@@ -48,13 +53,20 @@ void RemuTick(vraft::Timer *timer) {
         if (!ptr->raft()->started()) {
           int32_t rv = ptr->raft()->Start();
           ASSERT_EQ(rv, 0);
+
+          std::cout << "start " << (void *)(ptr->raft().get()) << std::endl;
         }
       }
 
       // stop next one
-      vraft::gtest_remu->raft_servers[(g_server_index++) % node_num]
-          ->raft()
-          ->Stop();
+      g_server_index = (g_server_index + 1) % node_num;
+      vraft::gtest_remu->raft_servers[g_server_index]->raft()->Stop();
+
+      std::cout << "stop "
+                << (void *)(vraft::gtest_remu->raft_servers[g_server_index]
+                                ->raft()
+                                .get())
+                << std::endl;
 
       timer->RepeatDecr();
 
@@ -73,6 +85,8 @@ void RemuTick(vraft::Timer *timer) {
         if (!ptr->raft()->started()) {
           int32_t rv = ptr->raft()->Start();
           ASSERT_EQ(rv, 0);
+
+          std::cout << "start " << (void *)(ptr->raft().get()) << std::endl;
         }
       }
 
