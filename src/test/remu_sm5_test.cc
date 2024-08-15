@@ -206,11 +206,7 @@ class RemuTest : public ::testing::Test {
 TEST_F(RemuTest, RunNode5) { vraft::RunRemuTest(node_num); }
 
 int main(int argc, char **argv) {
-  if (argc >= 2 && std::string(argv[1]) == std::string("--enable-pre-vote")) {
-    vraft::gtest_enable_pre_vote = true;
-  } else {
-    vraft::gtest_enable_pre_vote = false;
-  }
+  vraft::RemuParseConfig(argc, argv);
 
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);

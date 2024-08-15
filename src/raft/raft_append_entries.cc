@@ -126,6 +126,9 @@ int32_t Raft::OnAppendEntries(struct AppendEntries &msg) {
     timer_mgr_.StopRequestVote();
     timer_mgr_.AgainElection();
 
+    // record last_heartbeat_timestamp
+    last_heartbeat_timestamp_ = Clock::NSec();
+
     // update leader cache
     if (leader_.ToU64() == 0) {
       leader_ = msg.src;
@@ -230,6 +233,9 @@ int32_t Raft::OnAppendEntries(struct AppendEntries &msg) {
     // reset election timer again
     timer_mgr_.StopRequestVote();
     timer_mgr_.AgainElection();
+
+    // record last_heartbeat_timestamp
+    last_heartbeat_timestamp_ = Clock::NSec();
 
   end:
     SendAppendEntriesReply(reply, &tracer);

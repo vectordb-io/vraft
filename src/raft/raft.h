@@ -122,6 +122,8 @@ class Raft final {
   void set_leader_transfer(bool leader_transfer);
   bool pre_voting() const;
   void set_pre_voting(bool pre_voting);
+  bool stable_leader() const;
+  void set_stable_leader(bool stable_leader);
   StateMachineSPtr sm();
   RaftLog &log();
   SolidData &meta();
@@ -198,7 +200,10 @@ class Raft final {
   bool print_screen_;
   bool enable_pre_vote_;
   bool leader_transfer_;
+  RaftTerm transfer_max_term_;
   bool pre_voting_;
+  bool stable_leader_;
+  int64_t last_heartbeat_timestamp_;
 
   friend void Tick(Timer *timer);
   friend void Elect(Timer *timer);
@@ -267,6 +272,12 @@ inline void Raft::set_leader_transfer(bool leader_transfer) {
 inline bool Raft::pre_voting() const { return pre_voting_; }
 
 inline void Raft::set_pre_voting(bool pre_voting) { pre_voting_ = pre_voting; }
+
+inline bool Raft::stable_leader() const { return stable_leader_; }
+
+inline void Raft::set_stable_leader(bool stable_leader) {
+  stable_leader_ = stable_leader;
+}
 
 inline StateMachineSPtr Raft::sm() { return sm_; }
 

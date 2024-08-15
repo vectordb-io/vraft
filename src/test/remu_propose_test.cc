@@ -128,11 +128,7 @@ TEST_F(RemuTest, RunNode2) { vraft::RunRemuTest(2); }
 TEST_F(RemuTest, RunNode1) { vraft::RunRemuTest(1); }
 
 int main(int argc, char **argv) {
-  if (argc >= 2 && std::string(argv[1]) == std::string("--enable-pre-vote")) {
-    vraft::gtest_enable_pre_vote = true;
-  } else {
-    vraft::gtest_enable_pre_vote = false;
-  }
+  vraft::RemuParseConfig(argc, argv);
 
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);

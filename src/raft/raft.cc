@@ -76,7 +76,10 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       print_screen_(false),
       enable_pre_vote_(false),
       leader_transfer_(false),
-      pre_voting_(false) {
+      transfer_max_term_(0),
+      pre_voting_(false),
+      stable_leader_(true),
+      last_heartbeat_timestamp_(0) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
 }
 
@@ -382,6 +385,7 @@ nlohmann::json Raft::ToJson() {
   j["pre-vote"] = enable_pre_vote_;
   j["transfer"] = leader_transfer_;
   j["pre-voting"] = pre_voting_;
+  j["stable-leader"] = stable_leader_;
   j["run"] = started_;
   if (leader_.ToU64() == 0) {
     j["leader"] = 0;

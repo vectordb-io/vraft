@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     vraft::CodingInit();
 
     vraft::EventLoopSPtr loop = std::make_shared<vraft::EventLoop>("remu");
-    vraft::Remu remu(loop);
+    vraft::Remu remu(loop, true, true);
     r = &remu;
 
     vraft::TimerParam param;

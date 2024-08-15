@@ -17,7 +17,9 @@ extern RemuSPtr gtest_remu;
 extern std::string gtest_path;
 
 extern bool gtest_enable_pre_vote;
+extern bool gtest_stable_leader;
 
+void RemuParseConfig(int argc, char **argv);
 void RemuLogState(std::string key);
 void PrintAndCheck();
 void GenerateConfig(std::vector<Config> &configs, int32_t peers_num);

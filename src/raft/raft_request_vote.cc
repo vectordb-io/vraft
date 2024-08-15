@@ -44,11 +44,38 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
     tracer.PrepareState0();
     tracer.PrepareEvent(kEventRecv, msg.ToJsonString(false, true));
 
+    RequestVoteReply reply;
+    reply.src = msg.dest;
+    reply.dest = msg.src;
+    reply.uid = UniqId(&reply);
+    reply.pre_vote = msg.pre_vote;
+    reply.too_quick = false;
+    reply.req_term = msg.term;
+    reply.elapse = 0;
+
     RaftIndex last_index = LastIndex();
     RaftTerm last_term = LastTerm();
     bool log_ok =
         ((msg.last_log_term > last_term) ||
          (msg.last_log_term == last_term && msg.last_log_index >= last_index));
+
+    if (stable_leader_) {
+      if (!msg.leader_transfer) {
+        bool too_quick = (Clock::NSec() - last_heartbeat_timestamp_ <
+                          timer_mgr_.election_ms() * 1000 * 1000);
+
+        // if too_quick, response reject
+        if (too_quick) {
+          reply.term = meta_.term();
+          reply.send_ts = Clock::NSec();
+          reply.granted = false;
+          reply.log_ok = log_ok;
+          reply.too_quick = true;
+
+          goto end;
+        }
+      }
+    }
 
     // maybe step down first
     if (msg.term > meta_.term()) {
@@ -77,23 +104,20 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
     }
 
     // reply
-    RequestVoteReply reply;
-    reply.src = msg.dest;
-    reply.dest = msg.src;
-    reply.term = meta_.term();
-    reply.uid = UniqId(&reply);
-    reply.send_ts = Clock::NSec();
-    reply.elapse = 0;
-    reply.granted =
-        (msg.term == meta_.term() && meta_.vote() == msg.src.ToU64());
-    reply.log_ok = log_ok;
-    reply.pre_vote = msg.pre_vote;
-    reply.req_term = msg.term;
-    SendRequestVoteReply(reply, &tracer);
+    {
+      reply.term = meta_.term();
+      reply.send_ts = Clock::NSec();
+      reply.granted =
+          (msg.term == meta_.term() && meta_.vote() == msg.src.ToU64());
+      reply.log_ok = log_ok;
+    }
 
+  end:
+    SendRequestVoteReply(reply, &tracer);
     tracer.PrepareState1();
     tracer.Finish();
   }
+
   return 0;
 }
 
@@ -202,9 +226,15 @@ int32_t Raft::SendRequestVote(uint64_t dest, Tracer *tracer) {
 
   msg.last_log_index = LastIndex();
   msg.last_log_term = LastTerm();
-
-  msg.leader_transfer = leader_transfer_;
   msg.pre_vote = pre_voting_;
+
+  if (leader_transfer_ && meta_.term() <= transfer_max_term_) {
+    msg.leader_transfer = true;
+  } else {
+    msg.leader_transfer = false;
+    leader_transfer_ = false;
+    transfer_max_term_ = 0;
+  }
 
   std::string body_str;
   int32_t bytes = msg.ToString(body_str);

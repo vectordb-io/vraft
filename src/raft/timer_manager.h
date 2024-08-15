@@ -59,6 +59,7 @@ class TimerManager final {
   void set_heartbeat_func(TimerFunctor func);
   void set_maketimer_func(MakeTimerFunc func);
 
+  uint32_t election_ms() const;
   uint32_t last_election_ms() const;
   uint32_t next_election_ms() const;
 
@@ -129,6 +130,8 @@ inline void TimerManager::set_heartbeat_func(TimerFunctor func) {
 inline void TimerManager::set_maketimer_func(MakeTimerFunc func) {
   maketimer_func_ = func;
 }
+
+inline uint32_t TimerManager::election_ms() const { return election_ms_; }
 
 inline uint32_t TimerManager::last_election_ms() const {
   return last_election_ms_;

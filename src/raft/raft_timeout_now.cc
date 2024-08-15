@@ -12,6 +12,9 @@ namespace vraft {
 
 int32_t Raft::OnTimeoutNow(struct TimeoutNow &msg) {
   if (started_) {
+    leader_transfer_ = true;
+    transfer_max_term_ = meta_.term() + 3;
+
     Tracer tracer(this, true, tracer_cb_);
     tracer.PrepareState0();
     tracer.PrepareEvent(kEventRecv, msg.ToJsonString(false, true));

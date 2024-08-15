@@ -230,6 +230,10 @@ void Raft::StepDown(RaftTerm new_term, Tracer *tracer) {
   // start election timer
   timer_mgr_.StopRequestVote();
   timer_mgr_.AgainElection();
+
+  if (last_heartbeat_timestamp_ == INT64_MAX) {
+    last_heartbeat_timestamp_ = 0;
+  }
 }
 
 /********************************************************************************************
@@ -258,9 +262,14 @@ void Raft::BecomeLeader(Tracer *tracer) {
     tracer->PrepareEvent(kEventOther, std::string(buf));
   }
 
+  leader_transfer_ = false;
+
   assert(state_ == STATE_CANDIDATE);
   state_ = STATE_LEADER;
   leader_ = Me();
+
+  // update last_heartbeat_timestamp
+  last_heartbeat_timestamp_ = INT64_MAX;
 
   // stop election timer
   timer_mgr_.StopElection();

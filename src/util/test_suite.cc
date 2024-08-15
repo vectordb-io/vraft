@@ -19,6 +19,22 @@ RemuSPtr gtest_remu;
 std::string gtest_path;
 
 bool gtest_enable_pre_vote;
+bool gtest_stable_leader;
+
+void RemuParseConfig(int argc, char **argv) {
+  gtest_enable_pre_vote = false;
+  gtest_stable_leader = false;
+
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == std::string("--enable-pre-vote")) {
+      gtest_enable_pre_vote = true;
+    }
+
+    if (std::string(argv[i]) == std::string("--enable-stable-leader")) {
+      gtest_stable_leader = true;
+    }
+  }
+}
 
 void RemuLogState(std::string key) {
   if (gtest_remu) {
@@ -84,7 +100,8 @@ void RemuTestSetUp(std::string path, GTestTickFunc tick_func,
   int32_t rv = gtest_loop->Init();
   ASSERT_EQ(rv, 0);
 
-  gtest_remu = std::make_shared<Remu>(gtest_loop, gtest_enable_pre_vote);
+  gtest_remu = std::make_shared<Remu>(gtest_loop, gtest_enable_pre_vote,
+                                      gtest_stable_leader);
   gtest_remu->tracer_cb = RemuLogState;
   gtest_remu->create_sm = create_sm;
 
