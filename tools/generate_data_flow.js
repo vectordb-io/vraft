@@ -39,6 +39,35 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
       const event = columns[4] + '-' + columns[5];
       console.log(addr, '->', addr + ':', event);
 
+
+    } else if (
+        eventType === 'event_other' && columns.length === 5 &&
+        columns[4] === 'enable-recv') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4];
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 5 &&
+        columns[4] === 'enable-send') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4];
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 5 &&
+        columns[4] === 'disable-recv') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4];
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 5 &&
+        columns[4] === 'disable-send') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4];
+      console.log(addr, '->', addr + ':', event);
+
     } else if (
         eventType === 'event_other' && columns.length === 6 &&
         columns[4] === 'leader-transfer') {

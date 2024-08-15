@@ -63,6 +63,16 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       timer_mgr_(rc.peers),
       send_(nullptr),
       make_timer_(nullptr),
+      tracer_cb_(nullptr),
+      create_sm_(nullptr),
+      create_reader_(nullptr),
+      create_writer_(nullptr),
+      enable_send_func_(nullptr),
+      disable_send_func_(nullptr),
+      enable_recv_func_(nullptr),
+      disable_recv_func_(nullptr),
+      enable_send_(true),
+      enable_recv_(true),
       print_screen_(false),
       enable_pre_vote_(false),
       leader_transfer_(false),
@@ -238,6 +248,86 @@ RaftTerm Raft::GetTerm(RaftIndex index) {
 
 RaftTerm Raft::Term() { return meta_.term(); }
 
+void Raft::DisableSend() {
+  enable_send_ = false;
+
+  if (disable_send_func_) {
+    disable_send_func_();
+
+    {
+      Tracer tracer(this, true, tracer_cb_);
+      tracer.PrepareState0();
+
+      char buf[128];
+      snprintf(buf, sizeof(buf), "%s disable-send", Me().ToString().c_str());
+      tracer.PrepareEvent(kEventOther, std::string(buf));
+
+      tracer.PrepareState1();
+      tracer.Finish();
+    }
+  }
+}
+
+void Raft::EnableSend() {
+  enable_send_ = true;
+
+  if (enable_send_func_) {
+    enable_send_func_();
+
+    {
+      Tracer tracer(this, true, tracer_cb_);
+      tracer.PrepareState0();
+
+      char buf[128];
+      snprintf(buf, sizeof(buf), "%s enable-send", Me().ToString().c_str());
+      tracer.PrepareEvent(kEventOther, std::string(buf));
+
+      tracer.PrepareState1();
+      tracer.Finish();
+    }
+  }
+}
+
+void Raft::DisableRecv() {
+  enable_recv_ = false;
+
+  if (disable_recv_func_) {
+    disable_recv_func_();
+
+    {
+      Tracer tracer(this, true, tracer_cb_);
+      tracer.PrepareState0();
+
+      char buf[128];
+      snprintf(buf, sizeof(buf), "%s disable-recv", Me().ToString().c_str());
+      tracer.PrepareEvent(kEventOther, std::string(buf));
+
+      tracer.PrepareState1();
+      tracer.Finish();
+    }
+  }
+}
+
+void Raft::EnableRecv() {
+  enable_recv_ = true;
+
+  if (enable_recv_func_) {
+    enable_recv_func_();
+
+    {
+      Tracer tracer(this, true, tracer_cb_);
+      tracer.PrepareState0();
+
+      char buf[128];
+      snprintf(buf, sizeof(buf), "%s enable-recv", Me().ToString().c_str());
+      tracer.PrepareEvent(kEventOther, std::string(buf));
+
+      tracer.PrepareState1();
+      tracer.Finish();
+    }
+  }
+}
+
 bool Raft::IfSelfVote() { return (meta_.vote() == Me().ToU64()); }
 
 void Raft::AppendNoop(Tracer *tracer) {
@@ -269,9 +359,9 @@ int32_t Raft::SendPing(uint64_t dest, Tracer *tracer) {
 
   if (send_) {
     header_str.append(std::move(body_str));
-    send_(dest, header_str.data(), header_str.size());
+    int32_t rv = send_(dest, header_str.data(), header_str.size());
 
-    if (tracer != nullptr) {
+    if (tracer != nullptr && rv == 0) {
       tracer->PrepareEvent(kEventSend, msg.ToJsonString(false, true));
     }
   }
@@ -347,7 +437,22 @@ std::string Raft::ToJsonString(bool tiny, bool one_line) {
   std::string state_str = std::string(StateToStr(state_));
   if (!started_) {
     state_str += "(x)";
+  } else {
+    std::string tmp_str;
+
+    if (enable_send_ && enable_recv_) {
+      tmp_str = "";
+    } else if (enable_send_ && !enable_recv_) {
+      tmp_str = "(rx)";
+    } else if (!enable_send_ && enable_recv_) {
+      tmp_str = "(sx)";
+    } else if (!enable_send_ && !enable_recv_) {
+      tmp_str += "(sx-rx)";
+    }
+
+    state_str += tmp_str;
   }
+
   j[config_mgr_.Current().me.ToString()][0] = state_str;
   if (tiny) {
     j[config_mgr_.Current().me.ToString()][1] = ToJsonTiny();

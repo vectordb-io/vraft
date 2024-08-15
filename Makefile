@@ -85,6 +85,7 @@ REMU_SM4_TEST_SRCS := src/test/remu_sm4_test.cc $(COMMON_SRCS)
 REMU_SM5_TEST_SRCS := src/test/remu_sm5_test.cc $(COMMON_SRCS)
 REMU_RESTART_TEST_SRCS := src/test/remu_restart_test.cc $(COMMON_SRCS)
 REMU_LEADERTRANSFER_TEST_SRCS := src/test/remu_leadertransfer_test.cc $(COMMON_SRCS)
+REMU_PRE_VOTE_TEST_SRCS := src/test/remu_pre_vote_test.cc $(COMMON_SRCS)
 HOSTPORT_TEST_SRCS := src/test/hostport_test.cc $(COMMON_SRCS)
 BUFFER_TEST_SRCS := src/test/buffer_test.cc $(COMMON_SRCS)
 EVENTLOOP_TEST_SRCS := src/test/eventloop_test.cc $(COMMON_SRCS)
@@ -170,6 +171,7 @@ REMU_SM4_TEST_OBJECTS := $(REMU_SM4_TEST_SRCS:.cc=.o)
 REMU_SM5_TEST_OBJECTS := $(REMU_SM5_TEST_SRCS:.cc=.o)
 REMU_RESTART_TEST_OBJECTS := $(REMU_RESTART_TEST_SRCS:.cc=.o)
 REMU_LEADERTRANSFER_TEST_OBJECTS := $(REMU_LEADERTRANSFER_TEST_SRCS:.cc=.o)
+REMU_PRE_VOTE_TEST_OBJECTS := $(REMU_PRE_VOTE_TEST_SRCS:.cc=.o)
 HOSTPORT_TEST_OBJECTS := $(HOSTPORT_TEST_SRCS:.cc=.o)
 BUFFER_TEST_OBJECTS := $(BUFFER_TEST_SRCS:.cc=.o)
 EVENTLOOP_TEST_OBJECTS := $(EVENTLOOP_TEST_SRCS:.cc=.o)
@@ -238,6 +240,7 @@ TEST += remu_sm4_test
 TEST += remu_sm5_test
 TEST += remu_restart_test
 TEST += remu_leadertransfer_test
+TEST += remu_pre_vote_test
 TEST += hostport_test
 TEST += buffer_test
 TEST += eventloop_test
@@ -423,6 +426,9 @@ remu_restart_test: $(REMU_RESTART_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_leadertransfer_test: $(REMU_LEADERTRANSFER_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_pre_vote_test: $(REMU_PRE_VOTE_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 hostport_test: $(HOSTPORT_TEST_OBJECTS)

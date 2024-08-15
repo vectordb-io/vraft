@@ -109,6 +109,11 @@ class Raft final {
   void set_create_sm(CreateSMFunc func);
   void set_reader_sm(CreateReaderFunc func);
   void set_writer_sm(CreateWriterFunc func);
+  void set_enable_send_func(Functor func);
+  void set_disable_send_func(Functor func);
+  void set_enable_recv_func(Functor func);
+  void set_disable_recv_func(Functor func);
+
   bool print_screen() const;
   void set_print_screen(bool print_screen);
   bool enable_pre_vote() const;
@@ -119,6 +124,13 @@ class Raft final {
   void set_pre_voting(bool pre_voting);
   StateMachineSPtr sm();
   RaftLog &log();
+  SolidData &meta();
+
+  // debug
+  void DisableSend();
+  void EnableSend();
+  void DisableRecv();
+  void EnableRecv();
 
  private:
   bool IfSelfVote();
@@ -176,6 +188,12 @@ class Raft final {
   CreateSMFunc create_sm_;
   CreateReaderFunc create_reader_;
   CreateWriterFunc create_writer_;
+  Functor enable_send_func_;
+  Functor disable_send_func_;
+  Functor enable_recv_func_;
+  Functor disable_recv_func_;
+  bool enable_send_;
+  bool enable_recv_;
 
   bool print_screen_;
   bool enable_pre_vote_;
@@ -212,6 +230,22 @@ inline void Raft::set_writer_sm(CreateWriterFunc func) {
   create_writer_ = func;
 }
 
+inline void Raft::set_enable_send_func(Functor func) {
+  enable_send_func_ = func;
+}
+
+inline void Raft::set_disable_send_func(Functor func) {
+  disable_send_func_ = func;
+}
+
+inline void Raft::set_enable_recv_func(Functor func) {
+  enable_recv_func_ = func;
+}
+
+inline void Raft::set_disable_recv_func(Functor func) {
+  disable_recv_func_ = func;
+}
+
 inline bool Raft::print_screen() const { return print_screen_; }
 
 inline void Raft::set_print_screen(bool print_screen) {
@@ -237,6 +271,8 @@ inline void Raft::set_pre_voting(bool pre_voting) { pre_voting_ = pre_voting; }
 inline StateMachineSPtr Raft::sm() { return sm_; }
 
 inline RaftLog &Raft::log() { return log_; }
+
+inline SolidData &Raft::meta() { return meta_; }
 
 }  // namespace vraft
 

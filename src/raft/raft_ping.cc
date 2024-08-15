@@ -38,8 +38,12 @@ int32_t Raft::OnPing(struct Ping &msg) {
 
     if (send_) {
       header_str.append(std::move(reply_str));
-      send_(reply.dest.ToU64(), header_str.data(), header_str.size());
-      tracer.PrepareEvent(kEventSend, reply.ToJsonString(false, true));
+      int32_t rv =
+          send_(reply.dest.ToU64(), header_str.data(), header_str.size());
+
+      if (rv == 0) {
+        tracer.PrepareEvent(kEventSend, reply.ToJsonString(false, true));
+      }
     }
 
     tracer.PrepareState1();

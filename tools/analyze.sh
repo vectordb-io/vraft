@@ -52,7 +52,7 @@ done < "$file_path"
 
 
 # 生成数据流图
-cat ${dir}/remu.log.sm | grep -E "event_send|event_timer|event_start|event_stop| propose-value| leader-transfer" | grep -v "heartbeat-timer" > ${dir}/temp/remu.log.sm.df.1
+cat ${dir}/remu.log.sm | grep -E "event_send|event_timer|event_start|event_stop| propose-value| leader-transfer| enable-recv| enable-send| disable-recv| disable-send" | grep -v "heartbeat-timer" > ${dir}/temp/remu.log.sm.df.1
 node generate_data_flow.js ${dir}/temp/remu.log.sm.df.1 > ${dir}/temp/remu.log.sm.df.2
 cat ${dir}/temp/remu.log.sm.df.2 | awk 'BEGIN{print "@startuml"}{print $0}END{print "@enduml"}' > ${dir}/remu.log.sm.puml
 cat /tmp/remu_test_dir/log/temp/remu.log.sm.df.2 | sh generate_message_file.sh | awk '{print $1, $2, $3}' > ${dir}/remu.log.sm.message

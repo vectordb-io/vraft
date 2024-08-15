@@ -7,7 +7,7 @@
 namespace vraft {
 
 RaftServer::RaftServer(EventLoopSPtr &loop, Config &config)
-    : config_(config), loop_(loop) {
+    : config_(config), loop_(loop), enable_send_(true), enable_recv_(true) {
   Init();
   vraft_logger.FInfo("raft-server construct, loop:%p, %s, %p",
                      loop->UvLoopPtr(), config.my_addr().ToString().c_str(),
@@ -55,7 +55,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnPing(msg);
+          if (enable_recv_) {
+            raft_->OnPing(msg);
+          }
           break;
         }
 
@@ -66,7 +68,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnPingReply(msg);
+          if (enable_recv_) {
+            raft_->OnPingReply(msg);
+          }
           break;
         }
 
@@ -77,7 +81,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnRequestVote(msg);
+          if (enable_recv_) {
+            raft_->OnRequestVote(msg);
+          }
           break;
         }
 
@@ -88,7 +94,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnRequestVoteReply(msg);
+          if (enable_recv_) {
+            raft_->OnRequestVoteReply(msg);
+          }
           break;
         }
 
@@ -99,7 +107,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnAppendEntries(msg);
+          if (enable_recv_) {
+            raft_->OnAppendEntries(msg);
+          }
           break;
         }
 
@@ -110,7 +120,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnAppendEntriesReply(msg);
+          if (enable_recv_) {
+            raft_->OnAppendEntriesReply(msg);
+          }
           break;
         }
 
@@ -121,7 +133,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnInstallSnapshot(msg);
+          if (enable_recv_) {
+            raft_->OnInstallSnapshot(msg);
+          }
           break;
         }
 
@@ -132,7 +146,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnInstallSnapshotReply(msg);
+          if (enable_recv_) {
+            raft_->OnInstallSnapshotReply(msg);
+          }
           break;
         }
 
@@ -143,7 +159,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           diff_ms = (recv_ns - msg.send_ts) / (1000 * 1000);
           msg.elapse = diff_ms;
           buf->Retrieve(body_bytes);
-          raft_->OnTimeoutNow(msg);
+          if (enable_recv_) {
+            raft_->OnTimeoutNow(msg);
+          }
           break;
         }
 
@@ -152,7 +170,9 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
           int32_t bytes = msg.FromString(buf->BeginRead(), body_bytes);
           assert(bytes > 0);
           buf->Retrieve(body_bytes);
-          raft_->OnClientRequest(msg, conn);
+          if (enable_recv_) {
+            raft_->OnClientRequest(msg, conn);
+          }
           break;
         }
 
@@ -193,6 +213,14 @@ void RaftServer::Init() {
                             std::placeholders::_2, std::placeholders::_3));
   raft_->set_make_timer(
       std::bind(&RaftServer::MakeTimer, this, std::placeholders::_1));
+
+  raft_->set_enable_send_func(std::bind(&RaftServer::EnableSend, this));
+  raft_->set_disable_send_func(std::bind(&RaftServer::DisableSend, this));
+  raft_->set_enable_recv_func(std::bind(&RaftServer::EnableRecv, this));
+  raft_->set_disable_recv_func(std::bind(&RaftServer::DisableRecv, this));
+  raft_->EnableSend();
+  raft_->EnableRecv();
+
   raft_->set_assert_loop(std::bind(&RaftServer::AssertInLoopThread, this));
 }
 
@@ -219,17 +247,25 @@ int32_t RaftServer::Stop() {
   return rv;
 }
 
+// return 0: ok
+// return -1: error
+// return -2: enable send
 int32_t RaftServer::Send(uint64_t dest_addr, const char *buf,
                          unsigned int size) {
-  int32_t rv = 0;
-  TcpClientSPtr client = GetClientOrCreate(dest_addr);
-  if (client) {
-    rv = client->CopySend(buf, size);
+  if (enable_send_) {
+    int32_t rv = 0;
+    TcpClientSPtr client = GetClientOrCreate(dest_addr);
+    if (client) {
+      rv = client->CopySend(buf, size);
+    } else {
+      rv = -1;
+      vraft_logger.FError("GetClientOrCreate error");
+    }
+    return rv;
+
   } else {
-    rv = -1;
-    vraft_logger.FError("GetClientOrCreate error");
+    return -2;
   }
-  return rv;
 }
 
 TimerSPtr RaftServer::MakeTimer(TimerParam &param) {
@@ -282,6 +318,26 @@ void RaftServer::AssertInLoopThread() {
   if (sptr) {
     sptr->AssertInLoopThread();
   }
+}
+
+void RaftServer::DisableSend() { set_enable_send(false); }
+
+void RaftServer::EnableSend() { set_enable_send(true); }
+
+void RaftServer::DisableRecv() { set_enable_recv(false); }
+
+void RaftServer::EnableRecv() { set_enable_recv(true); }
+
+bool RaftServer::enable_send() const { return enable_send_; }
+
+void RaftServer::set_enable_send(bool enable_send) {
+  enable_send_ = enable_send;
+}
+
+bool RaftServer::enable_recv() const { return enable_recv_; }
+
+void RaftServer::set_enable_recv(bool enable_recv) {
+  enable_recv_ = enable_recv;
 }
 
 }  // namespace vraft

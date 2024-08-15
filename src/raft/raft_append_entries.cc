@@ -399,9 +399,9 @@ int32_t Raft::SendAppendEntries(uint64_t dest, Tracer *tracer) {
 
   if (send_) {
     header_str.append(std::move(body_str));
-    send_(dest, header_str.data(), header_str.size());
+    int32_t rv = send_(dest, header_str.data(), header_str.size());
 
-    if (tracer != nullptr) {
+    if (tracer != nullptr && rv == 0) {
       tracer->PrepareEvent(kEventSend, msg.ToJsonString(false, true));
     }
   }
@@ -421,9 +421,9 @@ int32_t Raft::SendAppendEntriesReply(AppendEntriesReply &msg, Tracer *tracer) {
 
   if (send_) {
     header_str.append(std::move(body_str));
-    send_(msg.dest.ToU64(), header_str.data(), header_str.size());
+    int32_t rv = send_(msg.dest.ToU64(), header_str.data(), header_str.size());
 
-    if (tracer != nullptr) {
+    if (tracer != nullptr && rv == 0) {
       tracer->PrepareEvent(kEventSend, msg.ToJsonString(false, true));
     }
   }
