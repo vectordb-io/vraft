@@ -39,6 +39,26 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
       const event = columns[4] + '-' + columns[5];
       console.log(addr, '->', addr + ':', event);
 
+    } else if (
+        eventType === 'event_other' && columns.length === 6 &&
+        columns[4] === 'become-leader') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4] + '-' + columns[5];
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 6 &&
+        columns[4] === 'increase-term') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4] + '-' + columns[5];
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 6 &&
+        columns[4] === 'step-down') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4] + '-' + columns[5];
+      console.log(addr, '->', addr + ':', event);
 
     } else if (
         eventType === 'event_other' && columns.length === 5 &&

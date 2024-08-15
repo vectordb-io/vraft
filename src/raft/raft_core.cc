@@ -30,6 +30,9 @@ void Elect(Timer *timer) {
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
+  std::string str = r->Me().ToString() + std::string(" election-timer timeout");
+  tracer.PrepareEvent(kEventTimer, str);
+
   if (r->enable_pre_vote() && r->Peers().size() > 0) {
     r->set_pre_voting(true);
     r->DoPreVote(&tracer);
@@ -39,14 +42,23 @@ void Elect(Timer *timer) {
     r->DoRequestVote(&tracer);
   }
 
-  std::string str = r->Me().ToString() + std::string(" election-timer timeout");
-  tracer.PrepareEvent(kEventTimer, str);
   tracer.PrepareState1();
   tracer.Finish();
 }
 
 void Raft::DoRequestVote(Tracer *tracer) {
+  // increase term
+  RaftTerm old_term = meta_.term();
   meta_.IncrTerm();
+  RaftTerm new_term = meta_.term();
+
+  if (tracer) {
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s increase-term term:%lu_to_%lu",
+             Me().ToString().c_str(), old_term, new_term);
+    tracer->PrepareEvent(kEventOther, std::string(buf));
+  }
+
   state_ = STATE_CANDIDATE;
   leader_ = RaftAddr(0);
 
@@ -192,9 +204,10 @@ UpdateTerm(i, j, m) ==
 ********************************************************************************************/
 void Raft::StepDown(RaftTerm new_term, Tracer *tracer) {
   if (tracer != nullptr) {
+    RaftTerm old_term = meta_.term();
     char buf[128];
-    snprintf(buf, sizeof(buf), "step down, term %ld >= %ld", new_term,
-             meta_.term());
+    snprintf(buf, sizeof(buf), "%s step-down term:%lu_to_%lu",
+             Me().ToString().c_str(), old_term, new_term);
     tracer->PrepareEvent(kEventOther, std::string(buf));
   }
 
@@ -239,7 +252,10 @@ BecomeLeader(i) ==
 ********************************************************************************************/
 void Raft::BecomeLeader(Tracer *tracer) {
   if (tracer != nullptr) {
-    tracer->PrepareEvent(kEventOther, "become leader");
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s become-leader term:%lu",
+             Me().ToString().c_str(), meta_.term());
+    tracer->PrepareEvent(kEventOther, std::string(buf));
   }
 
   assert(state_ == STATE_CANDIDATE);
