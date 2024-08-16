@@ -331,6 +331,15 @@ void Raft::EnableRecv() {
   }
 }
 
+// for debug!!!
+int32_t Raft::StartElection() {
+  if (state_ == STATE_FOLLOWER) {
+    timer_mgr_.StartElection();
+    return 0;
+  }
+  return -1;
+}
+
 bool Raft::IfSelfVote() { return (meta_.vote() == Me().ToU64()); }
 
 void Raft::AppendNoop(Tracer *tracer) {

@@ -133,6 +133,7 @@ class Raft final {
   void EnableSend();
   void DisableRecv();
   void EnableRecv();
+  int32_t StartElection();  // for debug!!!
 
  private:
   bool IfSelfVote();
