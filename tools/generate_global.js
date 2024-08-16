@@ -320,6 +320,95 @@ rl.on('line', (line) => {
 
         // line 4
         {
+          writeStream.write('\t<tr>\n');
+
+          // apply
+          {
+            var apply = json_obj[raftid][1][0][2]['apply'];
+            if (last_ready &&
+                apply != last_json_objs[raftid][1][0][2]['apply']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"apply":' + apply);
+            writeStream.write(td_end_str);
+          }
+
+          // cmt
+          {
+            var cmt = json_obj[raftid][1][0][2]['cmt'];
+            if (last_ready && cmt != last_json_objs[raftid][1][0][2]['cmt']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"cmt":' + cmt);
+            writeStream.write(td_end_str);
+          }
+
+          // elect_ms
+          {
+            var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
+            writeStream.write(td_str);
+            writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
+            writeStream.write(td_end_str);
+          }
+
+          // leader
+          {
+            var leader = json_obj[raftid][1][0][2]['leader'];
+            if (last_ready &&
+                leader != last_json_objs[raftid][1][0][2]['leader']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"leader":' + leader);
+            writeStream.write(td_end_str);
+          }
+
+          // run
+          {
+            var run = json_obj[raftid][1][0][2]['run'];
+            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"run":' + run);
+            writeStream.write(td_end_str);
+          }
+
+          // run
+          {
+            var run = json_obj[raftid][1][0][2]['run'];
+            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"run":' + run);
+            writeStream.write(td_end_str);
+          }
+
+          // run
+          {
+            var run = json_obj[raftid][1][0][2]['run'];
+            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"run":' + run);
+            writeStream.write(td_end_str);
+          }
+
+          writeStream.write('\t</tr>\n');
+        }
+
+        // line 5
+        {
           if (Object.keys(json_obj[raftid][1][0]).length >= 4) {
             var peers = Object.keys(json_obj[raftid][1][0][3]);
             for (let i = 0; i < peers.length; i++) {
