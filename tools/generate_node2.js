@@ -32,8 +32,16 @@ var begin_json_obj = {}
 
 const td_str = '\t\t<td>';
 const td_change_str = '\t\t<td class="change">';
+
+const td2_str = '\t\t<td colspan="2">'
+const td2_change_str = '\t\t<td class="change" colspan="2">'
+
 const td3_str = '\t\t<td colspan="3">'
 const td3_change_str = '\t\t<td class="change" colspan="3">'
+
+const td5_str = '\t\t<td colspan="5">'
+const td5_change_str = '\t\t<td class="change" colspan="5">'
+
 const td_end_str = '</td>\n';
 
 rl.on('line', (line) => {
@@ -44,11 +52,14 @@ rl.on('line', (line) => {
     if (line != '') {
       writeStream.write('<table>\n');
 
-      writeStream.write('\t<tr>\n');
-      writeStream.write('\t\t<td class="table-title" colspan="5">');
-      writeStream.write(line);
-      writeStream.write('</td>\n');
-      writeStream.write('\t</tr>\n');
+      // table-title:
+      {
+        writeStream.write('\t<tr>\n');
+        writeStream.write('\t\t<td class="table-title" colspan="7">');
+        writeStream.write(line);
+        writeStream.write('</td>\n');
+        writeStream.write('\t</tr>\n');
+      }
 
       state = 'data';
     }
@@ -60,227 +71,337 @@ rl.on('line', (line) => {
       var event_name = parts[1];
 
       if (event_name == 'state_begin' || event_name == 'state_end') {
-        writeStream.write('\t<tr>\n');
-        writeStream.write('\t\t<td class="event" colspan="5">');
-        writeStream.write(event_name);
-        writeStream.write(td_end_str);
-        writeStream.write('\t</tr>\n');
+        // write begin/end
+        {
+          writeStream.write('\t<tr>\n');
+          writeStream.write('\t\t<td class="event" colspan="7">');
+          writeStream.write(event_name);
+          writeStream.write(td_end_str);
+          writeStream.write('\t</tr>\n');
+        }
 
         var json_str = parts[3];
         var json_obj = JSON.parse(json_str);
 
         // generate one node
-
-        // line 1
         {
-          writeStream.write('\t<tr>\n');
-
-          writeStream.write('\t\t<td class="node">');
-          var keys = Object.keys(json_obj);
-          raftid = keys[0];
-          writeStream.write(raftid)
-          writeStream.write(td_end_str);
+          // get raftid
+          raftid = Object.keys(json_obj)[0];
 
           // when begin, save
           if (event_name == 'state_begin') {
             begin_json_obj = json_obj;
           }
 
-          var raft_state = json_obj[raftid][0];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              raft_state != begin_json_obj[raftid][0]) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
+          // line 1
+          {
+            writeStream.write('\t<tr>\n');
+
+            // raftid
+            {
+              writeStream.write('\t\t<td class="node">');
+              writeStream.write(raftid)
+              writeStream.write(td_end_str);
+            }
+
+            // raft_state
+            {
+              var raft_state = json_obj[raftid][0];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  raft_state != begin_json_obj[raftid][0]) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write(raft_state)
+              writeStream.write(td_end_str);
+            }
+
+            // empty str
+            {
+              writeStream.write(td5_str);
+              writeStream.write('');
+              writeStream.write(td_end_str);
+            }
+
+            writeStream.write('\t</tr>\n');
           }
-          writeStream.write(raft_state)
-          writeStream.write(td_end_str);
 
-          writeStream.write(td_str);
-          var raft_ptr = json_obj[raftid][1][1];
-          writeStream.write(raft_ptr);
-          writeStream.write(td_end_str);
+          // line 2
+          {
+            writeStream.write('\t<tr>\n');
 
-          var pre_voting = json_obj[raftid][1][0][2]['pre-voting'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              pre_voting != begin_json_obj[raftid][1][0][2]['pre-voting']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
+            // term
+            {
+              var term = json_obj[raftid][1][0][0]['term'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  term != begin_json_obj[raftid][1][0][0]['term']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"term":' + term);
+              writeStream.write(td_end_str);
+            }
+
+            // vote
+            {
+              var vote = json_obj[raftid][1][0][0]['vote'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  vote != begin_json_obj[raftid][1][0][0]['vote']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"vote":' + vote);
+              writeStream.write(td_end_str);
+            }
+
+            // log
+            {
+              var log = json_obj[raftid][1][0][1]['log'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  JSON.stringify(log) !=
+                      JSON.stringify(begin_json_obj[raftid][1][0][1]['log'])) {
+                writeStream.write(td3_change_str);
+              } else {
+                writeStream.write(td3_str);
+              }
+
+              writeStream.write('"log":' + JSON.stringify(log));
+              writeStream.write(td_end_str);
+            }
+
+            // sm
+            {
+              var sm = json_obj[raftid][1][0][1]['sm'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  JSON.stringify(sm) !=
+                      JSON.stringify(begin_json_obj[raftid][1][0][1]['sm'])) {
+                writeStream.write(td2_change_str);
+              } else {
+                writeStream.write(td2_str);
+              }
+
+              writeStream.write('"sm":' + JSON.stringify(sm));
+              writeStream.write(td_end_str);
+            }
+
+            writeStream.write('\t</tr>\n');
           }
-          writeStream.write('"pre-voting":' + pre_voting);
-          writeStream.write(td_end_str);
 
-          var transfer = json_obj[raftid][1][0][2]['transfer'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              transfer != begin_json_obj[raftid][1][0][2]['transfer']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"transfer":' + transfer);
-          writeStream.write(td_end_str);
+          // line 3
+          {
+            writeStream.write('\t<tr>\n');
 
-          writeStream.write('\t</tr>\n');
-        }
+            // apply
+            {
+              var apply = json_obj[raftid][1][0][2]['apply'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  apply != begin_json_obj[raftid][1][0][2]['apply']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
 
-        // line 2
-        {
-          writeStream.write('\t<tr>\n');
+              writeStream.write('"apply":' + apply);
+              writeStream.write(td_end_str);
+            }
 
-          var term = json_obj[raftid][1][0][0]['term'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              term != begin_json_obj[raftid][1][0][0]['term']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"term":' + term);
-          writeStream.write(td_end_str);
+            // cmt
+            {
+              var cmt = json_obj[raftid][1][0][2]['cmt'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  cmt != begin_json_obj[raftid][1][0][2]['cmt']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
 
-          var vote = json_obj[raftid][1][0][0]['vote'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              vote != begin_json_obj[raftid][1][0][0]['vote']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"vote":' + vote);
-          writeStream.write(td_end_str);
+              writeStream.write('"cmt":' + cmt);
+              writeStream.write(td_end_str);
+            }
 
-          var log = json_obj[raftid][1][0][1]['log'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              JSON.stringify(log) !=
-                  JSON.stringify(begin_json_obj[raftid][1][0][1]['log'])) {
-            writeStream.write(td3_change_str);
-          } else {
-            writeStream.write(td3_str);
-          }
-          writeStream.write('"log":' + JSON.stringify(log));
-          writeStream.write(td_end_str);
+            // leader
+            {
+              var leader = json_obj[raftid][1][0][2]['leader'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  leader != begin_json_obj[raftid][1][0][2]['leader']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
 
-          writeStream.write('\t</tr>\n');
-        }
+              writeStream.write('"leader":' + leader);
+              writeStream.write(td_end_str);
+            }
 
-        // line 3
-        {
-          writeStream.write('\t<tr>\n');
-
-          var apply = json_obj[raftid][1][0][2]['apply'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              apply != begin_json_obj[raftid][1][0][2]['apply']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"apply":' + apply);
-          writeStream.write(td_end_str);
-
-          var cmt = json_obj[raftid][1][0][2]['cmt'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              cmt != begin_json_obj[raftid][1][0][2]['cmt']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"cmt":' + cmt);
-          writeStream.write(td_end_str);
-
-          var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
-          writeStream.write(td_str);
-          writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
-          writeStream.write(td_end_str);
-
-          var leader = json_obj[raftid][1][0][2]['leader'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              leader != begin_json_obj[raftid][1][0][2]['leader']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"leader":' + leader);
-          writeStream.write(td_end_str);
-
-          var run = json_obj[raftid][1][0][2]['run'];
-          if ((event_name == 'state_end') &&
-              (Object.keys(begin_json_obj).length != 0) &&
-              run != begin_json_obj[raftid][1][0][2]['run']) {
-            writeStream.write(td_change_str);
-          } else {
-            writeStream.write(td_str);
-          }
-          writeStream.write('"run":' + run);
-          writeStream.write(td_end_str);
-
-          writeStream.write('\t</tr>\n');
-        }
-
-        // line 4
-        {
-          if (Object.keys(json_obj[raftid][1][0]).length >= 4) {
-            var peers = Object.keys(json_obj[raftid][1][0][3]);
-            for (let i = 0; i < peers.length; i++) {
-              var peer = peers[i];
-              writeStream.write('\t<tr>\n');
-
+            // elect_ms
+            {
+              var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
               writeStream.write(td_str);
-              writeStream.write(peer);
+              writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
               writeStream.write(td_end_str);
+            }
 
-              var match = json_obj[raftid][1][0][3][peer][0]['match'];
+            // run
+            {
+              var run = json_obj[raftid][1][0][2]['run'];
               if ((event_name == 'state_end') &&
                   (Object.keys(begin_json_obj).length != 0) &&
-                  match != begin_json_obj[raftid][1][0][3][peer][0]['match']) {
+                  run != begin_json_obj[raftid][1][0][2]['run']) {
                 writeStream.write(td_change_str);
               } else {
                 writeStream.write(td_str);
               }
-              writeStream.write('"match":' + match);
-              writeStream.write(td_end_str);
 
-              var next = json_obj[raftid][1][0][3][peer][0]['next'];
+              writeStream.write('"run":' + run);
+              writeStream.write(td_end_str);
+            }
+
+            // print
+            {
+              var print = json_obj[raftid][1][0][2]['print'];
               if ((event_name == 'state_end') &&
                   (Object.keys(begin_json_obj).length != 0) &&
-                  next != begin_json_obj[raftid][1][0][3][peer][0]['next']) {
+                  print != begin_json_obj[raftid][1][0][2]['print']) {
                 writeStream.write(td_change_str);
               } else {
                 writeStream.write(td_str);
               }
-              writeStream.write('"next":' + next);
-              writeStream.write(td_end_str);
 
-              var done = json_obj[raftid][1][0][3][peer][1]['done'];
-              if ((event_name == 'state_end') &&
-                  (Object.keys(begin_json_obj).length != 0) &&
-                  done != begin_json_obj[raftid][1][0][3][peer][1]['done']) {
-                writeStream.write(td_change_str);
-              } else {
-                writeStream.write(td_str);
+              writeStream.write('"print":' + print);
+              writeStream.write(td_end_str);
+            }
+
+            // raft_ptr
+            {
+              writeStream.write(td5_str);
+              var raft_ptr = json_obj[raftid][1][1];
+              writeStream.write(raft_ptr);
+              writeStream.write(td_end_str);
+            }
+
+            writeStream.write('\t</tr>\n');
+          }
+
+          // line 4
+          {
+            if (Object.keys(json_obj[raftid][1][0]).length >= 4) {
+              var peers = Object.keys(json_obj[raftid][1][0][3]);
+              for (let i = 0; i < peers.length; i++) {
+                var peer = peers[i];
+                writeStream.write('\t<tr>\n');
+
+                // peer
+                {
+                  writeStream.write(td_str);
+                  writeStream.write(peer);
+                  writeStream.write(td_end_str);
+                }
+
+                // match
+                {
+                  var match = json_obj[raftid][1][0][3][peer][0]['match'];
+                  if ((event_name == 'state_end') &&
+                      (Object.keys(begin_json_obj).length != 0) &&
+                      match !=
+                          begin_json_obj[raftid][1][0][3][peer][0]['match']) {
+                    writeStream.write(td_change_str);
+                  } else {
+                    writeStream.write(td_str);
+                  }
+                  writeStream.write('"match":' + match);
+                  writeStream.write(td_end_str);
+                }
+
+                // next
+                {
+                  var next = json_obj[raftid][1][0][3][peer][0]['next'];
+                  if ((event_name == 'state_end') &&
+                      (Object.keys(begin_json_obj).length != 0) &&
+                      next !=
+                          begin_json_obj[raftid][1][0][3][peer][0]['next']) {
+                    writeStream.write(td_change_str);
+                  } else {
+                    writeStream.write(td_str);
+                  }
+                  writeStream.write('"next":' + next);
+                  writeStream.write(td_end_str);
+                }
+
+                // done
+                {
+                  var done = json_obj[raftid][1][0][3][peer][1]['done'];
+                  if ((event_name == 'state_end') &&
+                      (Object.keys(begin_json_obj).length != 0) &&
+                      done !=
+                          begin_json_obj[raftid][1][0][3][peer][1]['done']) {
+                    writeStream.write(td_change_str);
+                  } else {
+                    writeStream.write(td_str);
+                  }
+                  writeStream.write('"done":' + done);
+                  writeStream.write(td_end_str);
+                }
+
+                // grant
+                {
+                  var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
+                  if ((event_name == 'state_end') &&
+                      (Object.keys(begin_json_obj).length != 0) &&
+                      grant !=
+                          begin_json_obj[raftid][1][0][3][peer][1]['grant']) {
+                    writeStream.write(td_change_str);
+                  } else {
+                    writeStream.write(td_str);
+                  }
+                  writeStream.write('"grant":' + grant);
+                  writeStream.write(td_end_str);
+                }
+
+                // logok
+                {
+                  var logok = json_obj[raftid][1][0][3][peer][1]['logok'];
+                  if ((event_name == 'state_end') &&
+                      (Object.keys(begin_json_obj).length != 0) &&
+                      logok !=
+                          begin_json_obj[raftid][1][0][3][peer][1]['logok']) {
+                    writeStream.write(td_change_str);
+                  } else {
+                    writeStream.write(td_str);
+                  }
+                  writeStream.write('"logok":' + logok);
+                  writeStream.write(td_end_str);
+                }
+
+                // iok
+                {
+                  var iok = json_obj[raftid][1][0][3][peer][1]['iok'];
+                  if ((event_name == 'state_end') &&
+                      (Object.keys(begin_json_obj).length != 0) &&
+                      iok != begin_json_obj[raftid][1][0][3][peer][1]['iok']) {
+                    writeStream.write(td_change_str);
+                  } else {
+                    writeStream.write(td_str);
+                  }
+                  writeStream.write('"iok":' + iok);
+                  writeStream.write(td_end_str);
+                }
+
+                writeStream.write('\t</tr>\n');
               }
-              writeStream.write('"done":' + done);
-              writeStream.write(td_end_str);
-
-              var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
-              if ((event_name == 'state_end') &&
-                  (Object.keys(begin_json_obj).length != 0) &&
-                  grant != begin_json_obj[raftid][1][0][3][peer][1]['grant']) {
-                writeStream.write(td_change_str);
-              } else {
-                writeStream.write(td_str);
-              }
-              writeStream.write('"grant":' + grant);
-              writeStream.write(td_end_str);
-
-              writeStream.write('\t</tr>\n');
             }
           }
         }
@@ -294,7 +415,7 @@ rl.on('line', (line) => {
         writeStream.write(event_name);
         writeStream.write(td_end_str);
 
-        writeStream.write('\t\t<td class="event" colspan="4">');
+        writeStream.write('\t\t<td class="event" colspan="7">');
         writeStream.write(event_desc);
         writeStream.write(td_end_str);
         writeStream.write('\t</tr>\n');

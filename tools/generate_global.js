@@ -35,11 +35,11 @@ var last_ready = false;
 const td_str = '\t\t<td>';
 const td_change_str = '\t\t<td class="change">';
 
-const td3_str = '\t\t<td colspan="3">'
-const td3_change_str = '\t\t<td class="change" colspan="3">'
-
 const td2_str = '\t\t<td colspan="2">'
 const td2_change_str = '\t\t<td class="change" colspan="2">'
+
+const td3_str = '\t\t<td colspan="3">'
+const td3_change_str = '\t\t<td class="change" colspan="3">'
 
 const td5_str = '\t\t<td colspan="5">'
 const td5_change_str = '\t\t<td class="change" colspan="5">'
@@ -116,7 +116,7 @@ rl.on('line', (line) => {
           // empty str
           {
             writeStream.write(td5_str);
-            writeStream.write("");
+            writeStream.write('');
             writeStream.write(td_end_str);
           }
 
