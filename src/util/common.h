@@ -10,6 +10,8 @@ namespace vraft {
 
 #define MAX_QUEUE_SIZE (4096)
 
+#define MAX_TRANSFER_TERM 3
+
 #define JSON_TAB 2
 
 #define SNAPSHOT_MAX_READ 10

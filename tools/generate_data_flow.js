@@ -120,8 +120,10 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
         if (firstKey === 'request-vote' || firstKey === 'pre-request-vote') {
           const last = jsonObj[firstKey][1]['last'];
           const last_term = jsonObj[firstKey][1]['last-term'];
+          const leader_transfer = jsonObj[firstKey][1]['leader-transfer'];
           msg_str += '_last:' + last;
           msg_str += '_ltm:' + last_term;
+          msg_str += '_transfer:' + leader_transfer;
 
         } else if (
             firstKey === 'request-vote-reply' ||
