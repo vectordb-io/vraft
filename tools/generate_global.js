@@ -476,31 +476,30 @@ rl.on('line', (line) => {
                 writeStream.write(td_end_str);
               }
 
-              // grant
+              // logok
               {
-                var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
+                var logok = json_obj[raftid][1][0][3][peer][1]['logok'];
                 if (last_ready &&
-                    grant !=
-                        last_json_objs[raftid][1][0][3][peer][1]['grant']) {
+                    logok !=
+                        last_json_objs[raftid][1][0][3][peer][1]['logok']) {
                   writeStream.write(td_change_str);
                 } else {
                   writeStream.write(td_str);
                 }
-                writeStream.write('"grant":' + grant);
+                writeStream.write('"logok":' + logok);
                 writeStream.write(td_end_str);
               }
 
-              // grant
+              // iok
               {
-                var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
+                var iok = json_obj[raftid][1][0][3][peer][1]['iok'];
                 if (last_ready &&
-                    grant !=
-                        last_json_objs[raftid][1][0][3][peer][1]['grant']) {
+                    iok != last_json_objs[raftid][1][0][3][peer][1]['iok']) {
                   writeStream.write(td_change_str);
                 } else {
                   writeStream.write(td_str);
                 }
-                writeStream.write('"grant":' + grant);
+                writeStream.write('"iok":' + iok);
                 writeStream.write(td_end_str);
               }
 
