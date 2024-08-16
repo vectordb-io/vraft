@@ -122,8 +122,6 @@ rl.on('line', (line) => {
         writeStream.write('"transfer":' + transfer);
         writeStream.write(td_end_str);
 
-
-
         writeStream.write('\t</tr>\n');
 
         // line 2
@@ -191,15 +189,6 @@ rl.on('line', (line) => {
         writeStream.write(td_end_str);
 
         var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
-        /*
-                if ((event_name == "state_end") &&
-           (Object.keys(begin_json_obj).length != 0) && elect_ms !=
-           begin_json_obj[raftid][1][0][2]["elect_ms"]) {
-                    writeStream.write(td_change_str);
-                } else {
-                    writeStream.write(td_str);
-                }
-        */
         writeStream.write(td_str);
         writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
         writeStream.write(td_end_str);
