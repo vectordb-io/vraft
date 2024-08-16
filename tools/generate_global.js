@@ -41,6 +41,9 @@ const td3_change_str = '\t\t<td class="change" colspan="3">'
 const td2_str = '\t\t<td colspan="2">'
 const td2_change_str = '\t\t<td class="change" colspan="2">'
 
+const td5_str = '\t\t<td colspan="5">'
+const td5_change_str = '\t\t<td class="change" colspan="5">'
+
 const td_end_str = '</td>\n';
 
 rl.on('line', (line) => {
@@ -112,61 +115,9 @@ rl.on('line', (line) => {
 
           // raft_ptr
           {
-            writeStream.write(td_str);
+            writeStream.write(td5_str);
             var raft_ptr = json_obj[raftid][1][1];
             writeStream.write(raft_ptr);
-            writeStream.write(td_end_str);
-          }
-
-          // pre_voting
-          {
-            var pre_voting = json_obj[raftid][1][0][2]['pre-voting'];
-            if (last_ready &&
-                pre_voting != last_json_objs[raftid][1][0][2]['pre-voting']) {
-              writeStream.write(td_change_str);
-            } else {
-              writeStream.write(td_str);
-            }
-            writeStream.write('"pre-voting":' + pre_voting);
-            writeStream.write(td_end_str);
-          }
-
-          // transfer
-          {
-            var transfer = json_obj[raftid][1][0][2]['transfer'];
-            if (last_ready &&
-                transfer != last_json_objs[raftid][1][0][2]['transfer']) {
-              writeStream.write(td_change_str);
-            } else {
-              writeStream.write(td_str);
-            }
-            writeStream.write('"transfer":' + transfer);
-            writeStream.write(td_end_str);
-          }
-
-          // transfer
-          {
-            var transfer = json_obj[raftid][1][0][2]['transfer'];
-            if (last_ready &&
-                transfer != last_json_objs[raftid][1][0][2]['transfer']) {
-              writeStream.write(td_change_str);
-            } else {
-              writeStream.write(td_str);
-            }
-            writeStream.write('"transfer":' + transfer);
-            writeStream.write(td_end_str);
-          }
-
-          // transfer
-          {
-            var transfer = json_obj[raftid][1][0][2]['transfer'];
-            if (last_ready &&
-                transfer != last_json_objs[raftid][1][0][2]['transfer']) {
-              writeStream.write(td_change_str);
-            } else {
-              writeStream.write(td_str);
-            }
-            writeStream.write('"transfer":' + transfer);
             writeStream.write(td_end_str);
           }
 
