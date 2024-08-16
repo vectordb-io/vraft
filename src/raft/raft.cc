@@ -77,7 +77,7 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       enable_pre_vote_(false),
       pre_voting_(false),
       leader_transfer_(false),
-      transfer_max_term_(0),      
+      transfer_max_term_(0),
       interval_check_(true),
       last_heartbeat_timestamp_(0) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
@@ -431,7 +431,6 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["tsf-max-term"] = transfer_max_term_;
   j[0][2]["interval-chk"] = interval_check_;
   j[0][2]["last-hbts"] = NsToString2(last_heartbeat_timestamp_);
-  
 
   for (auto dest : config_mgr_.Current().peers) {
     std::string key;
