@@ -240,7 +240,7 @@ std::string NsToString2(uint64_t ns) {
 
   // Stringstream to format strings with leading zeros & concatenation
   std::ostringstream ss;
-  ss << std::put_time(&tm, "%Y:%m:%d-%H:%M:%S")
+  ss << std::put_time(&tm, "%Y-%m-%d-%H-%M-%S")
      << "-";  // format and add date and time up to seconds
   ss << std::setw(9) << std::setfill('0')
      << leftover_ns;  // format nanoseconds with padding

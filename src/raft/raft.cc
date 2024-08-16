@@ -425,8 +425,12 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["elect_ms"][1] = timer_mgr_.next_election_ms();
   j[0][2]["print"] = print_screen_;
   j[0][2]["pre-vote"] = enable_pre_vote_;
-  j[0][2]["transfer"] = leader_transfer_;
   j[0][2]["pre-voting"] = pre_voting_;
+  j[0][2]["transfer"] = leader_transfer_;
+  j[0][2]["transfer-max-term"] = transfer_max_term_;
+  j[0][2]["stable-leader"] = stable_leader_;
+  j[0][2]["last-hbts"] = NsToString2(last_heartbeat_timestamp_);
+  
 
   for (auto dest : config_mgr_.Current().peers) {
     std::string key;
