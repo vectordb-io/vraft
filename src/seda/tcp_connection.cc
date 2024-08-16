@@ -23,13 +23,18 @@ void TcpConnectionHandleRead(UvStream *client, ssize_t nread,
 
     // FIX ME!! coredump
     // ./output/test/remu_sm5_test --enable-pre-vote
-    if (nread < 1024) {
-      vraft_logger.FDebug("recv data:%s",
-                          StrToHexStr(buf->base, nread).c_str());
-    } else {
-      vraft_logger.FDebug("recv data:%s ...",
-                          StrToHexStr(buf->base, 1024).c_str());
+    {
+      int32_t print_bytes = nread;
+      std::string end_str = "";
+      if (print_bytes > MAX_DEBUG_LEN) {
+        print_bytes = MAX_DEBUG_LEN;
+        end_str = " ...";
+      }
+      vraft_logger.FDebug("recv data:%s%s",
+                          StrToHexStr(buf->base, print_bytes).c_str(),
+                          end_str.c_str());
     }
+
     conn->OnMessage(buf->base, nread);
 
   } else {

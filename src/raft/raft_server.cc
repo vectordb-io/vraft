@@ -29,9 +29,18 @@ void RaftServer::OnMessage(const vraft::TcpConnectionSPtr &conn,
   uint64_t diff_ms = 0;
   vraft_logger.FTrace("raft-server recv msg, readable-bytes:%d",
                       buf->ReadableBytes());
-  int32_t print_bytes = buf->ReadableBytes() > 100 ? 100 : buf->ReadableBytes();
-  vraft_logger.FDebug("recv buf data:%s",
-                      StrToHexStr(buf->BeginRead(), print_bytes).c_str());
+
+  {
+    int32_t print_bytes = buf->ReadableBytes();
+    std::string end_str = "";
+    if (print_bytes > MAX_DEBUG_LEN) {
+      print_bytes = MAX_DEBUG_LEN;
+      end_str = " ...";
+    }
+    vraft_logger.FDebug("recv buf data:%s%s",
+                        StrToHexStr(buf->BeginRead(), print_bytes).c_str(),
+                        end_str.c_str());
+  }
 
   while (buf->ReadableBytes() >= static_cast<int32_t>(sizeof(MsgHeader))) {
     int32_t body_bytes = buf->PeekInt32();
