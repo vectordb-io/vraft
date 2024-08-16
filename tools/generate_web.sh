@@ -36,4 +36,4 @@ done
 node generate_message_flow.js ${dir}/log/remu.log.sm.message > ${dir}/remu_web/message_flow.html
 
 plantuml -tsvg ${dir}/log/remu.log.sm.puml
-cp ${dir}/log/remu.log.sm.puml/${dir}/remu_web
+cp ${dir}/log/remu.log.sm.svg ${dir}/remu_web
