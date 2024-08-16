@@ -75,9 +75,9 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       enable_recv_(true),
       print_screen_(false),
       enable_pre_vote_(false),
-      leader_transfer_(false),
-      transfer_max_term_(0),
       pre_voting_(false),
+      leader_transfer_(false),
+      transfer_max_term_(0),      
       interval_check_(true),
       last_heartbeat_timestamp_(0) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
@@ -392,9 +392,10 @@ nlohmann::json Raft::ToJson() {
   j["state"] = std::string(StateToStr(state_));
   j["print"] = print_screen_;
   j["pre-vote"] = enable_pre_vote_;
-  j["transfer"] = leader_transfer_;
   j["pre-voting"] = pre_voting_;
-  j["interval-check"] = interval_check_;
+  j["transfer"] = leader_transfer_;
+  j["tsf-max-term"] = transfer_max_term_;
+  j["interval-chk"] = interval_check_;
   j["run"] = started_;
   if (leader_.ToU64() == 0) {
     j["leader"] = 0;
@@ -421,8 +422,8 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["cmt"] = commit_;
   j[0][2]["leader"] = leader_.ToString();
   j[0][2]["run"] = started_;
-  j[0][2]["elect_ms"][0] = timer_mgr_.last_election_ms();
-  j[0][2]["elect_ms"][1] = timer_mgr_.next_election_ms();
+  j[0][2]["elect-ms"][0] = timer_mgr_.last_election_ms();
+  j[0][2]["elect-ms"][1] = timer_mgr_.next_election_ms();
   j[0][2]["print"] = print_screen_;
   j[0][2]["pre-vote"] = enable_pre_vote_;
   j[0][2]["pre-voting"] = pre_voting_;

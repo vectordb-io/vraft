@@ -201,9 +201,9 @@ class Raft final {
 
   bool print_screen_;
   bool enable_pre_vote_;
+  bool pre_voting_;
   bool leader_transfer_;
   RaftTerm transfer_max_term_;
-  bool pre_voting_;
   bool interval_check_;
   int64_t last_heartbeat_timestamp_;
 
