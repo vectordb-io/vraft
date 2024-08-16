@@ -20,7 +20,16 @@ void TcpConnectionHandleRead(UvStream *client, ssize_t nread,
     uint32_t u32 = Crc32(buf->base, nread);
     vraft_logger.FTrace("recv data, handle:%p, nread:%d, check:%X", client,
                         nread, u32);
-    vraft_logger.FDebug("recv data:%s", StrToHexStr(buf->base, nread).c_str());
+
+    // FIX ME!! coredump
+    // ./output/test/remu_sm5_test --enable-pre-vote
+    if (nread < 1024) {
+      vraft_logger.FDebug("recv data:%s",
+                          StrToHexStr(buf->base, nread).c_str());
+    } else {
+      vraft_logger.FDebug("recv data:%s ...",
+                          StrToHexStr(buf->base, 1024).c_str());
+    }
     conn->OnMessage(buf->base, nread);
 
   } else {

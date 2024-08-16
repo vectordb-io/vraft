@@ -5,8 +5,8 @@
 #include <memory>
 
 #include "common.h"
-#include "raft_addr.h"
 #include "nlohmann/json.hpp"
+#include "raft_addr.h"
 
 namespace vraft {
 

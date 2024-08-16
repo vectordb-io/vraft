@@ -447,14 +447,14 @@ nlohmann::json TestSM::ToJson() {
   return j;
 }
 
-nlohmann::json TestSM::ToJsonTiny() { 
+nlohmann::json TestSM::ToJsonTiny() {
   nlohmann::json j;
   j["apl-cnt"] = apply_count_;
   j["chk"] = U32ToHexStr(check_sum_);
   j["lst"] = LastIndex();
   j["ltm"] = LastTerm();
   return j;
- }
+}
 
 std::string TestSM::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;
