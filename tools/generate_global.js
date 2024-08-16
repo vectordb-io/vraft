@@ -36,6 +36,8 @@ const td_str = '\t\t<td>';
 const td_change_str = '\t\t<td class="change">';
 const td3_str = '\t\t<td colspan="3">'
 const td3_change_str = '\t\t<td class="change" colspan="3">'
+const td2_str = '\t\t<td colspan="2">'
+const td2_change_str = '\t\t<td class="change" colspan="2">'
 const td_end_str = '</td>\n';
 
 rl.on('line', (line) => {
@@ -50,7 +52,7 @@ rl.on('line', (line) => {
       // 0x17EC1C09C1413490 global-state: 2024:08:16 12:46:25 599796442
       {
         writeStream.write('\t<tr>\n');
-        writeStream.write('\t\t<td class="table-title" colspan="5">');
+        writeStream.write('\t\t<td class="table-title" colspan="7">');
         writeStream.write(line);
         writeStream.write('</td>\n');
         writeStream.write('\t</tr>\n');
@@ -59,7 +61,7 @@ rl.on('line', (line) => {
       // split row, same as footer
       {
         writeStream.write('\t<tr>\n');
-        writeStream.write('\t\t<td class="split" colspan="5">');
+        writeStream.write('\t\t<td class="split" colspan="7">');
         writeStream.write('</td>\n');
         writeStream.write('\t</tr>\n');
       }
@@ -139,6 +141,32 @@ rl.on('line', (line) => {
             writeStream.write(td_end_str);
           }
 
+          // transfer
+          {
+            var transfer = json_obj[raftid][1][0][2]['transfer'];
+            if (last_ready &&
+                transfer != last_json_objs[raftid][1][0][2]['transfer']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"transfer":' + transfer);
+            writeStream.write(td_end_str);
+          }
+
+          // transfer
+          {
+            var transfer = json_obj[raftid][1][0][2]['transfer'];
+            if (last_ready &&
+                transfer != last_json_objs[raftid][1][0][2]['transfer']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"transfer":' + transfer);
+            writeStream.write(td_end_str);
+          }
+
           writeStream.write('\t</tr>\n');
         }
 
@@ -179,6 +207,20 @@ rl.on('line', (line) => {
               writeStream.write(td3_change_str);
             } else {
               writeStream.write(td3_str);
+            }
+            writeStream.write('"log":' + JSON.stringify(log));
+            writeStream.write(td_end_str);
+          }
+
+          // log
+          {
+            var log = json_obj[raftid][1][0][1]['log'];
+            if (last_ready &&
+                JSON.stringify(log) !=
+                    JSON.stringify(last_json_objs[raftid][1][0][1]['log'])) {
+              writeStream.write(td2_change_str);
+            } else {
+              writeStream.write(td2_str);
             }
             writeStream.write('"log":' + JSON.stringify(log));
             writeStream.write(td_end_str);
@@ -234,6 +276,30 @@ rl.on('line', (line) => {
               writeStream.write(td_str);
             }
             writeStream.write('"leader":' + leader);
+            writeStream.write(td_end_str);
+          }
+
+          // run
+          {
+            var run = json_obj[raftid][1][0][2]['run'];
+            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"run":' + run);
+            writeStream.write(td_end_str);
+          }
+
+          // run
+          {
+            var run = json_obj[raftid][1][0][2]['run'];
+            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+              writeStream.write(td_change_str);
+            } else {
+              writeStream.write(td_str);
+            }
+            writeStream.write('"run":' + run);
             writeStream.write(td_end_str);
           }
 
@@ -321,6 +387,34 @@ rl.on('line', (line) => {
                 writeStream.write(td_end_str);
               }
 
+              // grant
+              {
+                var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
+                if (last_ready &&
+                    grant !=
+                        last_json_objs[raftid][1][0][3][peer][1]['grant']) {
+                  writeStream.write(td_change_str);
+                } else {
+                  writeStream.write(td_str);
+                }
+                writeStream.write('"grant":' + grant);
+                writeStream.write(td_end_str);
+              }
+
+              // grant
+              {
+                var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
+                if (last_ready &&
+                    grant !=
+                        last_json_objs[raftid][1][0][3][peer][1]['grant']) {
+                  writeStream.write(td_change_str);
+                } else {
+                  writeStream.write(td_str);
+                }
+                writeStream.write('"grant":' + grant);
+                writeStream.write(td_end_str);
+              }
+
               writeStream.write('\t</tr>\n');
             }
           }
@@ -329,7 +423,7 @@ rl.on('line', (line) => {
         // footer
         {
           writeStream.write('\t<tr>\n');
-          writeStream.write('\t\t<td class="split" colspan="5">');
+          writeStream.write('\t\t<td class="split" colspan="7">');
           writeStream.write('</td>\n');
           writeStream.write('\t</tr>\n');
         }
