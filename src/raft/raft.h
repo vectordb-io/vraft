@@ -142,6 +142,7 @@ class Raft final {
   void AppendNoop(Tracer *tracer);
   void MaybeCommit(Tracer *tracer);
   void BecomeLeader(Tracer *tracer);
+  void BecomeCandidate(Tracer *tracer);
   void StateMachineApply(Tracer *tracer);
   void StepDown(RaftTerm new_term, Tracer *tracer);
 

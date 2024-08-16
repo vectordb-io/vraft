@@ -172,7 +172,7 @@ int32_t Raft::OnRequestVoteReply(struct RequestVoteReply &msg) {
     } else {  // process
       assert(msg.term == meta_.term());
 
-      if (!msg.pre_vote) {
+      if (!msg.pre_vote) {  // real vote
         // get response
         vote_mgr_.Done(msg.src.ToU64());
 
@@ -188,15 +188,23 @@ int32_t Raft::OnRequestVoteReply(struct RequestVoteReply &msg) {
           }
         }
 
-      } else {
+      } else {  // pre-vote
         // close rpc timer
         timer_mgr_.StopRequestVote(msg.src.ToU64());
 
+        // set log ok
         if (msg.log_ok) {
-          // set log ok
           vote_mgr_.LogOK(msg.src.ToU64());
+        }
 
-          if (vote_mgr_.MajorityLogOK(true) && state_ == STATE_CANDIDATE &&
+        // set interval ok
+        if (msg.interval_ok) {
+          vote_mgr_.IntervalOK(msg.src.ToU64());
+        }
+
+        // check pre-vote ok
+        if (msg.log_ok) {
+          if (vote_mgr_.MajorityPreVoteOK(true) && state_ == STATE_CANDIDATE &&
               pre_voting_) {
             // clear pre-voting flag
             pre_voting_ = false;

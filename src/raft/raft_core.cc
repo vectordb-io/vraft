@@ -59,11 +59,8 @@ void Raft::DoRequestVote(Tracer *tracer) {
     tracer->PrepareEvent(kEventOther, std::string(buf));
   }
 
-  state_ = STATE_CANDIDATE;
-  leader_ = RaftAddr(0);
-
-  // reset candidate state, vote-manager
-  vote_mgr_.Clear();
+  // become candidate
+  BecomeCandidate(tracer);
 
   // vote for myself
   meta_.SetVote(Me().ToU64());
@@ -82,11 +79,8 @@ void Raft::DoRequestVote(Tracer *tracer) {
 }
 
 void Raft::DoPreVote(Tracer *tracer) {
-  state_ = STATE_CANDIDATE;
-  leader_ = RaftAddr(0);
-
-  // reset candidate state, vote-manager
-  vote_mgr_.Clear();
+  // become candidate
+  BecomeCandidate(tracer);
 
   // start request-vote
   timer_mgr_.StartRequestVote();
@@ -203,13 +197,7 @@ UpdateTerm(i, j, m) ==
     /\ UNCHANGED <<messages, candidateVars, leaderVars, logVars>>
 ********************************************************************************************/
 void Raft::StepDown(RaftTerm new_term, Tracer *tracer) {
-  if (tracer != nullptr) {
-    RaftTerm old_term = meta_.term();
-    char buf[128];
-    snprintf(buf, sizeof(buf), "%s step-down term:%lu_to_%lu",
-             Me().ToString().c_str(), old_term, new_term);
-    tracer->PrepareEvent(kEventOther, std::string(buf));
-  }
+  State old_state = state_;
 
   assert(meta_.term() <= new_term);
   if (meta_.term() < new_term) {  // larger term
@@ -234,6 +222,15 @@ void Raft::StepDown(RaftTerm new_term, Tracer *tracer) {
   if (last_heartbeat_timestamp_ == INT64_MAX) {
     last_heartbeat_timestamp_ = 0;
   }
+
+  if (tracer != nullptr) {
+    RaftTerm old_term = meta_.term();
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s step-down term:%lu_to_%lu %s_to_%s",
+             Me().ToString().c_str(), old_term, new_term, StateToStr(old_state),
+             StateToStr(state_));
+    tracer->PrepareEvent(kEventOther, std::string(buf));
+  }
 }
 
 /********************************************************************************************
@@ -255,12 +252,7 @@ BecomeLeader(i) ==
     /\ UNCHANGED <<messages, currentTerm, votedFor, candidateVars, logVars>>
 ********************************************************************************************/
 void Raft::BecomeLeader(Tracer *tracer) {
-  if (tracer != nullptr) {
-    char buf[128];
-    snprintf(buf, sizeof(buf), "%s become-leader term:%lu",
-             Me().ToString().c_str(), meta_.term());
-    tracer->PrepareEvent(kEventOther, std::string(buf));
-  }
+  State old_state = state_;
 
   leader_transfer_ = false;
 
@@ -282,8 +274,34 @@ void Raft::BecomeLeader(Tracer *tracer) {
   // start heartbeat timer
   timer_mgr_.StartHeartBeat();
 
+  if (tracer != nullptr) {
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s become-leader term:%lu %s_to_%s",
+             Me().ToString().c_str(), meta_.term(), StateToStr(old_state),
+             StateToStr(state_));
+    tracer->PrepareEvent(kEventOther, std::string(buf));
+  }
+
   // append noop
   AppendNoop(tracer);
+}
+
+void Raft::BecomeCandidate(Tracer *tracer) {
+  State old_state = state_;
+
+  state_ = STATE_CANDIDATE;
+  leader_ = RaftAddr(0);
+
+  // reset candidate state, vote-manager
+  vote_mgr_.Clear();
+
+  if (tracer != nullptr) {
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s become-candidate term:%lu %s_to_%s",
+             Me().ToString().c_str(), meta_.term(), StateToStr(old_state),
+             StateToStr(state_));
+    tracer->PrepareEvent(kEventOther, std::string(buf));
+  }
 }
 
 /********************************************************************************************

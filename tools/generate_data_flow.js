@@ -40,10 +40,17 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
       console.log(addr, '->', addr + ':', event);
 
     } else if (
-        eventType === 'event_other' && columns.length === 6 &&
+        eventType === 'event_other' && columns.length === 7 &&
         columns[4] === 'become-leader') {
       const addr = columns[3].replace(/[:#]/g, '_');
-      const event = columns[4] + '-' + columns[5];
+      const event = columns[4] + '-' + columns[5] + '-' + columns[6];
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 7 &&
+        columns[4] === 'become-candidate') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4] + '-' + columns[5] + '-' + columns[6];
       console.log(addr, '->', addr + ':', event);
 
     } else if (
@@ -54,10 +61,10 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
       console.log(addr, '->', addr + ':', event);
 
     } else if (
-        eventType === 'event_other' && columns.length === 6 &&
+        eventType === 'event_other' && columns.length === 7 &&
         columns[4] === 'step-down') {
       const addr = columns[3].replace(/[:#]/g, '_');
-      const event = columns[4] + '-' + columns[5];
+      const event = columns[4] + '-' + columns[5] + '-' + columns[6];
       console.log(addr, '->', addr + ':', event);
 
     } else if (
@@ -130,8 +137,10 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
             firstKey === 'pre-request-vote-reply') {
           const grant = jsonObj[firstKey][1]['grant'];
           const log_ok = jsonObj[firstKey][1]['log-ok'];
+          const interval_ok = jsonObj[firstKey][1]['interval-ok'];
           msg_str += '_grant:' + grant;
           msg_str += '_logok:' + log_ok;
+          msg_str += '_interval-ok:' + interval_ok;
 
         } else if (firstKey === 'append-entries') {
           const commit = jsonObj[firstKey][1]['commit'];
