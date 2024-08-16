@@ -59,7 +59,7 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
         ((msg.last_log_term > last_term) ||
          (msg.last_log_term == last_term && msg.last_log_index >= last_index));
 
-    if (stable_leader_) {
+    if (interval_check_) {
       if (!msg.leader_transfer) {
         bool interval_ok = (Clock::NSec() - last_heartbeat_timestamp_ >=
                             timer_mgr_.election_ms() * 1000 * 1000);

@@ -78,7 +78,7 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       leader_transfer_(false),
       transfer_max_term_(0),
       pre_voting_(false),
-      stable_leader_(true),
+      interval_check_(true),
       last_heartbeat_timestamp_(0) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
 }
@@ -394,7 +394,7 @@ nlohmann::json Raft::ToJson() {
   j["pre-vote"] = enable_pre_vote_;
   j["transfer"] = leader_transfer_;
   j["pre-voting"] = pre_voting_;
-  j["stable-leader"] = stable_leader_;
+  j["interval-check"] = interval_check_;
   j["run"] = started_;
   if (leader_.ToU64() == 0) {
     j["leader"] = 0;
@@ -427,8 +427,8 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["pre-vote"] = enable_pre_vote_;
   j[0][2]["pre-voting"] = pre_voting_;
   j[0][2]["transfer"] = leader_transfer_;
-  j[0][2]["transfer-max-term"] = transfer_max_term_;
-  j[0][2]["stable-leader"] = stable_leader_;
+  j[0][2]["tsf-max-term"] = transfer_max_term_;
+  j[0][2]["interval-chk"] = interval_check_;
   j[0][2]["last-hbts"] = NsToString2(last_heartbeat_timestamp_);
   
 

@@ -88,7 +88,7 @@ void Remu::Create() {
     ptr->raft()->set_tracer_cb(tracer_cb);
     ptr->raft()->set_create_sm(create_sm);
     ptr->raft()->set_enable_pre_vote(enable_pre_vote_);
-    ptr->raft()->set_stable_leader(stable_leader_);
+    ptr->raft()->set_interval_check(interval_check_);
     raft_servers.push_back(ptr);
   }
 }

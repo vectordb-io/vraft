@@ -122,8 +122,8 @@ class Raft final {
   void set_leader_transfer(bool leader_transfer);
   bool pre_voting() const;
   void set_pre_voting(bool pre_voting);
-  bool stable_leader() const;
-  void set_stable_leader(bool stable_leader);
+  bool interval_check() const;
+  void set_interval_check(bool interval_check);
   StateMachineSPtr sm();
   RaftLog &log();
   SolidData &meta();
@@ -204,7 +204,7 @@ class Raft final {
   bool leader_transfer_;
   RaftTerm transfer_max_term_;
   bool pre_voting_;
-  bool stable_leader_;
+  bool interval_check_;
   int64_t last_heartbeat_timestamp_;
 
   friend void Tick(Timer *timer);
@@ -275,10 +275,10 @@ inline bool Raft::pre_voting() const { return pre_voting_; }
 
 inline void Raft::set_pre_voting(bool pre_voting) { pre_voting_ = pre_voting; }
 
-inline bool Raft::stable_leader() const { return stable_leader_; }
+inline bool Raft::interval_check() const { return interval_check_; }
 
-inline void Raft::set_stable_leader(bool stable_leader) {
-  stable_leader_ = stable_leader;
+inline void Raft::set_interval_check(bool interval_check) {
+  interval_check_ = interval_check;
 }
 
 inline StateMachineSPtr Raft::sm() { return sm_; }
