@@ -296,7 +296,109 @@ rl.on('line', (line) => {
             writeStream.write('\t</tr>\n');
           }
 
+
           // line 4
+          {
+            writeStream.write('\t<tr>\n');
+
+            // pre-vote
+            {
+              var pre_vote = json_obj[raftid][1][0][2]['pre-vote'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  pre_vote != begin_json_obj[raftid][1][0][2]['pre-vote']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"pre-vote":' + pre_vote);
+              writeStream.write(td_end_str);
+            }
+
+            // pre-voting
+            {
+              var pre_voting = json_obj[raftid][1][0][2]['pre-voting'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  pre_voting != begin_json_obj[raftid][1][0][2]['pre-voting']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"pre-voting":' + pre_voting);
+              writeStream.write(td_end_str);
+            }
+
+            // transfer
+            {
+              var transfer = json_obj[raftid][1][0][2]['transfer'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  transfer != begin_json_obj[raftid][1][0][2]['transfer']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"transfer":' + transfer);
+              writeStream.write(td_end_str);
+            }
+
+            // tsf-max-term
+            {
+              var transfer_max_term = json_obj[raftid][1][0][2]['tsf-max-term'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  transfer_max_term !=
+                      begin_json_obj[raftid][1][0][2]['tsf-max-term']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"tsf-max-term":' + transfer_max_term);
+              writeStream.write(td_end_str);
+            }
+
+            // interval-chk
+            {
+              var interval_check = json_obj[raftid][1][0][2]['interval-chk'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  interval_check !=
+                      begin_json_obj[raftid][1][0][2]['interval-chk']) {
+                writeStream.write(td_change_str);
+              } else {
+                writeStream.write(td_str);
+              }
+
+              writeStream.write('"interval-chk":' + interval_check);
+              writeStream.write(td_end_str);
+            }
+
+            // last_heartbeat_timestamp
+            {
+              var last_heartbeat_timestamp =
+                  json_obj[raftid][1][0][2]['last-hbts'];
+              if ((event_name == 'state_end') &&
+                  (Object.keys(begin_json_obj).length != 0) &&
+                  last_heartbeat_timestamp !=
+                      begin_json_obj[raftid][1][0][2]['last-hbts']) {
+                writeStream.write(td2_change_str);
+              } else {
+                writeStream.write(td2_str);
+              }
+
+              writeStream.write('"last-hbts":' + last_heartbeat_timestamp);
+              writeStream.write(td_end_str);
+            }
+
+            writeStream.write('\t</tr>\n');
+          }
+
+          // line 5
           {
             if (Object.keys(json_obj[raftid][1][0]).length >= 4) {
               var peers = Object.keys(json_obj[raftid][1][0][3]);
