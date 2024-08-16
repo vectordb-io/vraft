@@ -34,10 +34,13 @@ var last_ready = false;
 
 const td_str = '\t\t<td>';
 const td_change_str = '\t\t<td class="change">';
+
 const td3_str = '\t\t<td colspan="3">'
 const td3_change_str = '\t\t<td class="change" colspan="3">'
+
 const td2_str = '\t\t<td colspan="2">'
 const td2_change_str = '\t\t<td class="change" colspan="2">'
+
 const td_end_str = '</td>\n';
 
 rl.on('line', (line) => {
@@ -322,85 +325,85 @@ rl.on('line', (line) => {
         {
           writeStream.write('\t<tr>\n');
 
-          // apply
+          // pre-vote
           {
-            var apply = json_obj[raftid][1][0][2]['apply'];
+            var pre_vote = json_obj[raftid][1][0][2]['pre-vote'];
             if (last_ready &&
-                apply != last_json_objs[raftid][1][0][2]['apply']) {
+                pre_vote != last_json_objs[raftid][1][0][2]['pre-vote']) {
               writeStream.write(td_change_str);
             } else {
               writeStream.write(td_str);
             }
-            writeStream.write('"apply":' + apply);
+            writeStream.write('"pre-vote":' + pre_vote);
             writeStream.write(td_end_str);
           }
 
-          // cmt
+          // pre-voting
           {
-            var cmt = json_obj[raftid][1][0][2]['cmt'];
-            if (last_ready && cmt != last_json_objs[raftid][1][0][2]['cmt']) {
-              writeStream.write(td_change_str);
-            } else {
-              writeStream.write(td_str);
-            }
-            writeStream.write('"cmt":' + cmt);
-            writeStream.write(td_end_str);
-          }
-
-          // elect_ms
-          {
-            var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
-            writeStream.write(td_str);
-            writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
-            writeStream.write(td_end_str);
-          }
-
-          // leader
-          {
-            var leader = json_obj[raftid][1][0][2]['leader'];
+            var pre_voting = json_obj[raftid][1][0][2]['pre-voting'];
             if (last_ready &&
-                leader != last_json_objs[raftid][1][0][2]['leader']) {
+                pre_voting != last_json_objs[raftid][1][0][2]['pre-voting']) {
               writeStream.write(td_change_str);
             } else {
               writeStream.write(td_str);
             }
-            writeStream.write('"leader":' + leader);
+            writeStream.write('"pre-voting":' + pre_voting);
             writeStream.write(td_end_str);
           }
 
-          // run
+          // transfer
           {
-            var run = json_obj[raftid][1][0][2]['run'];
-            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+            var transfer = json_obj[raftid][1][0][2]['transfer'];
+            if (last_ready &&
+                transfer != last_json_objs[raftid][1][0][2]['transfer']) {
               writeStream.write(td_change_str);
             } else {
               writeStream.write(td_str);
             }
-            writeStream.write('"run":' + run);
+            writeStream.write('"transfer":' + transfer);
             writeStream.write(td_end_str);
           }
 
-          // run
+          // tsf-max-term
           {
-            var run = json_obj[raftid][1][0][2]['run'];
-            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+            var transfer_max_term = json_obj[raftid][1][0][2]['tsf-max-term'];
+            if (last_ready &&
+                transfer_max_term !=
+                    last_json_objs[raftid][1][0][2]['tsf-max-term']) {
               writeStream.write(td_change_str);
             } else {
               writeStream.write(td_str);
             }
-            writeStream.write('"run":' + run);
+            writeStream.write('"tsf-max-term":' + transfer_max_term);
             writeStream.write(td_end_str);
           }
 
-          // run
+          // interval-chk
           {
-            var run = json_obj[raftid][1][0][2]['run'];
-            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+            var interval_check = json_obj[raftid][1][0][2]['interval-chk'];
+            if (last_ready &&
+                interval_check !=
+                    last_json_objs[raftid][1][0][2]['interval-chk']) {
               writeStream.write(td_change_str);
             } else {
               writeStream.write(td_str);
             }
-            writeStream.write('"run":' + run);
+            writeStream.write('"interval-chk":' + interval_check);
+            writeStream.write(td_end_str);
+          }
+
+          // last_heartbeat_timestamp
+          {
+            var last_heartbeat_timestamp =
+                json_obj[raftid][1][0][2]['last-hbts'];
+            if (last_ready &&
+                last_heartbeat_timestamp !=
+                    last_json_objs[raftid][1][0][2]['last-hbts']) {
+              writeStream.write(td2_change_str);
+            } else {
+              writeStream.write(td2_str);
+            }
+            writeStream.write('"last-hbts":' + last_heartbeat_timestamp);
             writeStream.write(td_end_str);
           }
 
