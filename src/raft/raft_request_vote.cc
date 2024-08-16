@@ -49,7 +49,7 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
     reply.dest = msg.src;
     reply.uid = UniqId(&reply);
     reply.pre_vote = msg.pre_vote;
-    reply.too_quick = false;
+    reply.interval_ok = true;
     reply.req_term = msg.term;
     reply.elapse = 0;
 
@@ -61,16 +61,16 @@ int32_t Raft::OnRequestVote(struct RequestVote &msg) {
 
     if (stable_leader_) {
       if (!msg.leader_transfer) {
-        bool too_quick = (Clock::NSec() - last_heartbeat_timestamp_ <
-                          timer_mgr_.election_ms() * 1000 * 1000);
+        bool interval_ok = (Clock::NSec() - last_heartbeat_timestamp_ >=
+                            timer_mgr_.election_ms() * 1000 * 1000);
 
-        // if too_quick, response reject
-        if (too_quick) {
+        // if !interval_ok, response reject
+        if (!interval_ok) {
           reply.term = meta_.term();
           reply.send_ts = Clock::NSec();
           reply.granted = false;
           reply.log_ok = log_ok;
-          reply.too_quick = true;
+          reply.interval_ok = false;
 
           goto end;
         }

@@ -25,7 +25,7 @@ TEST(RequestVoteReply, test) {
   msg.granted = true;
   msg.log_ok = true;
   msg.pre_vote = true;
-  msg.too_quick = true;
+  msg.interval_ok = true;
   msg.req_term = 88;
 
   std::string msg_str;
@@ -55,7 +55,7 @@ TEST(RequestVoteReply, test) {
   ASSERT_EQ(msg.granted, msg2.granted);
   ASSERT_EQ(msg.log_ok, msg2.log_ok);
   ASSERT_EQ(msg.pre_vote, msg2.pre_vote);
-  ASSERT_EQ(msg.too_quick, msg2.too_quick);
+  ASSERT_EQ(msg.interval_ok, msg2.interval_ok);
   ASSERT_EQ(msg.req_term, msg2.req_term);
   ASSERT_EQ(msg.send_ts, msg2.send_ts);
   ASSERT_EQ(msg.elapse, msg2.elapse);

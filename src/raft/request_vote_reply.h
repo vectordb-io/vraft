@@ -20,10 +20,10 @@ struct RequestVoteReply : public Message {
   uint64_t send_ts;  // nanosecond
   uint64_t elapse;   // microsecond
 
-  bool granted;    // uint8_t
-  bool log_ok;     // uint8_t
-  bool pre_vote;   // uint8_t
-  bool too_quick;  // uint8_t
+  bool granted;      // uint8_t
+  bool log_ok;       // uint8_t
+  bool pre_vote;     // uint8_t
+  bool interval_ok;  // uint8_t
 
   // send back
   RaftTerm req_term;

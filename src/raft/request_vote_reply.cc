@@ -13,7 +13,7 @@ int32_t RequestVoteReply::MaxBytes() {
   size += sizeof(uint8_t);  // bool granted;
   size += sizeof(uint8_t);  // bool log_ok;
   size += sizeof(uint8_t);  // bool pre_vote;
-  size += sizeof(uint8_t);  // bool too_quick;
+  size += sizeof(uint8_t);  // bool interval_ok;
   size += sizeof(req_term);
   return size;
 }
@@ -81,7 +81,7 @@ int32_t RequestVoteReply::ToString(const char *ptr, int32_t len) {
   }
 
   {
-    uint8_t u8 = too_quick;
+    uint8_t u8 = interval_ok;
     EncodeFixed8(p, u8);
     p += sizeof(u8);
     size += sizeof(u8);
@@ -155,7 +155,7 @@ int32_t RequestVoteReply::FromString(const char *ptr, int32_t len) {
     uint8_t u8 = DecodeFixed8(p);
     p += sizeof(u8);
     size += sizeof(u8);
-    too_quick = u8;
+    interval_ok = u8;
   }
 
   req_term = DecodeFixed64(p);
@@ -174,7 +174,7 @@ nlohmann::json RequestVoteReply::ToJson() {
   j[1]["grant"] = granted;
   j[1]["log-ok"] = log_ok;
   j[1]["pre-vote"] = pre_vote;
-  j[1]["too-quick"] = too_quick;
+  j[1]["interval-ok"] = interval_ok;
   j[1]["req-term"] = req_term;
   j[2]["send_ts"] = send_ts;
   j[2]["elapse"] = elapse;
@@ -189,7 +189,7 @@ nlohmann::json RequestVoteReply::ToJsonTiny() {
   j["gr"] = granted;
   j["ok"] = log_ok;
   j["pvt"] = pre_vote;
-  j["qck"] = too_quick;
+  j["iok"] = interval_ok;
   j["rtm"] = req_term;
   j["uid"] = U32ToHexStr(uid);
   j["send"] = send_ts;
