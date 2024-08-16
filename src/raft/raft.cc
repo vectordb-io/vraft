@@ -386,6 +386,13 @@ nlohmann::json Raft::ToJson() {
   j["vote"] = vote_mgr_.ToJson();
   j["config"] = config_mgr_.ToJson();
   j["log"] = log_.ToJson();
+
+  if (sm_) {
+    j["sm"] = sm_->ToJsonTiny();
+  } else {
+    j["sm"] = "null";
+  }
+
   j["meta"] = meta_.ToJson();
   j["commit"] = commit_;
   j["last_apply"] = last_apply_;
@@ -417,6 +424,12 @@ nlohmann::json Raft::ToJsonTiny() {
     j[0][0]["vote"] = addr.ToString();
   }
   j[0][1]["log"] = log_.ToJsonTiny();
+
+  if (sm_) {
+    j[0][1]["sm"] = sm_->ToJsonTiny();
+  } else {
+    j[0][1]["sm"] = "null";
+  }
 
   j[0][2]["apply"] = last_apply_;
   j[0][2]["cmt"] = commit_;

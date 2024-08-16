@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "raft_addr.h"
+#include "nlohmann/json.hpp"
 
 namespace vraft {
 
@@ -24,6 +25,16 @@ class StateMachine {
   virtual int32_t Apply(LogEntry *entry, RaftAddr addr) = 0;
   virtual RaftIndex LastIndex() = 0;
   virtual RaftTerm LastTerm() = 0;
+
+  virtual nlohmann::json ToJson() {
+    nlohmann::json j;
+    return j;
+  }
+  virtual nlohmann::json ToJsonTiny() {
+    nlohmann::json j;
+    return j;
+  }
+  virtual std::string ToJsonString(bool tiny, bool one_line) { return ""; }
 
   std::string path() { return path_; }
 

@@ -50,9 +50,9 @@ class TestSM : public vraft::StateMachine {
   uint32_t check_sum() { return check_sum_; }
   std::string all_values() { return all_values_; }
 
-  nlohmann::json ToJson();
-  nlohmann::json ToJsonTiny();
-  std::string ToJsonString(bool tiny, bool one_line);
+  nlohmann::json ToJson() override;
+  nlohmann::json ToJsonTiny() override;
+  std::string ToJsonString(bool tiny, bool one_line) override;
 
  private:
   int32_t SetApplyCount(int32_t apply_count);

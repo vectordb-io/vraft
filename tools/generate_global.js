@@ -113,11 +113,10 @@ rl.on('line', (line) => {
             writeStream.write(td_end_str);
           }
 
-          // raft_ptr
+          // empty str
           {
             writeStream.write(td5_str);
-            var raft_ptr = json_obj[raftid][1][1];
-            writeStream.write(raft_ptr);
+            writeStream.write("");
             writeStream.write(td_end_str);
           }
 
@@ -166,17 +165,17 @@ rl.on('line', (line) => {
             writeStream.write(td_end_str);
           }
 
-          // log
+          // sm
           {
-            var log = json_obj[raftid][1][0][1]['log'];
+            var sm = json_obj[raftid][1][0][1]['sm'];
             if (last_ready &&
-                JSON.stringify(log) !=
-                    JSON.stringify(last_json_objs[raftid][1][0][1]['log'])) {
+                JSON.stringify(sm) !=
+                    JSON.stringify(last_json_objs[raftid][1][0][1]['sm'])) {
               writeStream.write(td2_change_str);
             } else {
               writeStream.write(td2_str);
             }
-            writeStream.write('"log":' + JSON.stringify(log));
+            writeStream.write('"sm":' + JSON.stringify(sm));
             writeStream.write(td_end_str);
           }
 
@@ -212,14 +211,6 @@ rl.on('line', (line) => {
             writeStream.write(td_end_str);
           }
 
-          // elect_ms
-          {
-            var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
-            writeStream.write(td_str);
-            writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
-            writeStream.write(td_end_str);
-          }
-
           // leader
           {
             var leader = json_obj[raftid][1][0][2]['leader'];
@@ -233,15 +224,11 @@ rl.on('line', (line) => {
             writeStream.write(td_end_str);
           }
 
-          // run
+          // elect_ms
           {
-            var run = json_obj[raftid][1][0][2]['run'];
-            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
-              writeStream.write(td_change_str);
-            } else {
-              writeStream.write(td_str);
-            }
-            writeStream.write('"run":' + run);
+            var elect_ms = json_obj[raftid][1][0][2]['elect_ms'];
+            writeStream.write(td_str);
+            writeStream.write('"elect_ms":' + JSON.stringify(elect_ms));
             writeStream.write(td_end_str);
           }
 
@@ -257,15 +244,24 @@ rl.on('line', (line) => {
             writeStream.write(td_end_str);
           }
 
-          // run
+          // print
           {
-            var run = json_obj[raftid][1][0][2]['run'];
-            if (last_ready && run != last_json_objs[raftid][1][0][2]['run']) {
+            var print = json_obj[raftid][1][0][2]['print'];
+            if (last_ready &&
+                print != last_json_objs[raftid][1][0][2]['print']) {
               writeStream.write(td_change_str);
             } else {
               writeStream.write(td_str);
             }
-            writeStream.write('"run":' + run);
+            writeStream.write('"print":' + print);
+            writeStream.write(td_end_str);
+          }
+
+          // raft_ptr
+          {
+            writeStream.write(td5_str);
+            var raft_ptr = json_obj[raftid][1][1];
+            writeStream.write(raft_ptr);
             writeStream.write(td_end_str);
           }
 
