@@ -444,6 +444,7 @@ nlohmann::json Raft::ToJsonTiny() {
     j[0][3][key][1]["grant"] = vote_mgr_.votes[dest.ToU64()].grant;
     j[0][3][key][1]["done"] = vote_mgr_.votes[dest.ToU64()].done;
     j[0][3][key][1]["logok"] = vote_mgr_.votes[dest.ToU64()].logok;
+    j[0][3][key][1]["iok"] = vote_mgr_.votes[dest.ToU64()].interval_ok
   }
 
   j[1] = PointerToHexStr(this);
