@@ -259,6 +259,7 @@ void Raft::BecomeLeader(Tracer *tracer) {
   assert(state_ == STATE_CANDIDATE);
   state_ = STATE_LEADER;
   leader_ = Me();
+  ++leader_times_;
 
   // update last_heartbeat_timestamp
   last_heartbeat_timestamp_ = INT64_MAX;

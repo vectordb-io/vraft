@@ -46,7 +46,8 @@ void RemuLogState(std::string key) {
 }
 
 void PrintAndCheck() {
-  printf("--- %s ---\n", TestState2Str(current_state).c_str());
+  printf("--- %s --- all leader times:%d \n",
+         TestState2Str(current_state).c_str(), gtest_remu->LeaderTimes());
   gtest_remu->Print();
   gtest_remu->Check();
 }

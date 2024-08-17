@@ -24,6 +24,8 @@ struct Remu {
   TracerCb tracer_cb;
   CreateSMFunc create_sm;
 
+  int32_t LeaderTimes();
+
   void Create();
   void Start();
   void Stop();

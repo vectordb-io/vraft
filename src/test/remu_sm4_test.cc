@@ -273,6 +273,8 @@ class RemuTest : public ::testing::Test {
 
 TEST_F(RemuTest, RunNode3) { vraft::RunRemuTest(3); }
 
+TEST_F(RemuTest, RunNode5) { vraft::RunRemuTest(5); }
+
 int main(int argc, char **argv) {
   vraft::RemuParseConfig(argc, argv);
 

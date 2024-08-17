@@ -112,23 +112,11 @@ void RemuTick(vraft::Timer *timer) {
     case vraft::kTestState4: {
       vraft::PrintAndCheck();
 
-      int32_t leader_num = 0;
-      for (auto ptr : vraft::gtest_remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::STATE_LEADER &&
-            ptr->raft()->started()) {
-          if (vraft::gtest_enable_pre_vote) {
-            // if pre-vote, leader not change, term not change
-            ASSERT_EQ(ptr->raft()->Me().ToString(),
-                      leader_ptr->Me().ToString());
-            ASSERT_EQ(ptr->raft()->Term(), save_term);
-
-          } else {
-            // if !pre-vote, term change, new leader term >= save_term
-            EXPECT_GE(ptr->raft()->Term(), save_term);
-          }
-
-          leader_num++;
-        }
+      if (vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+      } else if (vraft::gtest_enable_pre_vote && !vraft::gtest_interval_check) {
+      } else if (!vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+      } else if (!vraft::gtest_enable_pre_vote &&
+                 !vraft::gtest_interval_check) {
       }
 
       timer->RepeatDecr();

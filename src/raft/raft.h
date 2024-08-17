@@ -114,6 +114,7 @@ class Raft final {
   void set_enable_recv_func(Functor func);
   void set_disable_recv_func(Functor func);
 
+  int32_t leader_times() const;
   bool print_screen() const;
   void set_print_screen(bool print_screen);
   bool enable_pre_vote() const;
@@ -198,6 +199,7 @@ class Raft final {
   Functor disable_recv_func_;
   bool enable_send_;
   bool enable_recv_;
+  int32_t leader_times_;
 
   bool print_screen_;
   bool enable_pre_vote_;
@@ -252,6 +254,8 @@ inline void Raft::set_enable_recv_func(Functor func) {
 inline void Raft::set_disable_recv_func(Functor func) {
   disable_recv_func_ = func;
 }
+
+inline int32_t Raft::leader_times() const { return leader_times_; }
 
 inline bool Raft::print_screen() const { return print_screen_; }
 

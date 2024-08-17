@@ -73,6 +73,7 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       disable_recv_func_(nullptr),
       enable_send_(true),
       enable_recv_(true),
+      leader_times_(0),
       print_screen_(false),
       enable_pre_vote_(false),
       pre_voting_(false),
@@ -397,6 +398,7 @@ nlohmann::json Raft::ToJson() {
   j["commit"] = commit_;
   j["last_apply"] = last_apply_;
   j["state"] = std::string(StateToStr(state_));
+  j["leader_times"] = leader_times_;
   j["print"] = print_screen_;
   j["pre-vote"] = enable_pre_vote_;
   j["pre-voting"] = pre_voting_;
@@ -437,6 +439,7 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["run"] = started_;
   j[0][2]["elect-ms"][0] = timer_mgr_.last_election_ms();
   j[0][2]["elect-ms"][1] = timer_mgr_.next_election_ms();
+  j[0][2]["leader_times"] = leader_times_;
   j[0][2]["print"] = print_screen_;
   j[0][2]["pre-vote"] = enable_pre_vote_;
   j[0][2]["pre-voting"] = pre_voting_;

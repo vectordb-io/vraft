@@ -52,7 +52,7 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
-    // stop one follower's recv
+    // stop one follower's send/recv
     // wait 10s
     case vraft::kTestState1: {
       vraft::PrintAndCheck();
@@ -63,8 +63,9 @@ void RemuTick(vraft::Timer *timer) {
           // save follower ptr
           follower_ptr = ptr->raft();
 
-          // stop one follower's recv
+          // stop one follower's send/recv
           follower_ptr->DisableRecv();
+          follower_ptr->DisableSend();
 
           timer->set_repeat_times(10);
           vraft::current_state = vraft::kTestState2;
@@ -88,12 +89,13 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
-    // enable recv
+    // enable send/recv
     case vraft::kTestState3: {
       vraft::PrintAndCheck();
 
       timer->RepeatDecr();
       if (timer->repeat_counter() == 0) {
+        follower_ptr->EnableSend();
         follower_ptr->EnableRecv();
 
         // update repeat counter
@@ -105,14 +107,81 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     // wait 10s, check leader
+    // pre-vote make the alone node not to increase its term
+    // if !pre-vote, leader may change, or may not change, but term must
+    // increase, means another election happened, system not stable
     case vraft::kTestState4: {
       vraft::PrintAndCheck();
 
       if (vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // term not change
+            ASSERT_EQ(ptr->raft()->Term(), save_term);
+
+            // leader not change
+            ASSERT_EQ(ptr->raft()->Me().ToString(),
+                      leader_ptr->Me().ToString());
+
+            // leader timers == 1
+            ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
+
+            vraft::current_state = vraft::kTestState5;
+            break;
+          }
+        }
+
       } else if (vraft::gtest_enable_pre_vote && !vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // term not change
+            ASSERT_EQ(ptr->raft()->Term(), save_term);
+
+            // leader not change
+            ASSERT_EQ(ptr->raft()->Me().ToString(),
+                      leader_ptr->Me().ToString());
+
+            // leader timers == 1
+            ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
+
+            vraft::current_state = vraft::kTestState5;
+            break;
+          }
+        }
       } else if (!vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            vraft::current_state = vraft::kTestState5;
+            break;
+          }
+        }
+
       } else if (!vraft::gtest_enable_pre_vote &&
                  !vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            vraft::current_state = vraft::kTestState5;
+            break;
+          }
+        }
       }
 
       timer->RepeatDecr();

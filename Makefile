@@ -88,6 +88,7 @@ REMU_LEADERTRANSFER_TEST_SRCS := src/test/remu_leadertransfer_test.cc $(COMMON_S
 REMU_TIMEOUT_BYSELF_TEST_SRCS := src/test/remu_timeout_byself_test.cc $(COMMON_SRCS)
 REMU_DISABLE_RECV_TEST_SRCS := src/test/remu_disable_recv_test.cc $(COMMON_SRCS)
 REMU_DISABLE_RECV2_TEST_SRCS := src/test/remu_disable_recv2_test.cc $(COMMON_SRCS)
+REMU_NET_ERROR_TEST_SRCS := src/test/remu_net_error_test.cc $(COMMON_SRCS)
 HOSTPORT_TEST_SRCS := src/test/hostport_test.cc $(COMMON_SRCS)
 BUFFER_TEST_SRCS := src/test/buffer_test.cc $(COMMON_SRCS)
 EVENTLOOP_TEST_SRCS := src/test/eventloop_test.cc $(COMMON_SRCS)
@@ -176,6 +177,7 @@ REMU_LEADERTRANSFER_TEST_OBJECTS := $(REMU_LEADERTRANSFER_TEST_SRCS:.cc=.o)
 REMU_TIMEOUT_BYSELF_TEST_OBJECTS := $(REMU_TIMEOUT_BYSELF_TEST_SRCS:.cc=.o)
 REMU_DISABLE_RECV_TEST_OBJECTS := $(REMU_DISABLE_RECV_TEST_SRCS:.cc=.o)
 REMU_DISABLE_RECV2_TEST_OBJECTS := $(REMU_DISABLE_RECV2_TEST_SRCS:.cc=.o)
+REMU_NET_ERROR_TEST_OBJECTS := $(REMU_NET_ERROR_TEST_SRCS:.cc=.o)
 HOSTPORT_TEST_OBJECTS := $(HOSTPORT_TEST_SRCS:.cc=.o)
 BUFFER_TEST_OBJECTS := $(BUFFER_TEST_SRCS:.cc=.o)
 EVENTLOOP_TEST_OBJECTS := $(EVENTLOOP_TEST_SRCS:.cc=.o)
@@ -247,6 +249,7 @@ TEST += remu_leadertransfer_test
 TEST += remu_timeout_byself_test
 TEST += remu_disable_recv_test
 TEST += remu_disable_recv2_test
+TEST += remu_net_error_test
 TEST += hostport_test
 TEST += buffer_test
 TEST += eventloop_test
@@ -441,6 +444,9 @@ remu_disable_recv_test: $(REMU_DISABLE_RECV_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_disable_recv2_test: $(REMU_DISABLE_RECV2_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_net_error_test: $(REMU_NET_ERROR_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 hostport_test: $(HOSTPORT_TEST_OBJECTS)

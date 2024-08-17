@@ -80,6 +80,16 @@ void Remu::CheckMeta() {}
 
 void Remu::CheckIndex() {}
 
+int32_t Remu::LeaderTimes() {
+  int32_t times = 0;
+  for (auto &ptr : raft_servers) {
+    if (ptr) {
+      times += ptr->raft()->leader_times();
+    }
+  }
+  return times;
+}
+
 void Remu::Create() {
   for (auto conf : configs) {
     auto sptr = loop.lock();
