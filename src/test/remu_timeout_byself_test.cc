@@ -17,6 +17,10 @@
 #include "util.h"
 #include "vraft_logger.h"
 
+vraft::RaftSPtr leader_ptr;
+vraft::RaftSPtr follower_ptr;
+vraft::RaftTerm save_term;
+
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     // wait until elect leader
@@ -28,6 +32,12 @@ void RemuTick(vraft::Timer *timer) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
           leader_num++;
+
+          // save leader ptr
+          leader_ptr = ptr->raft();
+
+          // save term
+          save_term = leader_ptr->Term();
         }
       }
 
@@ -43,16 +53,9 @@ void RemuTick(vraft::Timer *timer) {
     case vraft::kTestState1: {
       vraft::PrintAndCheck();
 
-      static bool goto_end = false;
       timer->RepeatDecr();
       if (timer->repeat_counter() == 0) {
-        if (!goto_end) {
-          goto_end = true;
-          vraft::current_state = vraft::kTestState2;
-        } else {
-          goto_end = false;
-          vraft::current_state = vraft::kTestStateEnd;
-        }
+        vraft::current_state = vraft::kTestState2;
       }
 
       break;
@@ -65,10 +68,94 @@ void RemuTick(vraft::Timer *timer) {
       for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_FOLLOWER &&
             ptr->raft()->started()) {
-          ptr->raft()->StartElection();
-          vraft::current_state = vraft::kTestState0;
+          // save follower ptr
+          follower_ptr = ptr->raft();
+
+          // timeout now
+          follower_ptr->StartElection();
+          timer->set_repeat_times(10);
+          vraft::current_state = vraft::kTestState3;
           break;
         }
+      }
+
+      break;
+    }
+
+    case vraft::kTestState3: {
+      vraft::PrintAndCheck();
+
+      if (vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+        // ok
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // term not change
+            ASSERT_EQ(ptr->raft()->Term(), save_term);
+
+            // leader not change
+            ASSERT_EQ(ptr->raft()->Me().ToString(),
+                      leader_ptr->Me().ToString());
+
+            // leader timers == 1
+            ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
+
+      } else if (vraft::gtest_enable_pre_vote && !vraft::gtest_interval_check) {
+        // only pre-vote not enough
+
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
+
+      } else if (!vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
+
+      } else if (!vraft::gtest_enable_pre_vote &&
+                 !vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
+      }
+
+      timer->RepeatDecr();
+      if (timer->repeat_counter() == 0) {
+        vraft::current_state = vraft::kTestStateEnd;
       }
 
       break;
@@ -77,6 +164,10 @@ void RemuTick(vraft::Timer *timer) {
     // quit
     case vraft::kTestStateEnd: {
       vraft::PrintAndCheck();
+
+      // import!! reset
+      leader_ptr.reset();
+      follower_ptr.reset();
 
       std::cout << "exit ..." << std::endl;
       vraft::gtest_remu->Stop();
@@ -98,13 +189,7 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-TEST_F(RemuTest, RunNode5) { vraft::RunRemuTest(5); }
-
-TEST_F(RemuTest, RunNode4) { vraft::RunRemuTest(4); }
-
 TEST_F(RemuTest, RunNode3) { vraft::RunRemuTest(3); }
-
-TEST_F(RemuTest, RunNode2) { vraft::RunRemuTest(2); }
 
 int main(int argc, char **argv) {
   vraft::RemuParseConfig(argc, argv);

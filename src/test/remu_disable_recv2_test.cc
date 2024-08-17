@@ -66,7 +66,6 @@ void RemuTick(vraft::Timer *timer) {
           // stop one follower's recv
           follower_ptr->DisableRecv();
 
-          timer->set_repeat_times(10);
           vraft::current_state = vraft::kTestState2;
           break;
         }
@@ -75,14 +74,19 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
-    // wait 10s
+    // leader propose a value
     case vraft::kTestState2: {
       vraft::PrintAndCheck();
 
-      timer->RepeatDecr();
-      if (timer->repeat_counter() == 0) {
-        timer->set_repeat_times(10);
-        vraft::current_state = vraft::kTestState3;
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
+        if (ptr->raft()->state() == vraft::STATE_LEADER &&
+            ptr->raft()->started()) {
+          int32_t rv = ptr->raft()->Propose("xxx", nullptr);
+          ASSERT_EQ(rv, 0);
+
+          vraft::current_state = vraft::kTestState3;
+          break;
+        }
       }
 
       break;

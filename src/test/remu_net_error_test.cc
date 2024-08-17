@@ -127,7 +127,6 @@ void RemuTick(vraft::Timer *timer) {
             // leader timers == 1
             ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
 
-            vraft::current_state = vraft::kTestState5;
             break;
           }
         }
@@ -146,7 +145,6 @@ void RemuTick(vraft::Timer *timer) {
             // leader timers == 1
             ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
 
-            vraft::current_state = vraft::kTestState5;
             break;
           }
         }
@@ -161,7 +159,6 @@ void RemuTick(vraft::Timer *timer) {
             // leader timers > 1
             EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
 
-            vraft::current_state = vraft::kTestState5;
             break;
           }
         }
@@ -178,7 +175,6 @@ void RemuTick(vraft::Timer *timer) {
             // leader timers > 1
             EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
 
-            vraft::current_state = vraft::kTestState5;
             break;
           }
         }
@@ -203,10 +199,6 @@ void RemuTick(vraft::Timer *timer) {
         ASSERT_EQ(checksum, checksum2);
       }
 
-      // import!! reset
-      leader_ptr.reset();
-      follower_ptr.reset();
-
       vraft::current_state = vraft::kTestStateEnd;
 
       break;
@@ -215,6 +207,10 @@ void RemuTick(vraft::Timer *timer) {
     // quit
     case vraft::kTestStateEnd: {
       vraft::PrintAndCheck();
+
+      // import!! reset
+      leader_ptr.reset();
+      follower_ptr.reset();
 
       std::cout << "exit ..." << std::endl;
       vraft::gtest_remu->Stop();

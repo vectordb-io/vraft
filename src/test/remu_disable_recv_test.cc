@@ -66,6 +66,7 @@ void RemuTick(vraft::Timer *timer) {
           // stop one follower's recv
           follower_ptr->DisableRecv();
 
+          timer->set_repeat_times(10);
           vraft::current_state = vraft::kTestState2;
           break;
         }
@@ -74,19 +75,14 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
-    // leader propose a value
+    // wait 10s
     case vraft::kTestState2: {
       vraft::PrintAndCheck();
 
-      for (auto ptr : vraft::gtest_remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::STATE_LEADER &&
-            ptr->raft()->started()) {
-          int32_t rv = ptr->raft()->Propose("xxx", nullptr);
-          ASSERT_EQ(rv, 0);
-
-          vraft::current_state = vraft::kTestState3;
-          break;
-        }
+      timer->RepeatDecr();
+      if (timer->repeat_counter() == 0) {
+        timer->set_repeat_times(10);
+        vraft::current_state = vraft::kTestState3;
       }
 
       break;
@@ -113,10 +109,70 @@ void RemuTick(vraft::Timer *timer) {
       vraft::PrintAndCheck();
 
       if (vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // term not change
+            ASSERT_EQ(ptr->raft()->Term(), save_term);
+
+            // leader not change
+            ASSERT_EQ(ptr->raft()->Me().ToString(),
+                      leader_ptr->Me().ToString());
+
+            // leader timers == 1
+            ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
+
       } else if (vraft::gtest_enable_pre_vote && !vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // term not change
+            ASSERT_EQ(ptr->raft()->Term(), save_term);
+
+            // leader not change
+            ASSERT_EQ(ptr->raft()->Me().ToString(),
+                      leader_ptr->Me().ToString());
+
+            // leader timers == 1
+            ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
+
       } else if (!vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
       } else if (!vraft::gtest_enable_pre_vote &&
                  !vraft::gtest_interval_check) {
+        for (auto ptr : vraft::gtest_remu->raft_servers) {
+          if (ptr->raft()->state() == vraft::STATE_LEADER &&
+              ptr->raft()->started()) {
+            // new leader term > save_term
+            EXPECT_GT(ptr->raft()->Term(), save_term);
+
+            // leader may change, or may not change
+            // leader timers > 1
+            EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+
+            break;
+          }
+        }
       }
 
       timer->RepeatDecr();
@@ -138,10 +194,6 @@ void RemuTick(vraft::Timer *timer) {
         ASSERT_EQ(checksum, checksum2);
       }
 
-      // import!! reset
-      leader_ptr.reset();
-      follower_ptr.reset();
-
       vraft::current_state = vraft::kTestStateEnd;
 
       break;
@@ -150,6 +202,10 @@ void RemuTick(vraft::Timer *timer) {
     // quit
     case vraft::kTestStateEnd: {
       vraft::PrintAndCheck();
+
+      // import!! reset
+      leader_ptr.reset();
+      follower_ptr.reset();
 
       std::cout << "exit ..." << std::endl;
       vraft::gtest_remu->Stop();
