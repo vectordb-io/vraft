@@ -1221,7 +1221,7 @@ TEST(RaftLog, LastConfig) {
       vraft::RaftConfig rc2;
       vraft::MetaValue meta;
       int32_t rv = raft_log.LastConfig(rc2, meta);
-      ASSERT_EQ(rv, 0);
+      ASSERT_EQ(rv, 1);
       ASSERT_EQ(rc.me.ToU64(), rc2.me.ToU64());
       ASSERT_EQ(rc.peers[0].ToU64(), rc2.peers[0].ToU64());
       ASSERT_EQ(rc.peers[1].ToU64(), rc2.peers[1].ToU64());
@@ -1249,7 +1249,7 @@ TEST(RaftLog, LastConfig) {
       vraft::RaftConfig rc2;
       vraft::MetaValue meta;
       int32_t rv = raft_log.LastConfig(rc2, meta);
-      ASSERT_EQ(rv, 0);
+      ASSERT_EQ(rv, 1);
       ASSERT_EQ(rc.me.ToU64(), rc2.me.ToU64());
       ASSERT_EQ(rc.peers[0].ToU64(), rc2.peers[0].ToU64());
       ASSERT_EQ(rc.peers[1].ToU64(), rc2.peers[1].ToU64());

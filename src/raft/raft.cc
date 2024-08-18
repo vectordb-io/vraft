@@ -175,17 +175,62 @@ void Raft::Init() {
   system(cmd_buf);
   assert(rv == 0);
 
-  rv = InitConfig();
-  assert(rv == 0);
-
   meta_.Init();
   log_.Init();
+
+  rv = InitConfig();
+  assert(rv == 0);
 
   // reset managers
   index_mgr_.ResetNext(LastIndex() + 1);
   index_mgr_.ResetMatch(0);
 }
 
+int32_t Raft::InitConfig() {
+  Tracer tracer(this, true, tracer_cb_);
+  tracer.PrepareState0();
+
+  // set update-file cb
+  config_mgr_.set_current_cb(std::bind(&Raft::UpdateConfigFile, this));
+
+  RaftConfig rc;
+  MetaValue mv;
+  int32_t rv = log_.LastConfig(rc, mv);
+  if (rv == 0) {
+    // use config in log, update current config
+    config_mgr_.SetCurrent(rc);
+
+  } else {
+    // use config in param
+
+    // append first config
+    int32_t rv =
+        log_.AppendFirstConfig(*(config_mgr_.Current()), meta_.term(), &tracer);
+    assert(rv == 0);
+
+    // update file
+    config_mgr_.RunCb();
+  }
+
+  // reset managers
+  index_mgr_.Reset(config_mgr_.Current()->peers);
+  vote_mgr_.Reset(config_mgr_.Current()->peers);
+  snapshot_mgr_.Reset(config_mgr_.Current()->peers);
+  timer_mgr_.Reset(config_mgr_.Current()->peers);
+
+  tracer.PrepareState1();
+  tracer.Finish();
+  return 0;
+}
+
+void Raft::UpdateConfigFile() {
+  // write config
+  std::ofstream write_file(conf_path_);
+  write_file << config_mgr_.ToJsonString(false, false);
+  write_file.close();
+}
+
+#if 0
 int32_t Raft::InitConfig() {
   std::ifstream read_file(conf_path_);
   if (read_file) {
@@ -221,6 +266,7 @@ int32_t Raft::InitConfig() {
 
   return 0;
 }
+#endif
 
 RaftIndex Raft::LastIndex() {
   RaftIndex snapshot_last = 0;

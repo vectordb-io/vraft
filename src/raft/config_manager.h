@@ -77,13 +77,22 @@ class ConfigManager final {
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
 
+  void set_current_cb(Functor cb);
+  void RunCb();
+
  private:
   RaftConfigSPtr current_;
   RaftConfigSPtr previous_;
+
+  Functor current_cb_;
 };
 
 inline ConfigManager::ConfigManager(const RaftConfig& current) {
-  SetCurrent(current);
+  current_ = std::make_shared<RaftConfig>();
+  *current_ = current;
+
+  previous_ = nullptr;
+  current_cb_ = nullptr;
 }
 
 inline ConfigManager::~ConfigManager() {}
@@ -98,6 +107,8 @@ inline void ConfigManager::SetCurrent(const RaftConfig& rc) {
   }
   current_ = std::make_shared<RaftConfig>();
   *current_ = rc;
+
+  RunCb();
 }
 
 inline nlohmann::json ConfigManager::ToJson() {

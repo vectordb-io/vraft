@@ -285,7 +285,7 @@ nlohmann::json RaftLog::ToJson() {
   RaftConfig rc;
   MetaValue meta;
   int32_t rv = LastConfig(rc, meta);
-  if (rv == 0) {
+  if (rv >= 0) {
     j["last_config"]["conf"] = rc.ToJson();
     j["last_config"]["term"] = meta.term;
     j["last_config"]["type"] = EntryTypeToStr(meta.type);
@@ -296,7 +296,8 @@ nlohmann::json RaftLog::ToJson() {
   return j;
 }
 
-// return 0, ok
+// return 0, first one
+// return 1, ok
 // return -1, error
 int32_t RaftLog::LastConfig(RaftConfig &rc, MetaValue &meta) {
   leveldb::ReadOptions ro;
@@ -309,15 +310,27 @@ int32_t RaftLog::LastConfig(RaftConfig &rc, MetaValue &meta) {
     int32_t rv = rc.FromString(config_str);
     assert(rv > 0);
 
-    // get meta
-    it->Prev();
-    assert(it->Valid());
+    int32_t u32 = DecodeFixed32(it->key().ToString().c_str());
+    if (u32 > 0) {
+      // get meta
+      it->Prev();
+      assert(it->Valid());
 
-    std::string meta_value = it->value().ToString();
-    DecodeMetaValue(meta_value.c_str(), meta_value.size(), meta);
+      std::string meta_value = it->value().ToString();
+      DecodeMetaValue(meta_value.c_str(), meta_value.size(), meta);
+    } else {
+      meta.term = 0;
+      meta.type = kConfig;
+      meta.chk_all = 0;
+      meta.chk_ths = 0;
+      meta.pre_chk_all = 0;
+
+      delete it;
+      return 0;
+    }
 
     delete it;
-    return 0;
+    return 1;
   }
 
   delete it;
@@ -405,6 +418,40 @@ MetaValuePtr RaftLog::LastMeta() {
   }
 }
 
+int32_t RaftLog::AppendFirstConfig(RaftConfig &rc, RaftTerm term,
+                                   Tracer *tracer) {
+  vraft::AppendEntry entry;
+  entry.term = term;
+  entry.type = vraft::kConfig;
+  rc.ToString(entry.value);
+
+  // write to config db
+  {
+    char buf[sizeof(int32_t)];
+    EncodeFixed32(buf, 0);
+
+    leveldb::WriteBatch batch;
+    batch.Put(leveldb::Slice(buf, sizeof(buf)),
+              leveldb::Slice(entry.value.c_str(), entry.value.size()));
+
+    leveldb::WriteOptions wo;
+    wo.sync = true;
+    leveldb::Status s = config_db_->Write(wo, &batch);
+    assert(s.ok());
+  }
+
+  if (tracer) {
+    char buf[128];
+    snprintf(buf, sizeof(buf),
+             "append first config, term:%lu, index:%u, type:%s, value-len:%lu",
+             entry.term, append_, EntryTypeToStr(entry.type),
+             entry.value.size());
+    tracer->PrepareEvent(kEventOther, std::string(buf));
+  }
+
+  return 0;
+}
+
 int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
   Check();
   RaftIndex tmp_first, tmp_last, tmp_append;
@@ -426,7 +473,6 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
   }
 
   leveldb::WriteBatch batch;
-  leveldb::WriteBatch config_batch;
   RaftIndex log_index = tmp_last;
 
   char meta_key[sizeof(RaftIndex)];
@@ -477,11 +523,6 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
 
   // write to config db
   if (entry.type == kConfig) {
-    config_batch.Put(leveldb::Slice(meta_key, sizeof(meta_key)),
-                     leveldb::Slice(meta_value, sizeof(meta_value)));
-    config_batch.Put(leveldb::Slice(data_key, sizeof(data_key)),
-                     leveldb::Slice(entry.value.c_str(), entry.value.size()));
-
     leveldb::WriteOptions wo;
     wo.sync = true;
     leveldb::Status s = config_db_->Write(wo, &batch);

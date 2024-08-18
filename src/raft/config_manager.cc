@@ -84,4 +84,12 @@ int32_t RaftConfig::FromString(const char* ptr, int32_t len) {
   return size;
 }
 
+void ConfigManager::set_current_cb(Functor cb) { current_cb_ = cb; }
+
+void ConfigManager::RunCb() {
+  if (current_cb_) {
+    current_cb_();
+  }
+}
+
 }  // namespace vraft

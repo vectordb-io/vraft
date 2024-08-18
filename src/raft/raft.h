@@ -139,6 +139,7 @@ class Raft final {
  private:
   bool IfSelfVote();
   int32_t InitConfig();
+  void UpdateConfigFile();
 
   void AppendNoop(Tracer *tracer);
   void MaybeCommit(Tracer *tracer);
