@@ -14,6 +14,12 @@ class RaftConfig final {
   RaftAddr me;
   std::vector<RaftAddr> peers;
 
+  int32_t MaxBytes();
+  int32_t ToString(std::string& s);
+  int32_t ToString(const char* ptr, int32_t len);
+  int32_t FromString(std::string& s);
+  int32_t FromString(const char* ptr, int32_t len);
+
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);

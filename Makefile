@@ -64,6 +64,7 @@ SOLID_DATA_TEST_SRCS := src/test/solid_data_test.cc $(COMMON_SRCS)
 UTIL_TEST_SRCS := src/test/util_test.cc $(COMMON_SRCS)
 RAFT_ADDR_TEST_SRCS := src/test/raft_addr_test.cc $(COMMON_SRCS)
 JSON_TEST_SRCS := src/test/json_test.cc $(COMMON_SRCS)
+CONFIG_MANAGER_TEST_SRCS := src/test/config_manager_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_TEST_SRCS := src/test/request_vote_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_REPLY_TEST_SRCS := src/test/request_vote_reply_test.cc $(COMMON_SRCS)
 TIMEOUT_NOW_TEST_SRCS := src/test/timeout_now_test.cc $(COMMON_SRCS)
@@ -153,6 +154,8 @@ SOLID_DATA_TEST_OBJECTS := $(SOLID_DATA_TEST_SRCS:.cc=.o)
 UTIL_TEST_OBJECTS := $(UTIL_TEST_SRCS:.cc=.o)
 RAFT_ADDR_TEST_OBJECTS := $(RAFT_ADDR_TEST_SRCS:.cc=.o)
 JSON_TEST_OBJECTS := $(JSON_TEST_SRCS:.cc=.o)
+CONFIG_MANAGER_TEST_OBJECTS := $(CONFIG_MANAGER_TEST_SRCS:.cc=.o)
+CONFIG_MANAGER_TEST_OBJECTS := $(CONFIG_MANAGER_TEST_SRCS:.cc=.o)
 REQUEST_VOTE_TEST_OBJECTS := $(REQUEST_VOTE_TEST_SRCS:.cc=.o)
 REQUEST_VOTE_REPLY_TEST_OBJECTS := $(REQUEST_VOTE_REPLY_TEST_SRCS:.cc=.o)
 TIMEOUT_NOW_TEST_OBJECTS := $(TIMEOUT_NOW_TEST_SRCS:.cc=.o)
@@ -227,6 +230,7 @@ TEST += solid_data_test
 TEST += util_test 
 TEST += raft_addr_test 
 TEST += json_test 
+TEST += config_manager_test 
 TEST += request_vote_test 
 TEST += request_vote_reply_test 
 TEST += timeout_now_test 
@@ -372,6 +376,9 @@ raft_addr_test: $(RAFT_ADDR_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 json_test: $(JSON_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+config_manager_test: $(CONFIG_MANAGER_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 request_vote_test: $(REQUEST_VOTE_TEST_OBJECTS)
