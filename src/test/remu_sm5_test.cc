@@ -23,13 +23,12 @@
 
 int32_t g_value_index = 0;
 int32_t g_server_index = 0;
-int32_t node_num = 5;
 
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     // stop first one
     case vraft::kTestState0: {
-      vraft::gtest_remu->raft_servers[(g_server_index++) % node_num]
+      vraft::gtest_remu->raft_servers[(g_server_index++) % vraft::gtest_node_num]
           ->raft()
           ->Stop();
       vraft::current_state = vraft::kTestState1;
@@ -63,7 +62,7 @@ void RemuTick(vraft::Timer *timer) {
       }
 
       // stop next one
-      vraft::gtest_remu->raft_servers[(g_server_index++) % node_num]
+      vraft::gtest_remu->raft_servers[(g_server_index++) % vraft::gtest_node_num]
           ->raft()
           ->Stop();
 
@@ -203,7 +202,7 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-TEST_F(RemuTest, RunNode5) { vraft::RunRemuTest(node_num); }
+TEST_F(RemuTest, RemuTest) { vraft::RunRemuTest(vraft::gtest_node_num); }
 
 int main(int argc, char **argv) {
   vraft::RemuParseConfig(argc, argv);

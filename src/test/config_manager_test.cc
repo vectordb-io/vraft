@@ -44,6 +44,24 @@ TEST(RaftConfig, RaftConfig) {
   }
 }
 
+TEST(ConfigManager, ConfigManager) {
+  vraft::RaftConfig rc;
+  rc.me.FromString("127.0.0.1:9000#7");
+
+  vraft::RaftAddr addr;
+  addr.FromString("127.0.0.1:9001#7");
+  rc.peers.push_back(addr);
+
+  vraft::ConfigManager mgr(rc);
+  std::cout << mgr.ToJsonString(false, false);
+
+  addr.FromString("127.0.0.1:9002#7");
+  rc.peers.push_back(addr);
+
+  mgr.SetCurrent(rc);
+  std::cout << mgr.ToJsonString(false, false);
+}
+
 int main(int argc, char **argv) {
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);

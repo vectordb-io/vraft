@@ -66,7 +66,7 @@ for file in `ls remu_*_test`; do
     fi
 
 #############################################################
-    cmd="./${file} --enable-stable-leader"
+    cmd="./${file} --enable-interval-check"
     echo ""
     echo "++++++++++++------------>>>>> Running ${cmd} ..."
 
@@ -94,7 +94,7 @@ for file in `ls remu_*_test`; do
     fi
 
 #############################################################
-    cmd="./${file} --enable-pre-vote --enable-stable-leader"
+    cmd="./${file} --enable-pre-vote --enable-interval-check"
     echo ""
     echo "++++++++++++------------>>>>> Running ${cmd} ..."
 

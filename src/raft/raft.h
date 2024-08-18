@@ -88,10 +88,10 @@ class Raft final {
   int32_t SendTimeoutNow(uint64_t dest, bool force, Tracer *tracer);
 
   // utils
-  int16_t Id() { return config_mgr_.Current().me.id(); }
-  RaftAddr Me() { return config_mgr_.Current().me; }
+  int16_t Id() { return config_mgr_.Current()->me.id(); }
+  RaftAddr Me() { return config_mgr_.Current()->me; }
   RaftTerm Term();
-  std::vector<RaftAddr> Peers() { return config_mgr_.Current().peers; }
+  std::vector<RaftAddr> Peers() { return config_mgr_.Current()->peers; }
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);

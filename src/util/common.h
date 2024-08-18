@@ -27,6 +27,11 @@ using TracerCb = std::function<void(std::string)>;
 using SendFunc =
     std::function<int32_t(uint64_t dest, const char *buf, unsigned int size)>;
 
+class RaftConfig;
+using RaftConfigSPtr = std::shared_ptr<RaftConfig>;
+using RaftConfigUPtr = std::unique_ptr<RaftConfig>;
+using RaftConfigWPtr = std::weak_ptr<RaftConfig>;
+
 class Console;
 using ConsoleSPtr = std::shared_ptr<Console>;
 using ConsoleUPtr = std::unique_ptr<Console>;

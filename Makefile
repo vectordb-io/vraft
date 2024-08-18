@@ -239,21 +239,6 @@ TEST += coding_test
 TEST += append_entries_reply_test 
 TEST += tracer_test 
 TEST += raft_test  
-TEST += remu_elect_test
-TEST += remu_elect2_test
-TEST += remu_propose_test 
-TEST += remu_propose2_test
-TEST += remu_sm_test 
-TEST += remu_sm2_test
-TEST += remu_sm3_test
-TEST += remu_sm4_test
-TEST += remu_sm5_test
-TEST += remu_restart_test
-TEST += remu_leadertransfer_test
-TEST += remu_timeout_byself_test
-TEST += remu_disable_recv_test
-TEST += remu_disable_recv2_test
-TEST += remu_net_error_test
 TEST += hostport_test
 TEST += buffer_test
 TEST += eventloop_test
@@ -283,12 +268,29 @@ TEST += vdb_engine_test
 TEST += parser_test
 TEST += vstore_msg_test
 
+REMU_TEST := remu_elect_test
+REMU_TEST += remu_elect2_test
+REMU_TEST += remu_propose_test 
+REMU_TEST += remu_propose2_test
+REMU_TEST += remu_sm_test 
+REMU_TEST += remu_sm2_test
+REMU_TEST += remu_sm3_test
+REMU_TEST += remu_sm4_test
+REMU_TEST += remu_sm5_test
+REMU_TEST += remu_restart_test
+REMU_TEST += remu_leadertransfer_test
+REMU_TEST += remu_timeout_byself_test
+REMU_TEST += remu_disable_recv_test
+REMU_TEST += remu_disable_recv2_test
+REMU_TEST += remu_net_error_test
+
 
 # compile
-all: $(MAIN) $(EXAMPLE) $(TEST)
+all: $(MAIN) $(EXAMPLE) $(TEST) $(REMU_TEST)
 main: $(MAIN) 
 example: $(EXAMPLE)
 test: $(TEST)
+remu-test: $(REMU_TEST)
 
 
 # .cc -> .o

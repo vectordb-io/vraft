@@ -20,6 +20,7 @@ std::string gtest_path;
 
 bool gtest_enable_pre_vote;
 bool gtest_interval_check;
+int32_t gtest_node_num = 3;
 
 void RemuParseConfig(int argc, char **argv) {
   gtest_enable_pre_vote = false;
@@ -32,6 +33,15 @@ void RemuParseConfig(int argc, char **argv) {
 
     if (std::string(argv[i]) == std::string("--enable-interval-check")) {
       gtest_interval_check = true;
+    }
+
+    {
+      std::string arg_str = std::string(std::string(argv[i]));
+      std::string key_str = std::string("--node-num=");
+      if (arg_str.compare(0, key_str.size(), key_str) == 0) {
+        arg_str.erase(0, key_str.size());
+        sscanf(arg_str.c_str(), "%d", &gtest_node_num);
+      }
     }
   }
 }

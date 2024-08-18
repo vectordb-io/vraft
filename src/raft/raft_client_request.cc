@@ -113,8 +113,8 @@ int32_t Raft::Propose(std::string value, Functor cb) {
   assert(rv == 0);
 
   MaybeCommit(&tracer);
-  if (config_mgr_.Current().peers.size() > 0) {
-    for (auto &peer : config_mgr_.Current().peers) {
+  if (config_mgr_.Current()->peers.size() > 0) {
+    for (auto &peer : config_mgr_.Current()->peers) {
       rv = SendAppendEntries(peer.ToU64(), &tracer);
       assert(rv == 0);
 

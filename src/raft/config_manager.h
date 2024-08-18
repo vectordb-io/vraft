@@ -9,8 +9,7 @@
 
 namespace vraft {
 
-class RaftConfig final {
- public:
+struct RaftConfig {
   RaftAddr me;
   std::vector<RaftAddr> peers;
 
@@ -23,8 +22,6 @@ class RaftConfig final {
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
-
- public:
 };
 
 inline nlohmann::json RaftConfig::ToJson() {
@@ -67,44 +64,69 @@ inline std::string RaftConfig::ToJsonString(bool tiny, bool one_line) {
 
 class ConfigManager final {
  public:
-  ConfigManager(const RaftConfig& config);
+  ConfigManager(const RaftConfig& current);
   ~ConfigManager();
   ConfigManager(const ConfigManager& t) = delete;
   ConfigManager& operator=(const ConfigManager& t) = delete;
 
-  RaftConfig& Current();
-  void SetCurrent(RaftConfig rc);
+  RaftConfigSPtr Previous();
+  RaftConfigSPtr Current();
+  void SetCurrent(const RaftConfig& rc);
 
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
 
  private:
-  RaftConfig current_;
+  RaftConfigSPtr current_;
+  RaftConfigSPtr previous_;
 };
 
-inline ConfigManager::ConfigManager(const RaftConfig& config)
-    : current_(config) {}
+inline ConfigManager::ConfigManager(const RaftConfig& current) {
+  SetCurrent(current);
+}
 
 inline ConfigManager::~ConfigManager() {}
 
-inline RaftConfig& ConfigManager::Current() { return current_; }
+inline RaftConfigSPtr ConfigManager::Previous() { return previous_; }
 
-inline void ConfigManager::SetCurrent(RaftConfig rc) {
-  current_.me = rc.me;
-  current_.peers.clear();
-  current_.peers.swap(rc.peers);
+inline RaftConfigSPtr ConfigManager::Current() { return current_; }
+
+inline void ConfigManager::SetCurrent(const RaftConfig& rc) {
+  if (current_) {
+    previous_ = current_;
+  }
+  current_ = std::make_shared<RaftConfig>();
+  *current_ = rc;
 }
 
 inline nlohmann::json ConfigManager::ToJson() {
   nlohmann::json j;
-  j = current_.ToJson();
+  if (current_) {
+    j["cur"] = current_->ToJson();
+  } else {
+    j["cur"] = "null";
+  }
+  if (previous_) {
+    j["pre"] = previous_->ToJson();
+  } else {
+    j["pre"] = "null";
+  }
   return j;
 }
 
 inline nlohmann::json ConfigManager::ToJsonTiny() {
   nlohmann::json j;
-  j = current_.ToJsonTiny();
+  if (current_) {
+    j["cur"] = current_->ToJsonTiny();
+  } else {
+    j["cur"] = "null";
+  }
+  if (previous_) {
+    j["pre"] = previous_->ToJsonTiny();
+  } else {
+    j["pre"] = "null";
+  }
   return j;
 }
 

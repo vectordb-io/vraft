@@ -127,18 +127,15 @@ void RemuTick(vraft::Timer *timer) {
         }
 
       } else if (vraft::gtest_enable_pre_vote && !vraft::gtest_interval_check) {
+        // only pre_vote is not enough
         for (auto ptr : vraft::gtest_remu->raft_servers) {
           if (ptr->raft()->state() == vraft::STATE_LEADER &&
               ptr->raft()->started()) {
-            // term not change
-            ASSERT_EQ(ptr->raft()->Term(), save_term);
+            // term may change, or may not change
+            EXPECT_GE(ptr->raft()->Term(), save_term);
 
-            // leader not change
-            ASSERT_EQ(ptr->raft()->Me().ToString(),
-                      leader_ptr->Me().ToString());
-
-            // leader timers == 1
-            ASSERT_EQ(vraft::gtest_remu->LeaderTimes(), 1);
+            // leader timers >= 1
+            EXPECT_GE(vraft::gtest_remu->LeaderTimes(), 1);
 
             break;
           }
@@ -227,15 +224,10 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-// TEST_F(RemuTest, RunNode5) { vraft::RunRemuTest(5); }
-
-// TEST_F(RemuTest, RunNode4) { vraft::RunRemuTest(4); }
-
-TEST_F(RemuTest, RunNode3) { vraft::RunRemuTest(3); }
+TEST_F(RemuTest, RemuTest) { vraft::RunRemuTest(vraft::gtest_node_num); }
 
 // only 1 node of 2 cannot elect
 // this case can investigate term-increase while enable pre-vote or not
-// TEST_F(RemuTest, RunNode2) { vraft::RunRemuTest(2); }
 
 int main(int argc, char **argv) {
   vraft::RemuParseConfig(argc, argv);

@@ -121,7 +121,7 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-TEST_F(RemuTest, RunNode5) { vraft::RunRemuTest(node_num); }
+TEST_F(RemuTest, RemuTest) { vraft::RunRemuTest(vraft::gtest_node_num); }
 
 int main(int argc, char **argv) {
   vraft::RemuParseConfig(argc, argv);

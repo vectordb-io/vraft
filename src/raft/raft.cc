@@ -198,9 +198,9 @@ int32_t Raft::InitConfig() {
     json_file.close();
 
     RaftConfig rc;
-    uint64_t u64 = j["config_manager"]["me"][0];
+    uint64_t u64 = j["config_manager"]["cur"]["me"][0];
     rc.me = RaftAddr(u64);
-    for (auto &peer : j["config_manager"]["peers"]) {
+    for (auto &peer : j["config_manager"]["cur"]["peers"]) {
       u64 = peer[0];
       rc.peers.push_back(RaftAddr(u64));
     }
@@ -448,7 +448,7 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["interval-chk"] = interval_check_;
   j[0][2]["last-hbts"] = NsToString2(last_heartbeat_timestamp_);
 
-  for (auto dest : config_mgr_.Current().peers) {
+  for (auto dest : config_mgr_.Current()->peers) {
     std::string key;
     key.append(dest.ToString());
     // index_mgr_
@@ -487,11 +487,11 @@ std::string Raft::ToJsonString(bool tiny, bool one_line) {
     state_str += tmp_str;
   }
 
-  j[config_mgr_.Current().me.ToString()][0] = state_str;
+  j[config_mgr_.Current()->me.ToString()][0] = state_str;
   if (tiny) {
-    j[config_mgr_.Current().me.ToString()][1] = ToJsonTiny();
+    j[config_mgr_.Current()->me.ToString()][1] = ToJsonTiny();
   } else {
-    j[config_mgr_.Current().me.ToString()][1] = ToJson();
+    j[config_mgr_.Current()->me.ToString()][1] = ToJson();
   }
 
   if (one_line) {

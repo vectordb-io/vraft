@@ -18,6 +18,7 @@ extern std::string gtest_path;
 
 extern bool gtest_enable_pre_vote;
 extern bool gtest_interval_check;
+extern int32_t gtest_node_num;
 
 void RemuParseConfig(int argc, char **argv);
 void RemuLogState(std::string key);
