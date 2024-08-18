@@ -60,6 +60,9 @@ TEST(ConfigManager, ConfigManager) {
 
   mgr.SetCurrent(rc);
   std::cout << mgr.ToJsonString(false, false);
+
+  mgr.Rollback();
+  std::cout << mgr.ToJsonString(false, false);
 }
 
 int main(int argc, char **argv) {

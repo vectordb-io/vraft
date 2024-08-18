@@ -165,4 +165,20 @@ int32_t Raft::LeaderTransferFirstPeer() {
   return LeaderTransfer(peers[0]);
 }
 
+int32_t Raft::AddServer(const RaftAddr &addr) {
+  if (assert_loop_) {
+    assert_loop_();
+  }
+
+  return 0;
+}
+
+int32_t Raft::RemoveServer(const RaftAddr &addr) {
+  if (assert_loop_) {
+    assert_loop_();
+  }
+
+  return 0;
+}
+
 }  // namespace vraft

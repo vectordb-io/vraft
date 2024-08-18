@@ -72,6 +72,7 @@ class ConfigManager final {
   RaftConfigSPtr Previous();
   RaftConfigSPtr Current();
   void SetCurrent(const RaftConfig& rc);
+  void Rollback();
 
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
@@ -109,6 +110,12 @@ inline void ConfigManager::SetCurrent(const RaftConfig& rc) {
   *current_ = rc;
 
   RunCb();
+}
+
+inline void ConfigManager::Rollback() {
+  assert(previous_);
+  current_ = previous_;
+  previous_ = nullptr;
 }
 
 inline nlohmann::json ConfigManager::ToJson() {

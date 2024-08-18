@@ -63,6 +63,8 @@ class Raft final {
   int32_t Propose(std::string value, Functor cb);
   int32_t LeaderTransfer(RaftAddr &dest);
   int32_t LeaderTransferFirstPeer();
+  int32_t AddServer(const RaftAddr &addr);
+  int32_t RemoveServer(const RaftAddr &addr);
 
   // on message
   int32_t OnPing(struct Ping &msg);
