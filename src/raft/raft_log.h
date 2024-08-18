@@ -391,6 +391,7 @@ class RaftLog final {
   RaftIndex Last() const { return last_; }
   RaftIndex Append() const { return append_; }
   uint32_t LastCheck() const { return last_checksum_; }
+  int32_t LastConfig(RaftConfig &rc, MetaValue &meta);
 
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
@@ -404,27 +405,14 @@ class RaftLog final {
   uint32_t last_checksum_;
 
   std::string path_;
+  std::string config_path_;
+
   leveldb::Options db_options_;
   std::shared_ptr<leveldb::DB> db_;
+  std::shared_ptr<leveldb::DB> config_db_;
 };
 
 inline RaftLog::~RaftLog() {}
-
-inline nlohmann::json RaftLog::ToJson() {
-  nlohmann::json j;
-  j["first"] = first_;
-  j["last"] = last_;
-  j["append"] = append_;
-  j["checksum"] = U32ToHexStr(last_checksum_);
-  MetaValuePtr ptr = LastMeta();
-  if (ptr) {
-    j["last_term"] = ptr->term;
-  } else {
-    j["last_term"] = 0;
-  }
-
-  return j;
-}
 
 inline nlohmann::json RaftLog::ToJsonTiny() {
   nlohmann::json j;

@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "coding.h"
+#include "config_manager.h"
 #include "leveldb/comparator.h"
 #include "leveldb/db.h"
 
@@ -1169,6 +1170,94 @@ TEST(RaftLog, CheckSum2) {
   }
 
   // system("rm -rf /tmp/raftlog_test_dir");
+}
+
+TEST(RaftLog, LastConfig) {
+  system("rm -rf /tmp/raftlog_test_dir");
+
+  {
+    vraft::RaftLog raft_log("/tmp/raftlog_test_dir");
+    raft_log.Init();
+
+    std::cout << raft_log.ToJsonString(true, true) << std::endl;
+    EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(0));
+    EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(0));
+    EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(1));
+
+    for (int i = 1; i <= 10; ++i) {
+      vraft::AppendEntry entry;
+      entry.term = i * 10;
+      entry.type = vraft::kData;
+      char buf[32];
+      snprintf(buf, sizeof(buf), "value_%d", i);
+      entry.value = buf;
+      raft_log.AppendOne(entry, nullptr);
+      std::cout << "append " << buf << ": " << raft_log.ToJsonString(true, true)
+                << std::endl;
+
+      vraft::RaftConfig rc2;
+      vraft::MetaValue meta;
+      int32_t rv = raft_log.LastConfig(rc2, meta);
+      ASSERT_EQ(rv, -1);
+    }
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+
+    {
+      vraft::RaftConfig rc;
+      rc.me.FromString("127.0.0.1:9000#7");
+
+      vraft::RaftAddr addr;
+      addr.FromString("127.0.0.1:9001#7");
+      rc.peers.push_back(addr);
+      addr.FromString("127.0.0.1:9002#7");
+      rc.peers.push_back(addr);
+
+      vraft::AppendEntry entry;
+      entry.term = 1234;
+      entry.type = vraft::kConfig;
+      rc.ToString(entry.value);
+      raft_log.AppendOne(entry, nullptr);
+
+      vraft::RaftConfig rc2;
+      vraft::MetaValue meta;
+      int32_t rv = raft_log.LastConfig(rc2, meta);
+      ASSERT_EQ(rv, 0);
+      ASSERT_EQ(rc.me.ToU64(), rc2.me.ToU64());
+      ASSERT_EQ(rc.peers[0].ToU64(), rc2.peers[0].ToU64());
+      ASSERT_EQ(rc.peers[1].ToU64(), rc2.peers[1].ToU64());
+      ASSERT_EQ(meta.term, entry.term);
+      ASSERT_EQ(meta.type, entry.type);
+    }
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+
+    {
+      vraft::RaftConfig rc;
+      rc.me.FromString("8.8.8.8:9000#7");
+
+      vraft::RaftAddr addr;
+      addr.FromString("8.8.8.8:9001#7");
+      rc.peers.push_back(addr);
+      addr.FromString("8.8.8.8:9002#7");
+      rc.peers.push_back(addr);
+
+      vraft::AppendEntry entry;
+      entry.term = 5678;
+      entry.type = vraft::kConfig;
+      rc.ToString(entry.value);
+      raft_log.AppendOne(entry, nullptr);
+
+      vraft::RaftConfig rc2;
+      vraft::MetaValue meta;
+      int32_t rv = raft_log.LastConfig(rc2, meta);
+      ASSERT_EQ(rv, 0);
+      ASSERT_EQ(rc.me.ToU64(), rc2.me.ToU64());
+      ASSERT_EQ(rc.peers[0].ToU64(), rc2.peers[0].ToU64());
+      ASSERT_EQ(rc.peers[1].ToU64(), rc2.peers[1].ToU64());
+      ASSERT_EQ(meta.term, entry.term);
+      ASSERT_EQ(meta.type, entry.type);
+    }
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+  }
 }
 
 int main(int argc, char **argv) {

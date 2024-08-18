@@ -28,7 +28,8 @@ void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     // stop first one
     case vraft::kTestState0: {
-      vraft::gtest_remu->raft_servers[(g_server_index++) % vraft::gtest_node_num]
+      vraft::gtest_remu
+          ->raft_servers[(g_server_index++) % vraft::gtest_node_num]
           ->raft()
           ->Stop();
       vraft::current_state = vraft::kTestState1;
@@ -62,7 +63,8 @@ void RemuTick(vraft::Timer *timer) {
       }
 
       // stop next one
-      vraft::gtest_remu->raft_servers[(g_server_index++) % vraft::gtest_node_num]
+      vraft::gtest_remu
+          ->raft_servers[(g_server_index++) % vraft::gtest_node_num]
           ->raft()
           ->Stop();
 
