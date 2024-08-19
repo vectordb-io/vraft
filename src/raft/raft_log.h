@@ -403,6 +403,9 @@ class RaftLog final {
   void set_insert_cb(AppendConfigFunc cb) { insert_cb_ = cb; }
   void set_delete_cb(DeleteConfigFunc cb) { delete_cb_ = cb; }
 
+  // for debug
+  RaftAddr me;
+
  private:
   RaftIndex first_;
   RaftIndex last_;

@@ -31,7 +31,7 @@ void RemuTick(vraft::Timer *timer) {
         }
       }
 
-      if (leader_num >= 1) {
+      if (leader_num == 1) {
         timer->RepeatDecr();
         if (timer->repeat_counter() == 0) {
           vraft::current_state = vraft::kTestState1;

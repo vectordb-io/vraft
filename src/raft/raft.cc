@@ -179,6 +179,7 @@ void Raft::Init() {
 
   meta_.Init();
   log_.Init();
+  log_.me = Me();  // for debug
   log_.set_insert_cb(std::bind(&Raft::ConfigChange, this, std::placeholders::_1,
                                std::placeholders::_2));
   log_.set_delete_cb(
@@ -202,7 +203,7 @@ int32_t Raft::InitConfig() {
   RaftConfig rc;
   MetaValue mv;
   int32_t rv = log_.LastConfig(rc, mv);
-  if (rv == 0) {
+  if (rv >= 0) {
     // use config in log, update current config
     config_mgr_.SetCurrent(rc);
 
@@ -220,6 +221,13 @@ int32_t Raft::InitConfig() {
 
   // reset managers
   ResetManagerPeers(config_mgr_.Current()->peers);
+
+  {
+    char buf[128];
+    snprintf(buf, sizeof(buf), "%s init-config %s", Me().ToString().c_str(),
+             config_mgr_.Current()->ToJsonString(true, true).c_str());
+    tracer.PrepareEvent(kEventOther, std::string(buf));
+  }
 
   tracer.PrepareState1();
   tracer.Finish();

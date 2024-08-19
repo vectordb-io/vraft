@@ -378,39 +378,44 @@ void Raft::StateMachineApply(Tracer *tracer) {
 
   // state machine apply
   if (commit_ > last_apply_) {
-    if (sm_) {
-      for (RaftIndex i = last_apply_ + 1; i <= commit_; ++i) {
-        LogEntry log_entry;
-        int32_t rv = log_.Get(i, log_entry);
-        assert(rv == 0);
+    for (RaftIndex i = last_apply_ + 1; i <= commit_; ++i) {
+      LogEntry log_entry;
+      int32_t rv = log_.Get(i, log_entry);
+      assert(rv == 0);
 
-        if (log_entry.append_entry.type == kData) {
+      if (log_entry.append_entry.type == kData) {
+        if (sm_) {
           rv = sm_->Apply(&log_entry, Me());
           assert(rv == 0);
+        }
+        // propose call back with rv
 
-          // propose call back with rv
+      } else if (log_entry.append_entry.type == kConfig) {
+        if (changing_index_ == log_entry.index) {
+          changing_index_ = 0;
 
-        } else if (log_entry.append_entry.type == kConfig) {
-          if (changing_index_ == log_entry.index) {
-            changing_index_ = 0;
+          if (tracer) {
+            RaftConfig rc;
+            rc.FromString(log_entry.append_entry.value);
 
-            if (tracer) {
-              char buf[128];
-              snprintf(buf, sizeof(buf), "config-change-finish, index:%u", i);
-              tracer->PrepareEvent(kEventOther, std::string(buf));
-            }
-
-            standby_ = false;
+            char buf[256];
+            snprintf(buf, sizeof(buf), "%s config-change-finish index:%u %s",
+                     Me().ToString().c_str(), i,
+                     rc.ToJsonString(true, true).c_str());
+            tracer->PrepareEvent(kEventOther, std::string(buf));
           }
 
-          // cb
-
-        } else if (log_entry.append_entry.type == kNoop) {
-        } else {
-          assert(0);
+          standby_ = false;
         }
+
+        // cb
+
+      } else if (log_entry.append_entry.type == kNoop) {
+      } else {
+        assert(0);
       }
     }
+
     last_apply_ = commit_;
   }
 }

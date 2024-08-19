@@ -19,6 +19,17 @@ nlohmann::json RaftConfig::ToJson() {
 
 nlohmann::json RaftConfig::ToJsonTiny() {
   nlohmann::json j;
+  j[0] = me.ToString();
+  int32_t i = 1;
+  for (auto peer : peers) {
+    j[i++] = peer.ToString();
+  }
+  return j;
+}
+
+#if 0
+nlohmann::json RaftConfig::ToJsonTiny() {
+  nlohmann::json j;
   j["me"] = me.ToString();
   int32_t i = 0;
   for (auto peer : peers) {
@@ -26,6 +37,7 @@ nlohmann::json RaftConfig::ToJsonTiny() {
   }
   return j;
 }
+#endif
 
 std::string RaftConfig::ToJsonString(bool tiny, bool one_line) {
   nlohmann::json j;

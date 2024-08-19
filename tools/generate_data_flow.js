@@ -103,6 +103,38 @@ fs.readFile(inputFile, 'utf-8', (err, data) => {
       const event = columns[4] + '-' + addr_to;
       console.log(addr, '->', addr + ':', event);
 
+
+    } else if (
+        eventType === 'event_other' && columns.length === 6 &&
+        columns[4] === 'config-change-propose') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const param = columns[5];
+      const event = columns[4] + '-' + param;
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 6 &&
+        columns[4] === 'init-config') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const param = columns[5];
+      const event = columns[4] + '-' + param;
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 6 &&
+        columns[4] === 'config-change-begin') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const param = columns[5];
+      const event = columns[4] + '-' + param;
+      console.log(addr, '->', addr + ':', event);
+
+    } else if (
+        eventType === 'event_other' && columns.length === 7 &&
+        columns[4] === 'config-change-finish') {
+      const addr = columns[3].replace(/[:#]/g, '_');
+      const event = columns[4] + '-' + columns[5] + '-' + columns[6];
+      console.log(addr, '->', addr + ':', event);
+
     } else if (eventType === 'event_stop' && columns.length === 5) {
       const addr = columns[3].replace(/[:#]/g, '_');
       const event = columns[4];

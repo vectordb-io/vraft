@@ -575,7 +575,8 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
 
     if (tracer) {
       char buf[128];
-      snprintf(buf, sizeof(buf), "config-change-begin, index:%u", append_);
+      snprintf(buf, sizeof(buf), "%s config-change-begin index:%u",
+               me.ToString().c_str(), append_);
       tracer->PrepareEvent(kEventOther, std::string(buf));
     }
   }
@@ -700,7 +701,7 @@ int32_t RaftLog::DeleteFrom(RaftIndex from_index, Tracer *tracer) {
 
       if (tracer) {
         char buf[128];
-        snprintf(buf, sizeof(buf), "config-change-delete, index:%u", i);
+        snprintf(buf, sizeof(buf), "config-change-delete index:%u", i);
         tracer->PrepareEvent(kEventOther, std::string(buf));
       }
     }
