@@ -20,13 +20,13 @@ class RaftAddr final {
   RaftAddr &operator=(const RaftAddr &t) = default;
 
   bool FromString(const std::string s);  // 127.0.0.1:9988#0
-  uint64_t ToU64();
+  uint64_t ToU64() const;
   void FromU64(uint64_t u64);
   std::string ToString() const;
 
-  uint32_t ip() { return ip_; }
-  uint16_t port() { return port_; }
-  int16_t id() { return id_; }
+  uint32_t ip() const { return ip_; }
+  uint16_t port() const { return port_; }
+  int16_t id() const { return id_; }
 
  private:
   void FromU64(uint64_t u64, uint32_t &ip, uint16_t &port, int16_t &id);
@@ -70,7 +70,7 @@ inline bool RaftAddr::FromString(const std::string s) {
 
 inline RaftAddr::~RaftAddr() {}
 
-inline uint64_t RaftAddr::ToU64() {
+inline uint64_t RaftAddr::ToU64() const {
   uint64_t u64 = 0;
   char *p = reinterpret_cast<char *>(&u64);
 

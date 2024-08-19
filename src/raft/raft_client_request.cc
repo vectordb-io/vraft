@@ -170,7 +170,62 @@ int32_t Raft::AddServer(const RaftAddr &addr) {
     assert_loop_();
   }
 
-  return 0;
+  if (changing_index_ > 0) {
+    return -1;
+  }
+
+  bool in = config_mgr_.Current()->InConfig(addr);
+  if (in) {
+    return -1;
+  }
+
+  if (config_mgr_.Current()->me.id() != addr.id()) {
+    return -1;
+  }
+
+  RaftConfig rc = *(config_mgr_.Current());
+  rc.peers.push_back(addr);
+
+  std::string value;
+  rc.ToString(value);
+
+  //---------------------- propose value
+
+  Tracer tracer(this, true, tracer_cb_);
+  tracer.PrepareState0();
+  char buf[128];
+  snprintf(buf, sizeof(buf), "%s config-change-propose length:%lu",
+           Me().ToString().c_str(), value.size());
+  tracer.PrepareEvent(kEventOther, std::string(buf));
+
+  int32_t rv = 0;
+  AppendEntry entry;
+
+  if (state_ != STATE_LEADER || !started_) {
+    rv = -1;
+    goto end;
+  }
+
+  entry.term = meta_.term();
+  entry.type = kConfig;
+  entry.value = value;
+  rv = log_.AppendOne(entry, &tracer);
+  assert(rv == 0);
+
+  MaybeCommit(&tracer);
+  if (config_mgr_.Current()->peers.size() > 0) {
+    for (auto &peer : config_mgr_.Current()->peers) {
+      rv = SendAppendEntries(peer.ToU64(), &tracer);
+      assert(rv == 0);
+
+      timer_mgr_.AgainHeartBeat(peer.ToU64());
+    }
+  }
+
+end:
+  tracer.PrepareState1();
+  tracer.Finish();
+  return rv;
 }
 
 int32_t Raft::RemoveServer(const RaftAddr &addr) {

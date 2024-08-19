@@ -22,9 +22,11 @@ struct RaftConfig {
   nlohmann::json ToJson();
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
+
+  bool InConfig(const RaftAddr& addr);
 };
 
-using AppendConfigFunc = std::function<void(const RaftConfig& rc)>;
+using AppendConfigFunc = std::function<void(const RaftConfig& rc, RaftIndex i)>;
 using DeleteConfigFunc = std::function<void(RaftIndex)>;
 
 }  // namespace vraft

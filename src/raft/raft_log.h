@@ -379,7 +379,7 @@ class RaftLog final {
   int32_t AppendFirstConfig(RaftConfig &rc, RaftTerm term, Tracer *tracer);
   int32_t AppendOne(AppendEntry &entry, Tracer *tracer);
   int32_t AppendSome(std::vector<AppendEntry> &entries);
-  int32_t DeleteFrom(RaftIndex from_index);
+  int32_t DeleteFrom(RaftIndex from_index, Tracer *tracer);
   int32_t DeleteUtil(RaftIndex to_index);
   int32_t Get(RaftIndex index, LogEntry &entry);
   int32_t GetMeta(RaftIndex index, MetaValue &meta);

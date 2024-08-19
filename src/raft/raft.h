@@ -130,6 +130,8 @@ class Raft final {
   StateMachineSPtr sm();
   RaftLog &log();
   SolidData &meta();
+  bool standby() const;
+  void set_standby(bool b);
 
   // debug
   void DisableSend();
@@ -155,8 +157,10 @@ class Raft final {
   RaftTerm GetTerm(RaftIndex index);
 
   void ResetManagerPeers(const std::vector<RaftAddr> &peers);
-  void ConfigChange(const RaftConfig &rc);
+  void ConfigChange(const RaftConfig &rc, RaftIndex i);
   void ConfigDelete(RaftIndex i);
+
+  void AgainElection() { timer_mgr_.AgainElection(); }
 
  private:
   bool started_;
@@ -215,6 +219,12 @@ class Raft final {
   RaftTerm transfer_max_term_;
   bool interval_check_;
   int64_t last_heartbeat_timestamp_;
+  RaftIndex changing_index_;  // config changing index
+
+  // when add into a cluster
+  // when standby_, cannot send out request-vote
+  // when config change finish, standby_ is clear
+  bool standby_;
 
   friend void Tick(Timer *timer);
   friend void Elect(Timer *timer);
@@ -297,6 +307,10 @@ inline StateMachineSPtr Raft::sm() { return sm_; }
 inline RaftLog &Raft::log() { return log_; }
 
 inline SolidData &Raft::meta() { return meta_; }
+
+inline bool Raft::standby() const { return standby_; }
+
+inline void Raft::set_standby(bool b) { standby_ = b; };
 
 }  // namespace vraft
 

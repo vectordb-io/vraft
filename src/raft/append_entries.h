@@ -217,8 +217,15 @@ inline nlohmann::json AppendEntries::ToJson() {
   j[1]["pre-term"] = pre_log_term;
   j[1]["commit"] = commit_index;
   j[1]["entry-count"] = entries.size();
+#if 0
   for (size_t i = 0; i < entries.size(); ++i) {
     j[2]["entries"][i] = entries[i].ToJson();
+  }
+#endif
+  for (size_t i = 0; i < entries.size(); ++i) {
+    j[2]["entries"][i]["tm"] = entries[i].append_entry.term;
+    j[2]["entries"][i]["tp"] = EntryTypeToStr(entries[i].append_entry.type);
+    j[2]["entries"][i]["sz"] = entries[i].append_entry.value.size();
   }
   j[3]["send_ts"] = send_ts;
   j[3]["elapse"] = elapse;

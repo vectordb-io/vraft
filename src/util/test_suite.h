@@ -16,6 +16,9 @@ extern EventLoopSPtr gtest_loop;
 extern RemuSPtr gtest_remu;
 extern std::string gtest_path;
 
+extern uint16_t normal_port;
+extern uint16_t standby_port;
+
 extern bool gtest_enable_pre_vote;
 extern bool gtest_interval_check;
 extern int32_t gtest_node_num;
@@ -32,6 +35,7 @@ void RemuTestSetUp(std::string path, GTestTickFunc tick_func,
                    CreateSMFunc create_sm);
 void RemuTestTearDown();
 void RunRemuTest(int32_t node_num);
+void RunRemuTest2(int32_t node_num, int32_t add_node_num);
 
 //------------------TestSM---------------------------
 

@@ -42,4 +42,18 @@ std::string RaftConfig::ToJsonString(bool tiny, bool one_line) {
   }
 }
 
+bool RaftConfig::InConfig(const RaftAddr &addr) {
+  if (me.ToU64() == addr.ToU64()) {
+    return true;
+  }
+
+  for (auto a : peers) {
+    if (a.ToU64() == addr.ToU64()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 }  // namespace vraft

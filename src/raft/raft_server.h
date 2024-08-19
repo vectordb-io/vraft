@@ -45,13 +45,14 @@ class RaftServer final {
   bool enable_recv() const;
   void set_enable_recv(bool enable_recv);
 
+  TcpClientSPtr GetClientOrCreate(uint64_t dest_addr);
+
  private:
   void Init();
   int32_t Send(uint64_t dest_addr, const char *buf, unsigned int size);
 
   TimerSPtr MakeTimer(TimerParam &param);
   TcpClientSPtr GetClient(uint64_t dest_addr);
-  TcpClientSPtr GetClientOrCreate(uint64_t dest_addr);
 
  private:
   Config config_;

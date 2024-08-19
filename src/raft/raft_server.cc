@@ -300,6 +300,10 @@ TcpClientSPtr RaftServer::GetClient(uint64_t dest_addr) {
 TcpClientSPtr RaftServer::GetClientOrCreate(uint64_t dest_addr) {
   TcpClientSPtr ptr = GetClient(dest_addr);
   if (ptr && !ptr->Connected()) {
+    printf("RaftServer::GetClientOrCreate %s clients_.erase %s -------- \n",
+           raft_->Me().ToString().c_str(),
+           RaftAddr(dest_addr).ToString().c_str());
+
     clients_.erase(dest_addr);
     ptr.reset();
   }
@@ -314,7 +318,16 @@ TcpClientSPtr RaftServer::GetClientOrCreate(uint64_t dest_addr) {
     int32_t rv = ptr->Connect(100);
     if (rv == 0) {
       clients_.insert({dest_addr, ptr});
+
+      printf("RaftServer::GetClientOrCreate %s clients_.insert %s -------- \n",
+             raft_->Me().ToString().c_str(),
+             RaftAddr(dest_addr).ToString().c_str());
+
     } else {
+      printf("RaftServer::GetClientOrCreate %s ptr.reset %s -------- \n",
+             raft_->Me().ToString().c_str(),
+             RaftAddr(dest_addr).ToString().c_str());
+
       ptr.reset();
     }
   }

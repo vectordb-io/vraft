@@ -570,7 +570,13 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
     if (insert_cb_) {
       RaftConfig rc;
       rc.FromString(entry.value);
-      insert_cb_(rc);
+      insert_cb_(rc, append_);
+    }
+
+    if (tracer) {
+      char buf[128];
+      snprintf(buf, sizeof(buf), "config-change-begin, index:%u", append_);
+      tracer->PrepareEvent(kEventOther, std::string(buf));
     }
   }
 
@@ -598,7 +604,7 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
 
 int32_t RaftLog::AppendSome(std::vector<AppendEntry> &entries) { return 0; }
 
-int32_t RaftLog::DeleteFrom(RaftIndex from_index) {
+int32_t RaftLog::DeleteFrom(RaftIndex from_index, Tracer *tracer) {
   Check();
   RaftIndex tmp_first, tmp_last, tmp_append;
   uint32_t tmp_checksum = 0;
@@ -690,6 +696,12 @@ int32_t RaftLog::DeleteFrom(RaftIndex from_index) {
 
       if (delete_cb_) {
         delete_cb_(i);
+      }
+
+      if (tracer) {
+        char buf[128];
+        snprintf(buf, sizeof(buf), "config-change-delete, index:%u", i);
+        tracer->PrepareEvent(kEventOther, std::string(buf));
       }
     }
   }

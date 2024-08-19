@@ -190,7 +190,7 @@ int32_t Raft::OnAppendEntries(struct AppendEntries &msg) {
 
         assert(commit_ < index);
 
-        rv = log_.DeleteFrom(index);
+        rv = log_.DeleteFrom(index, &tracer);
         assert(rv == 0);
 
         char buf[128];

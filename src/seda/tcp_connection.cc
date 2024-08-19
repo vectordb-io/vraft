@@ -148,10 +148,20 @@ int32_t TcpConnection::Close() {
 }
 
 bool TcpConnection::Connected() const {
+  bool b1 = UvIsActive(reinterpret_cast<UvHandle *>(conn_.get()));
+  bool b2 = UvIsReadable(reinterpret_cast<UvStream *>(conn_.get()));
+  bool b3 = UvIsWritable(reinterpret_cast<UvStream *>(conn_.get()));
+  bool b = b1 && b2 && b3;
+  return b;
+}
+
+#if 0
+bool TcpConnection::Connected() const {
   return UvIsActive(reinterpret_cast<UvHandle *>(conn_.get())) &&
          UvIsReadable(reinterpret_cast<UvStream *>(conn_.get())) &&
          UvIsWritable(reinterpret_cast<UvStream *>(conn_.get()));
 }
+#endif
 
 int32_t TcpConnection::Send(const char *buf, ssize_t size) {
   AssertInLoopThread();

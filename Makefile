@@ -75,6 +75,7 @@ TRACER_TEST_SRCS := src/test/tracer_test.cc $(COMMON_SRCS)
 RAFT_TEST_SRCS := src/test/raft_test.cc $(COMMON_SRCS)
 TPL_TEST_SRCS := src/test/tpl_test.cc $(COMMON_SRCS)
 TEST_SUITE_TEST_SRCS := src/test/test_suite_test.cc $(COMMON_SRCS)
+REMU_RECONFIG_TEST_SRCS := src/test/remu_reconfig_test.cc $(COMMON_SRCS)
 REMU_ELECT_TEST_SRCS := src/test/remu_elect_test.cc $(COMMON_SRCS)
 REMU_ELECT2_TEST_SRCS := src/test/remu_elect2_test.cc $(COMMON_SRCS)
 REMU_PROPOSE_TEST_SRCS := src/test/remu_propose_test.cc $(COMMON_SRCS)
@@ -167,6 +168,7 @@ RAFT_TEST_OBJECTS := $(RAFT_TEST_SRCS:.cc=.o)
 TPL_TEST_OBJECTS := $(TPL_TEST_SRCS:.cc=.o)
 TEST_SUITE_TEST_OBJECTS := $(TEST_SUITE_TEST_SRCS:.cc=.o)
 REMU_ELECT_TEST_OBJECTS := $(REMU_ELECT_TEST_SRCS:.cc=.o)
+REMU_RECONFIG_TEST_OBJECTS := $(REMU_RECONFIG_TEST_SRCS:.cc=.o)
 REMU_ELECT2_TEST_OBJECTS := $(REMU_ELECT2_TEST_SRCS:.cc=.o)
 REMU_PROPOSE_TEST_OBJECTS := $(REMU_PROPOSE_TEST_SRCS:.cc=.o)
 REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
@@ -268,6 +270,7 @@ TEST += vdb_engine_test
 TEST += parser_test
 TEST += vstore_msg_test
 
+REMU_TEST := remu_reconfig_test
 REMU_TEST := remu_elect_test
 REMU_TEST += remu_elect2_test
 REMU_TEST += remu_propose_test 
@@ -414,6 +417,9 @@ test_suite_test: $(TEST_SUITE_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_elect_test: $(REMU_ELECT_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_reconfig_test: $(REMU_RECONFIG_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_elect2_test: $(REMU_ELECT2_TEST_OBJECTS)

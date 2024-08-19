@@ -18,6 +18,9 @@ EventLoopSPtr gtest_loop;
 RemuSPtr gtest_remu;
 std::string gtest_path;
 
+uint16_t normal_port = 8000;
+uint16_t standby_port = 9000;
+
 bool gtest_enable_pre_vote;
 bool gtest_interval_check;
 int32_t gtest_node_num = 3;
@@ -65,9 +68,9 @@ void PrintAndCheck() {
 void GenerateConfig(std::vector<Config> &configs, int32_t peers_num) {
   configs.clear();
   GetConfig().peers().clear();
-  GetConfig().set_my_addr(HostPort("127.0.0.1", 9000));
+  GetConfig().set_my_addr(HostPort("127.0.0.1", normal_port));
   for (int i = 1; i <= peers_num; ++i) {
-    GetConfig().peers().push_back(HostPort("127.0.0.1", 9000 + i));
+    GetConfig().peers().push_back(HostPort("127.0.0.1", normal_port + i));
   }
   GetConfig().set_log_level(kLoggerTrace);
   GetConfig().set_enable_debug(true);
@@ -144,6 +147,29 @@ void RemuTestTearDown() {
 void RunRemuTest(int32_t node_num) {
   int32_t peers_num = node_num - 1;
   GenerateConfig(gtest_remu->configs, peers_num);
+  gtest_remu->Create();
+  gtest_remu->Start();
+
+  {
+    EventLoopSPtr l = gtest_loop;
+    std::thread t([l]() { l->Loop(); });
+    l->WaitStarted();
+    t.join();
+  }
+
+  std::cout << "join thread... \n";
+  std::fflush(nullptr);
+}
+
+void RunRemuTest2(int32_t node_num, int32_t add_node_num) {
+  int32_t peers_num = node_num - 1;
+  GenerateConfig(gtest_remu->configs, peers_num);
+  for (int32_t i = 0; i < add_node_num; ++i) {
+    gtest_remu->AddOneNode();
+  }
+
+  gtest_remu->PrintConfig();
+
   gtest_remu->Create();
   gtest_remu->Start();
 

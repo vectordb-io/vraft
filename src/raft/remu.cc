@@ -5,6 +5,7 @@
 
 #include "clock.h"
 #include "raft_server.h"
+#include "test_suite.h"
 #include "util.h"
 
 namespace vraft {
@@ -45,6 +46,12 @@ void Remu::Print(bool tiny, bool one_line) {
   }
   printf("\n");
   fflush(nullptr);
+}
+
+void Remu::PrintConfig() {
+  for (auto conf : configs) {
+    std::cout << conf.ToString() << std::endl;
+  }
 }
 
 void Remu::Check() {
@@ -99,6 +106,9 @@ void Remu::Create() {
     ptr->raft()->set_create_sm(create_sm);
     ptr->raft()->set_enable_pre_vote(enable_pre_vote_);
     ptr->raft()->set_interval_check(interval_check_);
+    if (conf.peers().size() == 0) {
+      ptr->raft()->set_standby(true);
+    }
     raft_servers.push_back(ptr);
   }
 }
@@ -123,5 +133,39 @@ void Remu::Clear() {
   configs.clear();
   raft_servers.clear();
 }
+
+void Remu::AddOneNode() {
+  assert(configs.size() > 0);
+
+  vraft::Config c;
+  c.set_my_addr(HostPort(configs[0].my_addr().host, standby_port++));
+  c.set_log_level(kLoggerTrace);
+  c.set_enable_debug(true);
+  c.set_path(vraft::gtest_path + "/" + c.my_addr().ToString());
+  c.set_mode(kSingleMode);
+
+  configs.push_back(c);
+}
+
+#if 0
+void Remu::AddOneNode() {
+  assert(configs.size() > 0);
+  vraft::Config c;
+  uint16_t max_port = configs[0].my_addr().port;
+  for (auto peer : configs[0].peers()) {
+    if (peer.port > max_port) {
+      max_port = peer.port;
+    }
+  }
+
+  c.set_my_addr(HostPort(configs[0].my_addr().host, max_port + 1));
+  c.set_log_level(kLoggerTrace);
+  c.set_enable_debug(true);
+  c.set_path(vraft::gtest_path);
+  c.set_mode(kSingleMode);
+
+  configs.push_back(c);
+}
+#endif
 
 }  // namespace vraft

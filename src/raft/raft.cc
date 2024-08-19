@@ -30,7 +30,7 @@ void Tick(Timer *timer) {
   Raft *r = reinterpret_cast<Raft *>(timer->data());
   vraft_logger.FInfo("raft-tick: %s", r->ToJsonString(true, true).c_str());
   for (auto &dest_addr : r->Peers()) {
-    r->SendPing(dest_addr.ToU64(), nullptr);
+    //   r->SendPing(dest_addr.ToU64(), nullptr);
   }
 
   if (r->print_screen()) {
@@ -80,7 +80,9 @@ Raft::Raft(const std::string &path, const RaftConfig &rc)
       leader_transfer_(false),
       transfer_max_term_(0),
       interval_check_(true),
-      last_heartbeat_timestamp_(0) {
+      last_heartbeat_timestamp_(0),
+      changing_index_(0),
+      standby_(false) {
   vraft_logger.FInfo("raft construct, %s, %p", rc.me.ToString().c_str(), this);
 }
 
@@ -177,8 +179,8 @@ void Raft::Init() {
 
   meta_.Init();
   log_.Init();
-  log_.set_insert_cb(
-      std::bind(&Raft::ConfigChange, this, std::placeholders::_1));
+  log_.set_insert_cb(std::bind(&Raft::ConfigChange, this, std::placeholders::_1,
+                               std::placeholders::_2));
   log_.set_delete_cb(
       std::bind(&Raft::ConfigDelete, this, std::placeholders::_1));
 
@@ -305,14 +307,94 @@ void Raft::ResetManagerPeers(const std::vector<RaftAddr> &peers) {
   timer_mgr_.Reset(peers);
 }
 
-void Raft::ConfigChange(const RaftConfig &rc) {
-  config_mgr_.SetCurrent(rc);
-  ResetManagerPeers(config_mgr_.Current()->peers);
+void Raft::ConfigChange(const RaftConfig &rc, RaftIndex i) {
+  std::vector<RaftAddr> add_nodes;
+
+  bool in = config_mgr_.Current()->InConfig(rc.me);
+  if (!in) {
+    add_nodes.push_back(rc.me);
+  }
+
+  for (auto new_peer : rc.peers) {
+    in = config_mgr_.Current()->InConfig(new_peer);
+    if (!in) {
+      add_nodes.push_back(new_peer);
+    }
+  }
+
+  if (!standby_) {
+    assert(add_nodes.size() == 1);
+  }
+
+  RaftConfig cur = *(config_mgr_.Current());
+  for (auto add_addr : add_nodes) {
+    cur.peers.push_back(add_addr);
+
+    // add index-mgr
+    {
+      IndexItem item;
+      item.next = 1;
+      item.match = 0;
+
+      if (state_ == STATE_LEADER) {
+        item.next = LastIndex() + 1;
+        item.match = 0;
+      }
+
+      index_mgr_.indices[add_addr.ToU64()] = item;
+    }
+
+    // add vote-mgr
+    {
+      VoteItem item;
+      item.grant = false;
+      item.done = false;
+      item.logok = false;
+      item.interval_ok = false;
+
+      vote_mgr_.votes[add_addr.ToU64()] = item;
+    }
+
+    // add snapshot-mgr
+    {
+      Snapshot snapshot;
+      snapshot.reader_ = nullptr;
+      snapshot.writer_ = nullptr;
+      snapshot_mgr_.snapshots[add_addr.ToU64()] = snapshot;
+    }
+
+    // add timer-mgr
+    {
+      // rpc timer request-vote
+      {
+        TimerSPtr sptr = timer_mgr_.CreateRpcTimer(add_addr);
+        timer_mgr_.AddRpcTimer(add_addr, sptr);
+      }
+
+      // heartbeat timer
+      {
+        TimerSPtr sptr = timer_mgr_.CreateHeartbeatTimer(add_addr);
+        timer_mgr_.AddHeartbeatTimer(add_addr, sptr);
+
+        if (state_ == STATE_LEADER) {
+          // sptr->Again(0, timer_mgr_.heartbeat_ms());
+        }
+      }
+    }
+  }
+
+  config_mgr_.SetCurrent(cur);
+  changing_index_ = i;
 }
 
 void Raft::ConfigDelete(RaftIndex i) {
+  assert(0);
+
+  if (changing_index_ == i) {
+    changing_index_ = 0;
+  }
+
   config_mgr_.Rollback();
-  ResetManagerPeers(config_mgr_.Current()->peers);
 }
 
 RaftTerm Raft::Term() { return meta_.term(); }
@@ -476,6 +558,8 @@ nlohmann::json Raft::ToJson() {
   } else {
     j["leader"] = leader_.ToString();
   }
+  j["changing"] = changing_index_;
+  j["standby"] = standby_;
   j["this"] = PointerToHexStr(this);
   return j;
 }
@@ -512,6 +596,8 @@ nlohmann::json Raft::ToJsonTiny() {
   j[0][2]["tsf-max-term"] = transfer_max_term_;
   j[0][2]["interval-chk"] = interval_check_;
   j[0][2]["last-hbts"] = NsToString2(last_heartbeat_timestamp_);
+  j[0][2]["changing"] = changing_index_;
+  j[0][2]["standby"] = standby_;
 
   for (auto dest : config_mgr_.Current()->peers) {
     std::string key;

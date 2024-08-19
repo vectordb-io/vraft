@@ -30,9 +30,11 @@ struct Remu {
   void Start();
   void Stop();
   void Clear();
+  void AddOneNode();
 
   void Log(std::string key);
   void Print(bool tiny = true, bool one_line = true);
+  void PrintConfig();
 
   void Check();
 

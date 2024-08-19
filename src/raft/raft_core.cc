@@ -27,6 +27,12 @@ void Elect(Timer *timer) {
   Raft *r = reinterpret_cast<Raft *>(timer->data());
   assert(r->state_ == STATE_FOLLOWER || r->state_ == STATE_CANDIDATE);
 
+  if (r->standby()) {
+    // reset election timer
+    r->AgainElection();
+    return;
+  }
+
   Tracer tracer(r, true, r->tracer_cb_);
   tracer.PrepareState0();
 
@@ -383,6 +389,25 @@ void Raft::StateMachineApply(Tracer *tracer) {
           assert(rv == 0);
 
           // propose call back with rv
+
+        } else if (log_entry.append_entry.type == kConfig) {
+          if (changing_index_ == log_entry.index) {
+            changing_index_ = 0;
+
+            if (tracer) {
+              char buf[128];
+              snprintf(buf, sizeof(buf), "config-change-finish, index:%u", i);
+              tracer->PrepareEvent(kEventOther, std::string(buf));
+            }
+
+            standby_ = false;
+          }
+
+          // cb
+
+        } else if (log_entry.append_entry.type == kNoop) {
+        } else {
+          assert(0);
         }
       }
     }

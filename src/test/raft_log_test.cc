@@ -468,7 +468,7 @@ TEST(RaftLog, CheckSum) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(10));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(11));
 
-    raft_log.DeleteFrom(1);
+    raft_log.DeleteFrom(1, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(0));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(0));
@@ -518,7 +518,7 @@ TEST(RaftLog, DeleteFrom) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(10));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(11));
 
-    raft_log.DeleteFrom(7);
+    raft_log.DeleteFrom(7, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(1));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(6));
@@ -565,7 +565,7 @@ TEST(RaftLog, DeleteFrom2) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(10));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(11));
 
-    raft_log.DeleteFrom(1);
+    raft_log.DeleteFrom(1, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(0));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(0));
@@ -616,7 +616,7 @@ TEST(RaftLog, DeleteFrom2) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(5));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(6));
 
-    raft_log.DeleteFrom(3);
+    raft_log.DeleteFrom(3, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(1));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(2));
@@ -632,7 +632,7 @@ TEST(RaftLog, DeleteFrom2) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(2));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(3));
 
-    raft_log.DeleteFrom(0);
+    raft_log.DeleteFrom(0, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(0));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(0));
@@ -809,7 +809,7 @@ TEST(RaftLog, DeleteFrom_DeleteUtil) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(10));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(11));
 
-    raft_log.DeleteFrom(7);
+    raft_log.DeleteFrom(7, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(6));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(6));
@@ -888,7 +888,7 @@ TEST(RaftLog, DeleteFrom_DeleteUtil2) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(10));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(11));
 
-    raft_log.DeleteFrom(8);
+    raft_log.DeleteFrom(8, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(6));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(7));
@@ -904,7 +904,7 @@ TEST(RaftLog, DeleteFrom_DeleteUtil2) {
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(7));
     EXPECT_EQ(raft_log.Append(), static_cast<uint32_t>(8));
 
-    raft_log.DeleteFrom(3);
+    raft_log.DeleteFrom(3, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(0));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(0));
@@ -963,7 +963,7 @@ TEST(RaftLog, Get) {
       EXPECT_EQ(rv, -1);
     }
 
-    raft_log.DeleteFrom(5);
+    raft_log.DeleteFrom(5, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(1));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(4));
@@ -1118,7 +1118,7 @@ TEST(RaftLog, CheckSum2) {
     rv = raft_log.GetMeta(4, meta);
     assert(rv == 0);
 
-    raft_log.DeleteFrom(5);
+    raft_log.DeleteFrom(5, nullptr);
     std::cout << raft_log.ToJsonString(true, true) << std::endl;
     EXPECT_EQ(raft_log.First(), static_cast<uint32_t>(1));
     EXPECT_EQ(raft_log.Last(), static_cast<uint32_t>(4));
@@ -1279,7 +1279,7 @@ TEST(RaftLog, LastConfig) {
     std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
 
     std::cout << "delete from 12" << std::endl;
-    raft_log.DeleteFrom(12);
+    raft_log.DeleteFrom(12, nullptr);
     std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
   }
 
@@ -1290,7 +1290,7 @@ TEST(RaftLog, LastConfig) {
     std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
 
     std::cout << "delete from 11" << std::endl;
-    raft_log.DeleteFrom(11);
+    raft_log.DeleteFrom(11, nullptr);
     std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
   }
 
