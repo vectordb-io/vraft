@@ -385,6 +385,108 @@ rl.on('line', (line) => {
 
 
         // line 5
+        /*
+                {
+                  if (Object.keys(json_obj[raftid][1][0]).length >= 4) {
+                    var peers = Object.keys(json_obj[raftid][1][0][3]);
+                    for (let i = 0; i < peers.length; i++) {
+                      var peer = peers[i];
+                      writeStream.write('\t<tr>\n');
+
+                      // peer
+                      {
+                        writeStream.write(td_str);
+                        writeStream.write(peer);
+                        writeStream.write(td_end_str);
+                      }
+
+                      // match
+                      {
+                        var match = json_obj[raftid][1][0][3][peer][0]['match'];
+                        if (last_ready &&
+                            match !=
+                                last_json_objs[raftid][1][0][3][peer][0]['match'])
+           { writeStream.write(td_change_str); } else {
+                          writeStream.write(td_str);
+                        }
+                        writeStream.write('"match":' + match);
+                        writeStream.write(td_end_str);
+                      }
+
+                      // next
+                      {
+                        var next = json_obj[raftid][1][0][3][peer][0]['next'];
+                        if (last_ready &&
+                            next !=
+           last_json_objs[raftid][1][0][3][peer][0]['next']) {
+                          writeStream.write(td_change_str);
+                        } else {
+                          writeStream.write(td_str);
+                        }
+                        writeStream.write('"next":' + next);
+                        writeStream.write(td_end_str);
+                      }
+
+                      // done
+                      {
+                        var done = json_obj[raftid][1][0][3][peer][1]['done'];
+                        if (last_ready &&
+                            done !=
+           last_json_objs[raftid][1][0][3][peer][1]['done']) {
+                          writeStream.write(td_change_str);
+                        } else {
+                          writeStream.write(td_str);
+                        }
+                        writeStream.write('"done":' + done);
+                        writeStream.write(td_end_str);
+                      }
+
+                      // grant
+                      {
+                        var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
+                        if (last_ready &&
+                            grant !=
+                                last_json_objs[raftid][1][0][3][peer][1]['grant'])
+           { writeStream.write(td_change_str); } else {
+                          writeStream.write(td_str);
+                        }
+                        writeStream.write('"grant":' + grant);
+                        writeStream.write(td_end_str);
+                      }
+
+                      // logok
+                      {
+                        var logok = json_obj[raftid][1][0][3][peer][1]['logok'];
+                        if (last_ready &&
+                            logok !=
+                                last_json_objs[raftid][1][0][3][peer][1]['logok'])
+           { writeStream.write(td_change_str); } else {
+                          writeStream.write(td_str);
+                        }
+                        writeStream.write('"logok":' + logok);
+                        writeStream.write(td_end_str);
+                      }
+
+                      // iok
+                      {
+                        var iok = json_obj[raftid][1][0][3][peer][1]['iok'];
+                        if (last_ready &&
+                            iok !=
+           last_json_objs[raftid][1][0][3][peer][1]['iok']) {
+                          writeStream.write(td_change_str);
+                        } else {
+                          writeStream.write(td_str);
+                        }
+                        writeStream.write('"iok":' + iok);
+                        writeStream.write(td_end_str);
+                      }
+
+                      writeStream.write('\t</tr>\n');
+                    }
+                  }
+                }
+        */
+        // line 5
         {
           if (Object.keys(json_obj[raftid][1][0]).length >= 4) {
             var peers = Object.keys(json_obj[raftid][1][0][3]);
@@ -402,13 +504,7 @@ rl.on('line', (line) => {
               // match
               {
                 var match = json_obj[raftid][1][0][3][peer][0]['match'];
-                if (last_ready &&
-                    match !=
-                        last_json_objs[raftid][1][0][3][peer][0]['match']) {
-                  writeStream.write(td_change_str);
-                } else {
-                  writeStream.write(td_str);
-                }
+                writeStream.write(td_str);
                 writeStream.write('"match":' + match);
                 writeStream.write(td_end_str);
               }
@@ -416,12 +512,7 @@ rl.on('line', (line) => {
               // next
               {
                 var next = json_obj[raftid][1][0][3][peer][0]['next'];
-                if (last_ready &&
-                    next != last_json_objs[raftid][1][0][3][peer][0]['next']) {
-                  writeStream.write(td_change_str);
-                } else {
-                  writeStream.write(td_str);
-                }
+                writeStream.write(td_str);
                 writeStream.write('"next":' + next);
                 writeStream.write(td_end_str);
               }
@@ -429,12 +520,7 @@ rl.on('line', (line) => {
               // done
               {
                 var done = json_obj[raftid][1][0][3][peer][1]['done'];
-                if (last_ready &&
-                    done != last_json_objs[raftid][1][0][3][peer][1]['done']) {
-                  writeStream.write(td_change_str);
-                } else {
-                  writeStream.write(td_str);
-                }
+                writeStream.write(td_str);
                 writeStream.write('"done":' + done);
                 writeStream.write(td_end_str);
               }
@@ -442,13 +528,7 @@ rl.on('line', (line) => {
               // grant
               {
                 var grant = json_obj[raftid][1][0][3][peer][1]['grant'];
-                if (last_ready &&
-                    grant !=
-                        last_json_objs[raftid][1][0][3][peer][1]['grant']) {
-                  writeStream.write(td_change_str);
-                } else {
-                  writeStream.write(td_str);
-                }
+                writeStream.write(td_str);
                 writeStream.write('"grant":' + grant);
                 writeStream.write(td_end_str);
               }
@@ -456,13 +536,7 @@ rl.on('line', (line) => {
               // logok
               {
                 var logok = json_obj[raftid][1][0][3][peer][1]['logok'];
-                if (last_ready &&
-                    logok !=
-                        last_json_objs[raftid][1][0][3][peer][1]['logok']) {
-                  writeStream.write(td_change_str);
-                } else {
-                  writeStream.write(td_str);
-                }
+                writeStream.write(td_str);
                 writeStream.write('"logok":' + logok);
                 writeStream.write(td_end_str);
               }
@@ -470,12 +544,7 @@ rl.on('line', (line) => {
               // iok
               {
                 var iok = json_obj[raftid][1][0][3][peer][1]['iok'];
-                if (last_ready &&
-                    iok != last_json_objs[raftid][1][0][3][peer][1]['iok']) {
-                  writeStream.write(td_change_str);
-                } else {
-                  writeStream.write(td_str);
-                }
+                writeStream.write(td_str);
                 writeStream.write('"iok":' + iok);
                 writeStream.write(td_end_str);
               }
