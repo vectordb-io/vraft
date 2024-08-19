@@ -177,6 +177,10 @@ void Raft::Init() {
 
   meta_.Init();
   log_.Init();
+  log_.set_insert_cb(
+      std::bind(&Raft::ConfigChange, this, std::placeholders::_1));
+  log_.set_delete_cb(
+      std::bind(&Raft::ConfigDelete, this, std::placeholders::_1));
 
   rv = InitConfig();
   assert(rv == 0);
@@ -213,10 +217,7 @@ int32_t Raft::InitConfig() {
   }
 
   // reset managers
-  index_mgr_.Reset(config_mgr_.Current()->peers);
-  vote_mgr_.Reset(config_mgr_.Current()->peers);
-  snapshot_mgr_.Reset(config_mgr_.Current()->peers);
-  timer_mgr_.Reset(config_mgr_.Current()->peers);
+  ResetManagerPeers(config_mgr_.Current()->peers);
 
   tracer.PrepareState1();
   tracer.Finish();
@@ -294,6 +295,24 @@ RaftTerm Raft::GetTerm(RaftIndex index) {
     assert(sm_);
     return sm_->LastTerm();
   }
+}
+
+void Raft::ResetManagerPeers(const std::vector<RaftAddr> &peers) {
+  // reset managers
+  index_mgr_.Reset(peers);
+  vote_mgr_.Reset(peers);
+  snapshot_mgr_.Reset(peers);
+  timer_mgr_.Reset(peers);
+}
+
+void Raft::ConfigChange(const RaftConfig &rc) {
+  config_mgr_.SetCurrent(rc);
+  ResetManagerPeers(config_mgr_.Current()->peers);
+}
+
+void Raft::ConfigDelete(RaftIndex i) {
+  config_mgr_.Rollback();
+  ResetManagerPeers(config_mgr_.Current()->peers);
 }
 
 RaftTerm Raft::Term() { return meta_.term(); }

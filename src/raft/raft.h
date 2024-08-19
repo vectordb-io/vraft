@@ -154,6 +154,10 @@ class Raft final {
   RaftTerm LastTerm();
   RaftTerm GetTerm(RaftIndex index);
 
+  void ResetManagerPeers(const std::vector<RaftAddr> &peers);
+  void ConfigChange(const RaftConfig &rc);
+  void ConfigDelete(RaftIndex i);
+
  private:
   bool started_;
   std::string home_path_;

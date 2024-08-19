@@ -5,6 +5,7 @@
 
 #include <cassert>
 #include <memory>
+#include <set>
 #include <type_traits>
 #include <utility>
 
@@ -14,6 +15,7 @@
 #include "leveldb/comparator.h"
 #include "leveldb/db.h"
 #include "nlohmann/json.hpp"
+#include "raft_config.h"
 #include "slice.h"
 #include "util.h"
 
@@ -398,10 +400,14 @@ class RaftLog final {
   nlohmann::json ToJsonTiny();
   std::string ToJsonString(bool tiny, bool one_line);
 
+  void set_insert_cb(AppendConfigFunc cb) { insert_cb_ = cb; }
+  void set_delete_cb(DeleteConfigFunc cb) { delete_cb_ = cb; }
+
  private:
   RaftIndex first_;
   RaftIndex last_;
   RaftIndex append_;
+  std::set<RaftIndex> config_indices_;
   bool checksum_;
   uint32_t last_checksum_;
 
@@ -411,6 +417,9 @@ class RaftLog final {
   leveldb::Options db_options_;
   std::shared_ptr<leveldb::DB> db_;
   std::shared_ptr<leveldb::DB> config_db_;
+
+  AppendConfigFunc insert_cb_;
+  DeleteConfigFunc delete_cb_;
 };
 
 inline RaftLog::~RaftLog() {}
@@ -427,6 +436,16 @@ inline nlohmann::json RaftLog::ToJsonTiny() {
   } else {
     j[3]["ltm"] = 0;
   }
+
+  if (config_indices_.size() > 0) {
+    int32_t i = 0;
+    for (auto index : config_indices_) {
+      j[4]["cfs"][i++] = index;
+    }
+  } else {
+    j[4]["cfs"] = "null";
+  }
+
   return j;
 }
 

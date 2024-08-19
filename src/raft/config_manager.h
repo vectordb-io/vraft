@@ -5,62 +5,9 @@
 
 #include "common.h"
 #include "nlohmann/json.hpp"
-#include "raft_addr.h"
+#include "raft_config.h"
 
 namespace vraft {
-
-struct RaftConfig {
-  RaftAddr me;
-  std::vector<RaftAddr> peers;
-
-  int32_t MaxBytes();
-  int32_t ToString(std::string& s);
-  int32_t ToString(const char* ptr, int32_t len);
-  int32_t FromString(std::string& s);
-  int32_t FromString(const char* ptr, int32_t len);
-
-  nlohmann::json ToJson();
-  nlohmann::json ToJsonTiny();
-  std::string ToJsonString(bool tiny, bool one_line);
-};
-
-inline nlohmann::json RaftConfig::ToJson() {
-  nlohmann::json j;
-  j["me"][0] = me.ToU64();
-  j["me"][1] = me.ToString();
-  int32_t i = 0;
-  for (auto peer : peers) {
-    j["peers"][i][0] = peer.ToU64();
-    j["peers"][i][1] = peer.ToString();
-    i++;
-  }
-  return j;
-}
-
-inline nlohmann::json RaftConfig::ToJsonTiny() {
-  nlohmann::json j;
-  j["me"] = me.ToString();
-  int32_t i = 0;
-  for (auto peer : peers) {
-    j["peers"][i++] = peer.ToString();
-  }
-  return j;
-}
-
-inline std::string RaftConfig::ToJsonString(bool tiny, bool one_line) {
-  nlohmann::json j;
-  if (tiny) {
-    j["rc"] = ToJsonTiny();
-  } else {
-    j["raft_config"] = ToJson();
-  }
-
-  if (one_line) {
-    return j.dump();
-  } else {
-    return j.dump(JSON_TAB);
-  }
-}
 
 class ConfigManager final {
  public:
@@ -116,6 +63,8 @@ inline void ConfigManager::Rollback() {
   assert(previous_);
   current_ = previous_;
   previous_ = nullptr;
+
+  RunCb();
 }
 
 inline nlohmann::json ConfigManager::ToJson() {

@@ -221,6 +221,31 @@ void RaftLog::Init() {
   }
 
   delete it;
+
+  // init configs
+  {
+    leveldb::ReadOptions ro;
+    leveldb::Iterator *it = config_db_->NewIterator(ro);
+    it->SeekToFirst();
+    while (it->Valid()) {
+      RaftIndex index = DecodeFixed32(it->key().ToString().c_str());
+      RaftIndex log_index;
+
+      if (index == 0) {
+        log_index = index;
+      } else if (index % 2 == 0) {  // data index
+        log_index = DataIndexToLogIndex(index);
+      } else if (index % 2 == 1) {  // meta index
+        log_index = MetaIndexToLogIndex(index);
+      }
+
+      config_indices_.insert(log_index);
+      it->Next();
+    }
+
+    delete it;
+  }
+
   Check();
 }
 
@@ -280,6 +305,15 @@ nlohmann::json RaftLog::ToJson() {
     j["last_term"] = ptr->term;
   } else {
     j["last_term"] = 0;
+  }
+
+  if (config_indices_.size() > 0) {
+    int32_t i = 0;
+    for (auto index : config_indices_) {
+      j["configs"][i++] = index;
+    }
+  } else {
+    j["configs"] = "null";
   }
 
   RaftConfig rc;
@@ -438,6 +472,8 @@ int32_t RaftLog::AppendFirstConfig(RaftConfig &rc, RaftTerm term,
     wo.sync = true;
     leveldb::Status s = config_db_->Write(wo, &batch);
     assert(s.ok());
+
+    config_indices_.insert(0);
   }
 
   if (tracer) {
@@ -527,6 +563,15 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
     wo.sync = true;
     leveldb::Status s = config_db_->Write(wo, &batch);
     assert(s.ok());
+
+    config_indices_.insert(log_index);
+
+    // update config mgr
+    if (insert_cb_) {
+      RaftConfig rc;
+      rc.FromString(entry.value);
+      insert_cb_(rc);
+    }
   }
 
   if (tracer) {
@@ -602,6 +647,8 @@ int32_t RaftLog::DeleteFrom(RaftIndex from_index) {
   tmp_checksum = meta.pre_chk_all;
 
   leveldb::WriteBatch batch;
+  leveldb::WriteBatch delete_config_batch;
+  std::vector<RaftIndex> delete_config_indices;
   for (RaftIndex i = from_index; i <= last_; ++i) {
     char meta_key[sizeof(RaftIndex)];
     EncodeMetaKey(meta_key, sizeof(RaftIndex), i);
@@ -610,6 +657,15 @@ int32_t RaftLog::DeleteFrom(RaftIndex from_index) {
     char data_key[sizeof(RaftIndex)];
     EncodeDataKey(data_key, sizeof(RaftIndex), i);
     batch.Delete(leveldb::Slice(data_key, sizeof(data_key)));
+
+    // delete config db
+    auto config_it = config_indices_.find(i);
+    if (config_it != config_indices_.end()) {
+      delete_config_batch.Delete(leveldb::Slice(meta_key, sizeof(meta_key)));
+      delete_config_batch.Delete(leveldb::Slice(data_key, sizeof(data_key)));
+
+      delete_config_indices.push_back(i);
+    }
   }
 
   // need to persist append index
@@ -622,6 +678,21 @@ int32_t RaftLog::DeleteFrom(RaftIndex from_index) {
 
   leveldb::Status s = db_->Write(leveldb::WriteOptions(), &batch);
   assert(s.ok());
+
+  // delete config db
+  {
+    leveldb::Status s =
+        config_db_->Write(leveldb::WriteOptions(), &delete_config_batch);
+    assert(s.ok());
+
+    for (auto i : delete_config_indices) {
+      config_indices_.erase(i);
+
+      if (delete_cb_) {
+        delete_cb_(i);
+      }
+    }
+  }
 
   // update index
   first_ = tmp_first;

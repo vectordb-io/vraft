@@ -1205,6 +1205,19 @@ TEST(RaftLog, LastConfig) {
     {
       vraft::RaftConfig rc;
       rc.me.FromString("127.0.0.1:9000#7");
+      raft_log.AppendFirstConfig(rc, 1234, nullptr);
+
+      vraft::RaftConfig rc2;
+      vraft::MetaValue meta;
+      int32_t rv = raft_log.LastConfig(rc2, meta);
+      ASSERT_EQ(rv, 0);
+      ASSERT_EQ(rc.me.ToU64(), rc2.me.ToU64());
+    }
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+
+    {
+      vraft::RaftConfig rc;
+      rc.me.FromString("127.0.0.1:9000#7");
 
       vraft::RaftAddr addr;
       addr.FromString("127.0.0.1:9001#7");
@@ -1256,6 +1269,35 @@ TEST(RaftLog, LastConfig) {
       ASSERT_EQ(meta.term, entry.term);
       ASSERT_EQ(meta.type, entry.type);
     }
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+  }
+
+  {
+    // restart
+    vraft::RaftLog raft_log("/tmp/raftlog_test_dir");
+    raft_log.Init();
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+
+    std::cout << "delete from 12" << std::endl;
+    raft_log.DeleteFrom(12);
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+  }
+
+  {
+    // restart
+    vraft::RaftLog raft_log("/tmp/raftlog_test_dir");
+    raft_log.Init();
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+
+    std::cout << "delete from 11" << std::endl;
+    raft_log.DeleteFrom(11);
+    std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
+  }
+
+  {
+    // restart
+    vraft::RaftLog raft_log("/tmp/raftlog_test_dir");
+    raft_log.Init();
     std::cout << "=======" << raft_log.ToJsonString(false, true) << std::endl;
   }
 }
