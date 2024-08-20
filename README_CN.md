@@ -52,10 +52,13 @@ VRAFT是一个用C++编写的分布式开发框架, 实现了RAFT协议和SEDA�
 
 ## Web Interface
 
-#### global state change
+#### 自动Raft生成消息流程图
+![](images/message-flow.png)
+
+#### 全局状态转换
 ![](images/remu-web2.png)
 
-#### node state change
+#### 单节点状态转换
 ![](images/remu-web3.png)
 
 # 3 Flame Graph
