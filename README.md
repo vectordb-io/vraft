@@ -5,11 +5,18 @@
 
 VRAFT is a framework written in C++ that implements the RAFT protocol and the SEDA architecture. Based on VRAFT, distributed software can be developed easily, such as distributed storage system and [vectordb]((https://github.com/vectordb-io/vectordb)).
 
-#### Features:
 * **Program with TLA+ Specification** -- Coding with the assistance of [TLA+ Specification](https://lamport.azurewebsites.net/tla/tla.html) to theoretically ensure the correctness of the system.
 * **Remu([Raft Emulator](https://zhuanlan.zhihu.com/p/707899225))** -- There's a Built-in raft emulator that allows for distributed debugging, distributed global state viewing, and distributed automated testing.
 * **Debug Everything** -- The full-stack source code of VRAFT can be debugged.
 * **Infrastructure Software Demo** -- There are several demos of infrastructure software in VRAFT, such as distributed KV-store, metadata management center, distributed SQL, vectordb ...
+
+#### Features:
+* Basic Raft
+* Raft Cluster Emulator
+* Multi-Raft
+* Pre-Vote
+* Leadership Transfer
+* Dynamic Membership Change
 
 #### Articles:
 * [《自己动手实现Raft》](https://zhuanlan.zhihu.com/p/706518239) <br>
