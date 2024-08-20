@@ -270,8 +270,8 @@ TEST += vdb_engine_test
 TEST += parser_test
 TEST += vstore_msg_test
 
-REMU_TEST := remu_reconfig_test
 REMU_TEST := remu_elect_test
+REMU_TEST += remu_reconfig_test
 REMU_TEST += remu_elect2_test
 REMU_TEST += remu_propose_test 
 REMU_TEST += remu_propose2_test
