@@ -52,6 +52,9 @@ VRAFT is a framework written in C++ that implements the RAFT protocol and the SE
 
 ## Web Interface
 
+#### auto generate message flow
+![](images/message-flow.png)
+
 #### global state change
 ![](images/remu-web2.png)
 
