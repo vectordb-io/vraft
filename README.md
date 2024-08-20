@@ -13,10 +13,14 @@ VRAFT is a framework written in C++ that implements the RAFT protocol and the SE
 #### Features:
 * Basic Raft
 * Raft Cluster Emulator
+  * Global State Change View
+  * Auto Message Flow
+  * Cluster Breakpoint Debugger
 * Multi-Raft
 * Pre-Vote
 * Leadership Transfer
 * Dynamic Membership Change
+* Execution History CheckSum
 
 #### Articles:
 * [《自己动手实现Raft》](https://zhuanlan.zhihu.com/p/706518239) <br>
