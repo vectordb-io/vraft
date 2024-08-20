@@ -17,6 +17,14 @@
 #include "util.h"
 #include "vraft_logger.h"
 
+// for remu gdb
+void RemuPrint() { vraft::gtest_remu->Print(true, true); }
+
+void RemuCheck() {
+  vraft::gtest_remu->Check();
+  std::cout << "check ok!" << std::endl;
+}
+
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     // wait until elect leader
