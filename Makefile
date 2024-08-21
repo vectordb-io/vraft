@@ -63,6 +63,7 @@ RAFT_LOG_TEST_SRCS := src/test/raft_log_test.cc $(COMMON_SRCS)
 SOLID_DATA_TEST_SRCS := src/test/solid_data_test.cc $(COMMON_SRCS)
 UTIL_TEST_SRCS := src/test/util_test.cc $(COMMON_SRCS)
 RAFT_ADDR_TEST_SRCS := src/test/raft_addr_test.cc $(COMMON_SRCS)
+RAFT_CONFIG_TEST_SRCS := src/test/raft_config_test.cc $(COMMON_SRCS)
 JSON_TEST_SRCS := src/test/json_test.cc $(COMMON_SRCS)
 CONFIG_MANAGER_TEST_SRCS := src/test/config_manager_test.cc $(COMMON_SRCS)
 REQUEST_VOTE_TEST_SRCS := src/test/request_vote_test.cc $(COMMON_SRCS)
@@ -76,6 +77,7 @@ RAFT_TEST_SRCS := src/test/raft_test.cc $(COMMON_SRCS)
 TPL_TEST_SRCS := src/test/tpl_test.cc $(COMMON_SRCS)
 TEST_SUITE_TEST_SRCS := src/test/test_suite_test.cc $(COMMON_SRCS)
 REMU_RECONFIG_TEST_SRCS := src/test/remu_reconfig_test.cc $(COMMON_SRCS)
+REMU_RECONFIG2_TEST_SRCS := src/test/remu_reconfig2_test.cc $(COMMON_SRCS)
 REMU_ELECT_TEST_SRCS := src/test/remu_elect_test.cc $(COMMON_SRCS)
 REMU_ELECT2_TEST_SRCS := src/test/remu_elect2_test.cc $(COMMON_SRCS)
 REMU_PROPOSE_TEST_SRCS := src/test/remu_propose_test.cc $(COMMON_SRCS)
@@ -154,6 +156,7 @@ RAFT_LOG_TEST_OBJECTS := $(RAFT_LOG_TEST_SRCS:.cc=.o)
 SOLID_DATA_TEST_OBJECTS := $(SOLID_DATA_TEST_SRCS:.cc=.o)
 UTIL_TEST_OBJECTS := $(UTIL_TEST_SRCS:.cc=.o)
 RAFT_ADDR_TEST_OBJECTS := $(RAFT_ADDR_TEST_SRCS:.cc=.o)
+RAFT_CONFIG_TEST_OBJECTS := $(RAFT_CONFIG_TEST_SRCS:.cc=.o)
 JSON_TEST_OBJECTS := $(JSON_TEST_SRCS:.cc=.o)
 CONFIG_MANAGER_TEST_OBJECTS := $(CONFIG_MANAGER_TEST_SRCS:.cc=.o)
 CONFIG_MANAGER_TEST_OBJECTS := $(CONFIG_MANAGER_TEST_SRCS:.cc=.o)
@@ -169,6 +172,7 @@ TPL_TEST_OBJECTS := $(TPL_TEST_SRCS:.cc=.o)
 TEST_SUITE_TEST_OBJECTS := $(TEST_SUITE_TEST_SRCS:.cc=.o)
 REMU_ELECT_TEST_OBJECTS := $(REMU_ELECT_TEST_SRCS:.cc=.o)
 REMU_RECONFIG_TEST_OBJECTS := $(REMU_RECONFIG_TEST_SRCS:.cc=.o)
+REMU_RECONFIG2_TEST_OBJECTS := $(REMU_RECONFIG2_TEST_SRCS:.cc=.o)
 REMU_ELECT2_TEST_OBJECTS := $(REMU_ELECT2_TEST_SRCS:.cc=.o)
 REMU_PROPOSE_TEST_OBJECTS := $(REMU_PROPOSE_TEST_SRCS:.cc=.o)
 REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
@@ -231,6 +235,7 @@ TEST += raft_log_test
 TEST += solid_data_test 
 TEST += util_test 
 TEST += raft_addr_test 
+TEST += raft_config_test 
 TEST += json_test 
 TEST += config_manager_test 
 TEST += request_vote_test 
@@ -272,6 +277,7 @@ TEST += vstore_msg_test
 
 REMU_TEST := remu_elect_test
 REMU_TEST += remu_reconfig_test
+REMU_TEST += remu_reconfig2_test
 REMU_TEST += remu_elect2_test
 REMU_TEST += remu_propose_test 
 REMU_TEST += remu_propose2_test
@@ -380,6 +386,9 @@ util_test: $(UTIL_TEST_OBJECTS)
 raft_addr_test: $(RAFT_ADDR_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
+raft_config_test: $(RAFT_CONFIG_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
 json_test: $(JSON_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
@@ -420,6 +429,9 @@ remu_elect_test: $(REMU_ELECT_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_reconfig_test: $(REMU_RECONFIG_TEST_OBJECTS)
+	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
+
+remu_reconfig2_test: $(REMU_RECONFIG2_TEST_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/test/$@
 
 remu_elect2_test: $(REMU_ELECT2_TEST_OBJECTS)

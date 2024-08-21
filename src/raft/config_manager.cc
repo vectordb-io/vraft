@@ -4,6 +4,24 @@
 
 namespace vraft {
 
+bool RaftConfig::operator==(const RaftConfig& rhs) const {
+  if (!(me == rhs.me)) {
+    return false;
+  }
+
+  if (peers.size() != rhs.peers.size()) {
+    return false;
+  }
+
+  for (size_t i = 0; i < peers.size(); ++i) {
+    if (!(peers[i] == rhs.peers[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 int32_t RaftConfig::MaxBytes() {
   int32_t size = 0;
   size += sizeof(uint64_t);      // RaftAddr me

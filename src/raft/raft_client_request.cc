@@ -75,6 +75,28 @@ int32_t Raft::OnClientRequest(struct ClientRequest &msg,
   return rv;
 }
 
+int32_t Raft::DoPropose(const std::string &value, EntryType type,
+                        Tracer *tracer) {
+  AppendEntry entry;
+  entry.term = meta_.term();
+  entry.type = type;
+  entry.value = value;
+  int32_t rv = log_.AppendOne(entry, tracer);
+  assert(rv == 0);
+
+  MaybeCommit(tracer);
+  if (config_mgr_.Current()->peers.size() > 0) {
+    for (auto &peer : config_mgr_.Current()->peers) {
+      rv = SendAppendEntries(peer.ToU64(), tracer);
+      assert(rv == 0);
+
+      timer_mgr_.AgainHeartBeat(peer.ToU64());
+    }
+  }
+
+  return rv;
+}
+
 /********************************************************************************************
 \* Leader i receives a client request to add v to the log.
 ClientRequest(i, v) ==
@@ -99,28 +121,12 @@ int32_t Raft::Propose(std::string value, Functor cb) {
   tracer.PrepareEvent(kEventOther, std::string(buf));
 
   int32_t rv = 0;
-  AppendEntry entry;
-
   if (state_ != STATE_LEADER || !started_) {
     rv = -1;
     goto end;
   }
 
-  entry.term = meta_.term();
-  entry.type = kData;
-  entry.value = value;
-  rv = log_.AppendOne(entry, &tracer);
-  assert(rv == 0);
-
-  MaybeCommit(&tracer);
-  if (config_mgr_.Current()->peers.size() > 0) {
-    for (auto &peer : config_mgr_.Current()->peers) {
-      rv = SendAppendEntries(peer.ToU64(), &tracer);
-      assert(rv == 0);
-
-      timer_mgr_.AgainHeartBeat(peer.ToU64());
-    }
-  }
+  rv = DoPropose(value, kData, &tracer);
 
 end:
   tracer.PrepareState1();
@@ -199,28 +205,12 @@ int32_t Raft::AddServer(const RaftAddr &addr) {
   tracer.PrepareEvent(kEventOther, std::string(buf));
 
   int32_t rv = 0;
-  AppendEntry entry;
-
   if (state_ != STATE_LEADER || !started_) {
     rv = -1;
     goto end;
   }
 
-  entry.term = meta_.term();
-  entry.type = kConfig;
-  entry.value = value;
-  rv = log_.AppendOne(entry, &tracer);
-  assert(rv == 0);
-
-  MaybeCommit(&tracer);
-  if (config_mgr_.Current()->peers.size() > 0) {
-    for (auto &peer : config_mgr_.Current()->peers) {
-      rv = SendAppendEntries(peer.ToU64(), &tracer);
-      assert(rv == 0);
-
-      timer_mgr_.AgainHeartBeat(peer.ToU64());
-    }
-  }
+  rv = DoPropose(value, kConfig, &tracer);
 
 end:
   tracer.PrepareState1();
