@@ -11,6 +11,18 @@ VRAFT是一个用C++编写的分布式开发框架, 实现了RAFT协议和SEDA�
 * **Debug Everything** -- 全栈源代码可调试.
 * **Infrastructure Software Demo** -- 内置若干基础架构软件的实现Demo(分布式kv-store, 分布式元数据管理, 分布式SQL, 向量数据库 ...)
 
+#### 功能点:
+* Basic Raft
+* Raft Cluster Emulator
+  * Global State Change View
+  * Auto Message Flow
+  * Cluster Breakpoint Debugger
+* Multi-Raft
+* Pre-Vote
+* Leadership Transfer
+* Dynamic Membership Change
+* Execution History CheckSum
+
 #### 参考文章:
 * [《自己动手实现Raft》](https://zhuanlan.zhihu.com/p/706518239) <br>
 * [《Raft Emulator的设计》](https://zhuanlan.zhihu.com/p/707899225) <br>
