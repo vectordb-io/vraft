@@ -1,13 +1,15 @@
 #!/bin/sh
 
-# 检查是否传入了目标目录参数
-if [ $# -eq 0 ]; then
-  echo "Usage: $0 target_directory"
-  exit 1
+# 获取目标目录路径
+target_dir=$1
+
+# 检查目标目录是否存在
+if [ ! -d "$target_dir" ]; then
+    echo "目标目录不存在: $target_dir"
+    exit 1
 fi
 
-# 从命令行参数获取目标目录
-target_dir="$1"
+# 目标index.html文件
 output_file="${target_dir}/index.html"
 
 # 创建HTML文件的头部
@@ -16,7 +18,7 @@ echo '<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文件列表</title>
+    <title>目录列表</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,21 +40,25 @@ echo '<!DOCTYPE html>
     </style>
 </head>
 <body>
-    <h1>当前目录文件列表</h1>
+    <h1>子目录列表</h1>
     <ul>' > "$output_file"
 
-# 遍历目标目录中的文件，并创建链接
-for file in "$target_dir"/*; do
-    filename=$(basename "$file")
-    case "$filename" in
-        *.html|*.svg)
-            echo "<li><a href=\"$filename\">$filename</a></li>" >> "$output_file"
-            ;;
-    esac
+# 遍历目标目录中的子目录
+for dir in "$target_dir"/*; do
+    if [ -d "$dir" ]; then
+        dirname=$(basename "$dir")
+        if [ -f "$dir/index.html" ]; then
+            echo "<li><a href=\"$dirname/index.html\">$dirname</a></li>" >> "$output_file"
+        else
+            echo "<li>$dirname (index.html 不存在)</li>" >> "$output_file"
+        fi
+    fi
 done
 
 # 完成HTML文件
 echo '    </ul>
 </body>
 </html>' >> "$output_file"
+
+echo "已生成 ${output_file}"
 
