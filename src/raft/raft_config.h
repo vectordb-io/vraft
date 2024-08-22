@@ -35,6 +35,10 @@ struct RaftConfig {
 using AppendConfigFunc = std::function<void(const RaftConfig& rc, RaftIndex i)>;
 using DeleteConfigFunc = std::function<void(RaftIndex)>;
 
+// return 0, c1 == c2
+// return -1, c1 < c2 && c1 in c2
+// return 1, c1 > c2 && c2 in c1
+// return -2, c1 not in c2 && c2 not in c1
 int32_t ConfigCompare(const RaftConfig& c1, const RaftConfig& c2,
                       std::vector<RaftAddr>& diff);
 

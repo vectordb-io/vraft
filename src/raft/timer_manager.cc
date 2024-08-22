@@ -38,6 +38,14 @@ void TimerManager::AddRpcTimer(const RaftAddr &dest, TimerSPtr sptr) {
   request_votes_[dest.ToU64()] = sptr;
 }
 
+void TimerManager::DeleteRpcTimer(const RaftAddr &dest) {
+  request_votes_.erase(dest.ToU64());
+}
+
+void TimerManager::DeleteHeartBeat(const RaftAddr &dest) {
+  heartbeats_.erase(dest.ToU64());
+}
+
 TimerSPtr TimerManager::CreateRpcTimer(const RaftAddr &dest) {
   assert(maketimer_func_);
   TimerSPtr sptr;

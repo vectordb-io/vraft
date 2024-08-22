@@ -158,9 +158,10 @@ class Raft final {
 
   void ResetManagerPeers(const std::vector<RaftAddr> &peers);
   void ConfigChange(const RaftConfig &rc, RaftIndex i);
-  void ConfigDelete(RaftIndex i);
-  void AddPeer(const RaftAddr &addr) {}
-  void DeletePeer(const RaftAddr &addr) {}
+  void ConfigRollback(RaftIndex i);
+  RaftConfig DoConfigChange(const RaftConfig &rc);
+  void AddPeer(const RaftAddr &addr);
+  void DeletePeer(const RaftAddr &addr);
 
   void AgainElection() { timer_mgr_.AgainElection(); }
 

@@ -74,6 +74,9 @@ class TimerManager final {
   TimerSPtr CreateHeartbeatTimer(const RaftAddr &dest);
   void AddHeartbeatTimer(const RaftAddr &dest, TimerSPtr sptr);
 
+  void DeleteRpcTimer(const RaftAddr &dest);
+  void DeleteHeartBeat(const RaftAddr &dest);
+
  private:
   void *data_;
   TimerSPtr tick_;

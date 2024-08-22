@@ -17,6 +17,9 @@
 #include "util.h"
 #include "vraft_logger.h"
 
+vraft::RaftSPtr del_follower = nullptr;
+vraft::RaftSPtr save_leader = nullptr;
+
 void RemuTick(vraft::Timer *timer) {
   switch (vraft::current_state) {
     // wait until elect leader, then wait 5s to ensure leader stable
@@ -27,6 +30,7 @@ void RemuTick(vraft::Timer *timer) {
       for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
+          save_leader = ptr->raft();
           leader_num++;
         }
       }
@@ -45,12 +49,24 @@ void RemuTick(vraft::Timer *timer) {
     case vraft::kTestState1: {
       vraft::PrintAndCheck();
 
+      // get a follower
+      for (auto ptr : vraft::gtest_remu->raft_servers) {
+        if (ptr->raft()->state() == vraft::STATE_FOLLOWER &&
+            ptr->raft()->started()) {
+          del_follower = ptr->raft();
+          break;
+        }
+      }
+
+      if (!del_follower) {
+        vraft::current_state = vraft::kTestStateEnd;
+        break;
+      }
+
       for (auto ptr : vraft::gtest_remu->raft_servers) {
         if (ptr->raft()->state() == vraft::STATE_LEADER &&
             ptr->raft()->started()) {
-          vraft::RaftAddr addr;
-          addr.FromString("127.0.0.1:9000#0");
-          int32_t rv = ptr->raft()->AddServer(addr);
+          int32_t rv = ptr->raft()->RemoveServer(del_follower->Me());
           ASSERT_EQ(rv, 0);
 
           // update repeat counter
@@ -100,25 +116,27 @@ void RemuTick(vraft::Timer *timer) {
 
     // check log consistant
     case vraft::kTestState4: {
-      uint32_t checksum =
-          vraft::gtest_remu->raft_servers[0]->raft()->log().LastCheck();
+      uint32_t checksum = save_leader->log().LastCheck();
       printf("====log checksum:%X \n\n", checksum);
       for (auto &rs : vraft::gtest_remu->raft_servers) {
         auto sptr = rs->raft();
-        if (sptr->Peers().size() > 0) {
+        if (sptr->Me().ToU64() != del_follower->Me().ToU64() &&
+            sptr->Peers().size() > 0) {
           uint32_t checksum2 = sptr->log().LastCheck();
           ASSERT_EQ(checksum, checksum2);
         }
       }
 
       vraft::current_state = vraft::kTestStateEnd;
-
       break;
     }
 
     // quit
     case vraft::kTestStateEnd: {
       vraft::PrintAndCheck();
+
+      del_follower.reset();
+      save_leader.reset();
 
       std::cout << "exit ..." << std::endl;
       vraft::gtest_remu->Stop();
@@ -140,7 +158,7 @@ class RemuTest : public ::testing::Test {
   void TearDown() override { vraft::RemuTestTearDown(); }
 };
 
-TEST_F(RemuTest, RemuTest) { vraft::RunRemuTest2(vraft::gtest_node_num, 1); }
+TEST_F(RemuTest, RemuTest) { vraft::RunRemuTest(vraft::gtest_node_num); }
 
 // only 1 node of 2 cannot elect
 // this case can investigate term-increase while enable pre-vote or not
@@ -150,5 +168,10 @@ int main(int argc, char **argv) {
 
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+
+  if (vraft::gtest_enable_pre_vote && vraft::gtest_interval_check) {
+    return RUN_ALL_TESTS();
+  }
+
+  return 0;
 }

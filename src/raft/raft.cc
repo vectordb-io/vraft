@@ -183,7 +183,7 @@ void Raft::Init() {
   log_.set_insert_cb(std::bind(&Raft::ConfigChange, this, std::placeholders::_1,
                                std::placeholders::_2));
   log_.set_delete_cb(
-      std::bind(&Raft::ConfigDelete, this, std::placeholders::_1));
+      std::bind(&Raft::ConfigRollback, this, std::placeholders::_1));
 
   rv = InitConfig();
   assert(rv == 0);
@@ -316,6 +316,54 @@ void Raft::ResetManagerPeers(const std::vector<RaftAddr> &peers) {
 }
 
 void Raft::ConfigChange(const RaftConfig &rc, RaftIndex i) {
+  RaftConfig new_config = DoConfigChange(rc);
+  config_mgr_.SetCurrent(new_config);
+  changing_index_ = i;
+}
+
+RaftConfig Raft::DoConfigChange(const RaftConfig &rc) {
+  std::vector<RaftAddr> diff_nodes;
+  bool add = config_mgr_.Current()->IamIn(rc);
+  bool rm = rc.IamIn(*(config_mgr_.Current()));
+
+  RaftConfig new_config = *(config_mgr_.Current());
+  if (!standby_) {
+    assert((add && !rm) || (rm && !add));
+
+    if (add && !rm) {  // add node
+      int32_t rv = ConfigCompare(*(config_mgr_.Current()), rc, diff_nodes);
+      assert(rv == -1);
+      for (auto node : diff_nodes) {
+        AddPeer(node);
+        new_config.peers.push_back(node);
+      }
+
+    } else {  // rm node
+      int32_t rv = ConfigCompare(*(config_mgr_.Current()), rc, diff_nodes);
+      assert(rv == 1);
+      for (auto node : diff_nodes) {
+        DeletePeer(node);
+        new_config.peers.erase(
+            std::remove(new_config.peers.begin(), new_config.peers.end(), node),
+            new_config.peers.end());
+      }
+    }
+
+  } else {                 // standby_
+    assert((add && !rm));  // add
+    int32_t rv = ConfigCompare(*(config_mgr_.Current()), rc, diff_nodes);
+    assert(rv == -1);
+    for (auto node : diff_nodes) {
+      AddPeer(node);
+      new_config.peers.push_back(node);
+    }
+  }
+
+  return new_config;
+}
+
+#if 0
+void Raft::ConfigChange(const RaftConfig &rc, RaftIndex i) {
   std::vector<RaftAddr> add_nodes;
 
   bool in = config_mgr_.Current()->InConfig(rc.me);
@@ -394,15 +442,91 @@ void Raft::ConfigChange(const RaftConfig &rc, RaftIndex i) {
   config_mgr_.SetCurrent(cur);
   changing_index_ = i;
 }
+#endif
 
-void Raft::ConfigDelete(RaftIndex i) {
-  assert(0);
+void Raft::ConfigRollback(RaftIndex i) {
+  RaftConfig pre_config = *(config_mgr_.Previous());
+  DoConfigChange(pre_config);
+  config_mgr_.Rollback();
 
   if (changing_index_ == i) {
     changing_index_ = 0;
   }
+}
 
-  config_mgr_.Rollback();
+void Raft::AddPeer(const RaftAddr &addr) {
+  // add index-mgr
+  {
+    IndexItem item;
+    item.next = 1;
+    item.match = 0;
+
+    if (state_ == STATE_LEADER) {
+      item.next = LastIndex() + 1;
+      item.match = 0;
+    }
+
+    index_mgr_.indices[addr.ToU64()] = item;
+  }
+
+  // add vote-mgr
+  {
+    VoteItem item;
+    item.grant = false;
+    item.done = false;
+    item.logok = false;
+    item.interval_ok = false;
+
+    vote_mgr_.votes[addr.ToU64()] = item;
+  }
+
+  // add snapshot-mgr
+  {
+    Snapshot snapshot;
+    snapshot.reader_ = nullptr;
+    snapshot.writer_ = nullptr;
+    snapshot_mgr_.snapshots[addr.ToU64()] = snapshot;
+  }
+
+  // add timer-mgr
+  {
+    // rpc timer request-vote
+    {
+      TimerSPtr sptr = timer_mgr_.CreateRpcTimer(addr);
+      timer_mgr_.AddRpcTimer(addr, sptr);
+    }
+
+    // heartbeat timer
+    {
+      TimerSPtr sptr = timer_mgr_.CreateHeartbeatTimer(addr);
+      timer_mgr_.AddHeartbeatTimer(addr, sptr);
+
+      if (state_ == STATE_LEADER) {
+        sptr->Again(0, timer_mgr_.heartbeat_ms());
+      }
+    }
+  }
+}
+
+void Raft::DeletePeer(const RaftAddr &addr) {
+  // delete index-mgr
+  index_mgr_.indices.erase(addr.ToU64());
+
+  // delete vote-mgr
+  vote_mgr_.votes.erase(addr.ToU64());
+
+  // delete snapshot-mgr
+  snapshot_mgr_.snapshots.erase(addr.ToU64());
+
+  // delete timer-mgr
+
+  // rpc timer request-vote
+  timer_mgr_.CloseRequestVote(addr.ToU64());
+  timer_mgr_.DeleteRpcTimer(addr);
+
+  // heartbeat timer
+  timer_mgr_.CloseHeartBeat(addr.ToU64());
+  timer_mgr_.DeleteHeartBeat(addr);
 }
 
 RaftTerm Raft::Term() { return meta_.term(); }

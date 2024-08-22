@@ -185,10 +185,6 @@ int32_t Raft::AddServer(const RaftAddr &addr) {
     return -1;
   }
 
-  if (config_mgr_.Current()->me.id() != addr.id()) {
-    return -1;
-  }
-
   RaftConfig rc = *(config_mgr_.Current());
   rc.peers.push_back(addr);
 
@@ -223,7 +219,47 @@ int32_t Raft::RemoveServer(const RaftAddr &addr) {
     assert_loop_();
   }
 
-  return 0;
+  if (changing_index_ > 0) {
+    return -1;
+  }
+
+  bool in = config_mgr_.Current()->InConfig(addr);
+  if (!in) {
+    return -1;
+  }
+
+  if (config_mgr_.Current()->me == addr) {
+    return -1;
+  }
+
+  RaftConfig rc = *(config_mgr_.Current());
+  rc.peers.erase(std::remove(rc.peers.begin(), rc.peers.end(), addr),
+                 rc.peers.end());
+
+  std::string value;
+  rc.ToString(value);
+
+  //---------------------- propose value
+
+  Tracer tracer(this, true, tracer_cb_);
+  tracer.PrepareState0();
+  char buf[128];
+  snprintf(buf, sizeof(buf), "%s config-change-propose length:%lu",
+           Me().ToString().c_str(), value.size());
+  tracer.PrepareEvent(kEventOther, std::string(buf));
+
+  int32_t rv = 0;
+  if (state_ != STATE_LEADER || !started_) {
+    rv = -1;
+    goto end;
+  }
+
+  rv = DoPropose(value, kConfig, &tracer);
+
+end:
+  tracer.PrepareState1();
+  tracer.Finish();
+  return rv;
 }
 
 }  // namespace vraft
