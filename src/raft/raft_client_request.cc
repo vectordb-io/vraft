@@ -196,8 +196,8 @@ int32_t Raft::AddServer(const RaftAddr &addr) {
   Tracer tracer(this, true, tracer_cb_);
   tracer.PrepareState0();
   char buf[128];
-  snprintf(buf, sizeof(buf), "%s config-change-propose length:%lu",
-           Me().ToString().c_str(), value.size());
+  snprintf(buf, sizeof(buf), "%s config-change-propose %s",
+           Me().ToString().c_str(), rc.ToJsonString(true, true).c_str());
   tracer.PrepareEvent(kEventOther, std::string(buf));
 
   int32_t rv = 0;
@@ -244,8 +244,8 @@ int32_t Raft::RemoveServer(const RaftAddr &addr) {
   Tracer tracer(this, true, tracer_cb_);
   tracer.PrepareState0();
   char buf[128];
-  snprintf(buf, sizeof(buf), "%s config-change-propose length:%lu",
-           Me().ToString().c_str(), value.size());
+  snprintf(buf, sizeof(buf), "%s config-change-propose %s",
+           Me().ToString().c_str(), rc.ToJsonString(true, true).c_str());
   tracer.PrepareEvent(kEventOther, std::string(buf));
 
   int32_t rv = 0;

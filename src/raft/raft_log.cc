@@ -567,16 +567,17 @@ int32_t RaftLog::AppendOne(AppendEntry &entry, Tracer *tracer) {
     config_indices_.insert(log_index);
 
     // update config mgr
+    RaftConfig rc;
+    rc.FromString(entry.value);
     if (insert_cb_) {
-      RaftConfig rc;
-      rc.FromString(entry.value);
       insert_cb_(rc, append_);
     }
 
     if (tracer) {
       char buf[128];
-      snprintf(buf, sizeof(buf), "%s config-change-begin index:%u",
-               me.ToString().c_str(), append_);
+      snprintf(buf, sizeof(buf), "%s config-change-begin index:%u %s",
+               me.ToString().c_str(), append_,
+               rc.ToJsonString(true, true).c_str());
       tracer->PrepareEvent(kEventOther, std::string(buf));
     }
   }

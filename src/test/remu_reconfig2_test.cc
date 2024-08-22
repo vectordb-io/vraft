@@ -103,19 +103,33 @@ void RemuTick(vraft::Timer *timer) {
       break;
     }
 
-    // check config change
+    // check disrupt server
     case vraft::kTestState3: {
       vraft::PrintAndCheck();
 
       timer->RepeatDecr();
       if (timer->repeat_counter() == 0) {
+        // stop server
+        del_follower->Stop();
+        timer->set_repeat_times(5);
         vraft::current_state = vraft::kTestState4;
       }
       break;
     }
 
-    // check log consistant
+    // wait 5s
     case vraft::kTestState4: {
+      vraft::PrintAndCheck();
+
+      timer->RepeatDecr();
+      if (timer->repeat_counter() == 0) {
+        vraft::current_state = vraft::kTestState5;
+      }
+      break;
+    }
+
+    // check log consistant
+    case vraft::kTestState5: {
       uint32_t checksum = save_leader->log().LastCheck();
       printf("====log checksum:%X \n\n", checksum);
       for (auto &rs : vraft::gtest_remu->raft_servers) {
@@ -127,6 +141,7 @@ void RemuTick(vraft::Timer *timer) {
         }
       }
 
+      timer->set_repeat_times(10);
       vraft::current_state = vraft::kTestStateEnd;
       break;
     }

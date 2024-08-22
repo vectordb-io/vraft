@@ -10,6 +10,6 @@ cp *.js /tmp/vraft_tools/
 cp *.css /tmp/vraft_tools/
 cp -r ./html /tmp/vraft_tools/
 
-cp ../output/main/meta-tool /tmp/vraft_tools/
-cp ../output/main/rlog-tool /tmp/vraft_tools/
-cp ../output/main/db-tool /tmp/vraft_tools/
+cp ../output/main/meta-tool /tmp/vraft_tools/ 2>/dev/null
+cp ../output/main/rlog-tool /tmp/vraft_tools/ 2>/dev/null
+cp ../output/main/db-tool /tmp/vraft_tools/ 2>/dev/null
