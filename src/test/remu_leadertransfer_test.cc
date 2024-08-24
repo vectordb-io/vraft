@@ -65,11 +65,24 @@ void RemuTick(vraft::Timer *timer) {
     case vraft::kTestState2: {
       vraft::PrintAndCheck();
 
-      for (auto ptr : vraft::gtest_remu->raft_servers) {
-        if (ptr->raft()->state() == vraft::STATE_LEADER &&
-            ptr->raft()->started()) {
-          ptr->raft()->LeaderTransferFirstPeer();
-          vraft::current_state = vraft::kTestState3;
+      leader_ptr->LeaderTransferFirstPeer();
+      vraft::current_state = vraft::kTestState3;
+      timer->set_repeat_times(5);
+
+      break;
+    }
+
+    // wait leader change
+    case vraft::kTestState3: {
+      vraft::PrintAndCheck();
+
+      if (leader_ptr->state() != vraft::STATE_LEADER) {  // leader change
+        vraft::current_state = vraft::kTestState4;
+
+      } else {  // not change
+        timer->RepeatDecr();
+        if (timer->repeat_counter() == 0) {  // re-transfer
+          vraft::current_state = vraft::kTestState2;
         }
       }
 
@@ -77,7 +90,7 @@ void RemuTick(vraft::Timer *timer) {
     }
 
     // leader change
-    case vraft::kTestState3: {
+    case vraft::kTestState4: {
       vraft::PrintAndCheck();
 
       int32_t leader_num = 0;
@@ -92,9 +105,8 @@ void RemuTick(vraft::Timer *timer) {
           // new leader term > save_term
           EXPECT_GT(ptr->raft()->Term(), save_term);
 
-          // leader may change, or may not change
-          // leader timers > 1
-          EXPECT_GT(vraft::gtest_remu->LeaderTimes(), 1);
+          // leader timers == 2
+          EXPECT_EQ(vraft::gtest_remu->LeaderTimes(), 2);
         }
       }
 
