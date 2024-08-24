@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FILE_PATH="./remu_params"
+FILE_PATH="./remu_test.param"
 SAVE="no"
 
 for arg in "$@"
@@ -21,7 +21,7 @@ do
   else
     echo "invalid parameter: $arg"
     echo "Usage:"
-    echo "sh $0 --params=./remu_params --save=yes"
+    echo "sh $0 --params=./remu_test.param --save=yes"
     exit 1
   fi
 done

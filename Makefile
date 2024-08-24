@@ -565,7 +565,7 @@ vstore_msg_test: $(VSTORE_MSG_TEST_OBJECTS)
 clean:
 	find output/main/ -type f ! -name '*.sh' | xargs rm -f
 	find output/example/ -type f ! -name '*.sh' | xargs rm -f
-	find output/test/ -type f ! -name '*.sh' | xargs rm -f
+	find output/test/ -type f ! -name '*.sh' -o -name "*.param" | xargs rm -f
 	find ./src/ -name "*.o" | xargs rm -f
 
 
