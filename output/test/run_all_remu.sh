@@ -33,7 +33,10 @@ fi
 
 current_time=$(date +"%Y-%m-%d-%H-%M-%S")
 case_dir=~/remu_cases.${current_time}
-mkdir -p ${case_dir}
+
+if [ "$SAVE" = "yes" ]; then
+    mkdir -p ${case_dir}
+fi
 
 all_case=""
 
