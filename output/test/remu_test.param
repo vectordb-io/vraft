@@ -1,0 +1,8 @@
+
+--enable-pre-vote
+--enable-interval-check
+--enable-pre-vote --enable-interval-check
+--node-num=5
+--enable-pre-vote --node-num=5
+--enable-interval-check --node-num=5
+--enable-pre-vote --enable-interval-check --node-num=5
