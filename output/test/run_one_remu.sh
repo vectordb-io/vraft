@@ -5,6 +5,7 @@ start_time=$(date +%s)
 count=0
 
 cmd="$1"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -15,6 +16,7 @@ else
 fi
 
 cmd="$1 --enable-pre-vote"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -25,6 +27,7 @@ else
 fi
 
 cmd="$1 --enable-interval-check"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -35,6 +38,7 @@ else
 fi
 
 cmd="$1 --enable-pre-vote --enable-interval-check"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -45,6 +49,7 @@ else
 fi
 
 cmd="$1 --node-num=5"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -55,6 +60,7 @@ else
 fi
 
 cmd="$1 --enable-pre-vote --node-num=5"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -65,6 +71,7 @@ else
 fi
 
 cmd="$1 --enable-interval-check --node-num=5"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then
@@ -75,6 +82,7 @@ else
 fi
 
 cmd="$1 --enable-pre-vote --enable-interval-check --node-num=5"
+echo "running ${cmd}"
 ${cmd}
 ret=$?
 if [ ${ret} -ne 0 ]; then

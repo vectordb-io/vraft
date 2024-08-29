@@ -51,3 +51,5 @@ node generate_message_flow.js ${dir}/log/remu.log.sm.message > ${dir}/remu_web/m
 
 plantuml -tsvg ${dir}/log/remu.log.sm.puml
 cp ${dir}/log/remu.log.sm.svg ${dir}/remu_web/message_flow.svg
+
+sh update_file_name.sh "${dir}/remu_web"

@@ -17,7 +17,22 @@
                 "/home/mhlee/Work/dev/vraft/third_party/googletest/googletest/include",
                 "/home/mhlee/Work/dev/vraft/third_party/leveldb/include",
                 "/home/mhlee/Work/dev/vraft/third_party/libuv/include",
-                "/home/mhlee/Work/dev/vraft/third_party/nlohmann_json/single_include"
+                "/home/mhlee/Work/dev/vraft/third_party/nlohmann_json/single_include",
+                "/root/Work/dev/vraft/src/raft",
+                "/root/Work/dev/vraft/src/seda",
+                "/root/Work/dev/vraft/src/util",
+                "/root/Work/dev/vraft/src/example",
+                "/root/Work/dev/vraft/src/vmeta",
+                "/root/Work/dev/vraft/src/vstore",
+                "/root/Work/dev/vraft/src/vpaxos",
+                "/root/Work/dev/vraft/src/vectordb",
+                "/root/Work/dev/vraft/third_party/spdlog/include",
+                "/root/Work/dev/vraft/third_party/annoy/src",
+                "/root/Work/dev/vraft/third_party/cxxopts/include",
+                "/root/Work/dev/vraft/third_party/googletest/googletest/include",
+                "/root/Work/dev/vraft/third_party/leveldb/include",
+                "/root/Work/dev/vraft/third_party/libuv/include",
+                "/root/Work/dev/vraft/third_party/nlohmann_json/single_include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++", // 或者你所使用的其他编译器

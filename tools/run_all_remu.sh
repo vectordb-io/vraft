@@ -38,10 +38,12 @@ if [ "$SAVE" = "yes" ]; then
     mkdir -p ${case_dir}
 fi
 
-all_case=""
+ok_case=""
+bad_case=""
 
-# case count
-count=0
+# case ok_count
+ok_count=0
+bad_count=0
 
 # start_time
 start_time=$(date +%s)
@@ -61,6 +63,9 @@ save_case_data() {
         echo "------move case data to ${case_dir}"
         mkdir -p ${case_dir}/${cpdir}
         mv /tmp/remu_test_dir/remu_web/* ${case_dir}/${cpdir}
+        cd /tmp/vraft_tools/
+        sh generate_one_case_index.sh ${case_dir}/${cpdir}
+        cd -
     fi
 }
 
@@ -69,28 +74,18 @@ for file in `ls remu_*_test`; do
         #echo "$param"
         cmd="./${file} ${param}"
         echo "---------------------------->>>>> Running ${cmd} ..."
-        count=$((count + 1))
         ${cmd}
         ret=$?
         if [ ${ret} -ne 0 ]; then
+            bad_case="${bad_case}\n${cmd}"
+            bad_count=$((bad_count + 1))
             echo ""
             echo "----------------------------xxxxxxxxxxxxx ${cmd} failed, return ${ret}"
 
-            echo "already run case:"
-            echo ${all_case}
-            echo ""
-
-            # end_time
-            end_time=$(date +%s)
-
-            time_diff=$((end_time - start_time))
-            echo "run ${count} case, elapsed time:${time_diff} seconds"
-
             save_case_data
-
-            exit 1
         else
-            all_case="${all_case}\n${cmd}"
+            ok_case="${ok_case}\n${cmd}"
+            ok_count=$((ok_count + 1))
             echo ""
             echo "----------------------------+++++++++++++++ ${cmd} ok, return ${ret}"
 
@@ -99,20 +94,22 @@ for file in `ls remu_*_test`; do
     done < "$FILE_PATH"
 done
 
-echo "run case:"
-echo ${all_case}
+echo "ok_case:"
+echo ${ok_case}
 echo ""
+echo "bad_case:"
+echo ${bad_case}
 
 # end_time
 end_time=$(date +%s)
 
 # time_diff
 time_diff=$((end_time - start_time))
-echo "run ${count} case, elapsed time:${time_diff} seconds"
+echo "ok_count:${ok_count}, bad_count:${bad_count}, elapsed time:${time_diff} seconds"
 
 if [ "$SAVE" = "yes" ]; then
     echo "------move case data to ${case_dir}"
+    cd /tmp/vraft_tools/
+    sh generate_casedir.sh ${case_dir}
+    cd -
 fi
-
-echo ""
-echo "all case ok, perfect!!!"
