@@ -52,6 +52,13 @@ for dir in "$target_dir"/*; do
         else
             echo "<li>$dirname (index.html 不存在)</li>" >> "$output_file"
         fi
+    else
+        filename=$(basename "$dir")
+        case "$filename" in
+            *.html)
+                echo "<li><a href=\"$filename\">$filename</a></li>" >> "$output_file"
+                ;;
+        esac
     fi
 done
 

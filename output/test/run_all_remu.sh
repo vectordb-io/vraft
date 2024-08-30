@@ -58,14 +58,14 @@ save_case_data() {
         else
             sh one_key.sh --noweb
         fi
-        cd -
+        cd - > /dev/null
 
         echo "------move case data to ${case_dir}"
         mkdir -p ${case_dir}/${cpdir}
         mv /tmp/remu_test_dir/remu_web/* ${case_dir}/${cpdir}
         cd /tmp/vraft_tools/
         sh generate_one_case_index.sh ${case_dir}/${cpdir}
-        cd -
+        cd - > /dev/null
     fi
 }
 
@@ -94,8 +94,13 @@ for file in `ls remu_*_test`; do
     done < "$FILE_PATH"
 done
 
+echo ""
+echo "run cases finish"
+
+echo ""
 echo "ok_case:"
 echo ${ok_case}
+
 echo ""
 echo "bad_case:"
 echo ${bad_case}
@@ -105,11 +110,15 @@ end_time=$(date +%s)
 
 # time_diff
 time_diff=$((end_time - start_time))
+
+echo ""
 echo "ok_count:${ok_count}, bad_count:${bad_count}, elapsed time:${time_diff} seconds"
+echo ""
 
 if [ "$SAVE" = "yes" ]; then
-    echo "------move case data to ${case_dir}"
     cd /tmp/vraft_tools/
-    sh generate_casedir.sh ${case_dir}
-    cd -
+    #sh generate_casedir.sh ${case_dir}
+    cd - > /dev/null
+    echo "move case data to"
+    echo "${case_dir}"
 fi
