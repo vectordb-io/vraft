@@ -229,8 +229,34 @@ TEST_F(RemuTest, RemuTest) { vraft::RunRemuTest(vraft::gtest_node_num); }
 // only 1 node of 2 cannot elect
 // this case can investigate term-increase while enable pre-vote or not
 
+void PrintDesc() {
+  if (vraft::gtest_desc) {
+    std::string desc;
+    char buf[256];
+
+    snprintf(buf, sizeof(buf), "step1: start nodes \n", vraft::gtest_node_num);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step2: wait for leader elect \n");
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step3: check leader stable \n");
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step4: check log consistant \n");
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step5: quit \n");
+    desc.append(buf);
+
+    std::cout << desc;
+    exit(0);
+  }
+}
+
 int main(int argc, char **argv) {
   vraft::RemuParseConfig(argc, argv);
+  PrintDesc();
 
   vraft::CodingInit();
   ::testing::InitGoogleTest(&argc, argv);
