@@ -23,11 +23,13 @@ uint16_t standby_port = 9000;
 
 bool gtest_enable_pre_vote;
 bool gtest_interval_check;
+bool gtest_desc;
 int32_t gtest_node_num = 3;
 
 void RemuParseConfig(int argc, char **argv) {
   gtest_enable_pre_vote = false;
   gtest_interval_check = false;
+  gtest_desc = false;
 
   for (int i = 1; i < argc; ++i) {
     if (std::string(argv[i]) == std::string("--enable-pre-vote")) {
@@ -36,6 +38,10 @@ void RemuParseConfig(int argc, char **argv) {
 
     if (std::string(argv[i]) == std::string("--enable-interval-check")) {
       gtest_interval_check = true;
+    }
+
+    if (std::string(argv[i]) == std::string("--desc")) {
+      gtest_desc = true;
     }
 
     {

@@ -21,6 +21,7 @@ extern uint16_t standby_port;
 
 extern bool gtest_enable_pre_vote;
 extern bool gtest_interval_check;
+extern bool gtest_desc;
 extern int32_t gtest_node_num;
 
 void RemuParseConfig(int argc, char **argv);

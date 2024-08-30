@@ -16,7 +16,7 @@ template <typename InstanceType>
 class NoDestructor {
  public:
   template <typename... ConstructorArgTypes>
-  explicit NoDestructor(ConstructorArgTypes &&... constructor_args) {
+  explicit NoDestructor(ConstructorArgTypes &&...constructor_args) {
     static_assert(sizeof(instance_storage_) >= sizeof(InstanceType),
                   "instance_storage_ is not large enough to hold the instance");
     static_assert(
