@@ -132,7 +132,8 @@ void PrintDesc() {
     std::string desc;
     char buf[256];
 
-    snprintf(buf, sizeof(buf), "step1: start %d nodes \n", vraft::gtest_node_num);
+    snprintf(buf, sizeof(buf), "step1: start %d nodes \n",
+             vraft::gtest_node_num);
     desc.append(buf);
 
     snprintf(buf, sizeof(buf), "step2: wait for leader elect \n");
