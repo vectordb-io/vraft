@@ -49,7 +49,10 @@ done
 
 node generate_message_flow.js ${dir}/log/remu.log.sm.message > ${dir}/remu_web/message_flow_bk.html
 
+sh generate_text_html.sh ${dir}/log/desc > ${dir}/remu_web/desc.html
+
 plantuml -tsvg ${dir}/log/remu.log.sm.puml
 cp ${dir}/log/remu.log.sm.svg ${dir}/remu_web/message_flow.svg
 
 sh update_file_name.sh "${dir}/remu_web"
+

@@ -76,6 +76,10 @@ for file in `ls remu_*_test`; do
         echo "---------------------------->>>>> Running ${cmd} ..."
         ${cmd}
         ret=$?
+
+        ${cmd} --desc
+        ${cmd} --desc > /tmp/remu_test_dir/log/desc
+
         if [ ${ret} -ne 0 ]; then
             bad_case="${bad_case}\n${cmd}"
             bad_count=$((bad_count + 1))
