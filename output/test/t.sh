@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sh run_all_remu.sh --params=./remu_test2.param --save=yes > execute_log
+sh run_all_remu.sh --params=./remu_test.param --save=yes > execute_log
 dirpath=`cat execute_log | tail -n1`
 
 sh /tmp/vraft_tools/get_result.sh ./execute_log > ./execute_result

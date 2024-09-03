@@ -150,20 +150,55 @@ void PrintDesc() {
     std::string desc;
     char buf[256];
 
-    snprintf(buf, sizeof(buf), "step1: start %d nodes \n",
+    // parameters
+    snprintf(buf, sizeof(buf), "parameters: \n");
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "filename:%s \n", __FILE__);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "gtest_enable_pre_vote:%d \n",
+             vraft::gtest_enable_pre_vote);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "gtest_interval_check:%d \n",
+             vraft::gtest_interval_check);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "gtest_node_num:%d \n", vraft::gtest_node_num);
+    desc.append(buf);
+
+    // steps
+    int32_t step = 1;
+    snprintf(buf, sizeof(buf), "\nsteps: \n");
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step%d: start %d nodes \n", step++,
              vraft::gtest_node_num);
     desc.append(buf);
 
-    snprintf(buf, sizeof(buf), "step2: wait for leader elect \n");
+    snprintf(buf, sizeof(buf), "step%d: wait for leader elect \n", step++);
     desc.append(buf);
 
-    snprintf(buf, sizeof(buf), "step3: check leader stable \n");
+    snprintf(buf, sizeof(buf), "step%d: check leader stable \n", step++);
     desc.append(buf);
 
-    snprintf(buf, sizeof(buf), "step4: check log consistant \n");
+    snprintf(buf, sizeof(buf), "step%d: add server \n", step++);
     desc.append(buf);
 
-    snprintf(buf, sizeof(buf), "step5: quit \n");
+    snprintf(buf, sizeof(buf),
+             "step%d: wait until elect leader, then wait 5s to ensure leader "
+             "stable \n",
+             step++);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step%d: check config change \n", step++);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step%d: check log consistant \n", step++);
+    desc.append(buf);
+
+    snprintf(buf, sizeof(buf), "step%d: quit \n", step++);
     desc.append(buf);
 
     std::cout << desc;
