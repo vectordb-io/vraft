@@ -316,6 +316,9 @@ test: $(TEST)
 remu-test: $(REMU_TEST)
 libs: $(LIBS)
 
+clibs:
+	make CLIBS=yes libs 
+
 
 # .cc -> .o
 %.o: %.cc
@@ -585,6 +588,7 @@ clean:
 	find output/main/ -type f ! -name '*.sh' | xargs rm -f
 	find output/example/ -type f ! -name '*.sh' | xargs rm -f
 	find output/test -type f ! -name "*.sh" ! -name "*.param" | xargs rm -f
+	find output/libs/ -type f ! -name '*.sh' | xargs rm -f
 	find ./src/ -name "*.o" | xargs rm -f
 
 
