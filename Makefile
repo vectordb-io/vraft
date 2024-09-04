@@ -317,7 +317,7 @@ remu-test: $(REMU_TEST)
 libs: $(LIBS)
 
 clibs:
-	make CLIBS=yes libs 
+	make CLIBS=yes libs -j4
 
 
 # .cc -> .o
