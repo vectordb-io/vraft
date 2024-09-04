@@ -1,15 +1,22 @@
 ASAN ?= no
-
 ifeq ($(ASAN),yes)
 	SANITIZE_FLAGS = -fsanitize=address
 else
 	SANITIZE_FLAGS =
 endif
 
+CLIBS ?= no
+ifeq ($(CLIBS),yes)
+	LIBS_CXXFLAGS = -shared -fPIC
+else
+	LIBS_CXXFLAGS =
+endif
+
 CXX := g++
 
 CXXFLAGS := -g -Wall -std=c++14 -DANNOYLIB_MULTITHREADED_BUILD
 CXXFLAGS += $(SANITIZE_FLAGS)
+CXXFLAGS += $(LIBS_CXXFLAGS)
 
 INCLUDES := -Isrc/raft -Isrc/seda -Isrc/util -Isrc/test -Isrc/example
 INCLUDES += -Isrc/vmeta -Isrc/vstore -Isrc/vpaxos -Isrc/vectordb
@@ -20,6 +27,7 @@ INCLUDES += -Ithird_party/leveldb/include
 INCLUDES += -Ithird_party/libuv/include 
 INCLUDES += -Ithird_party/nlohmann_json/single_include
 INCLUDES += -Ithird_party/annoy/src
+INCLUDES += $(shell python -m pybind11 --includes)
 
 LDFLAGS := third_party/libuv/.libs/libuv.a 
 LDFLAGS += third_party/leveldb/build/libleveldb.a 
@@ -32,6 +40,9 @@ LDFLAGS += -pthread -ldl
 SRC_DIRS := src/raft src/seda src/util
 SRC_DIRS += src/vmeta src/vstore src/vpaxos src/vectordb
 COMMON_SRCS := $(wildcard $(SRC_DIRS:=/*.cc))
+
+# lib src
+VDB_MODULE_SRCS := src/lib/vdb_module.cc $(COMMON_SRCS)
 
 # main src
 VRAFT_SERVER_SRCS := src/main/vraft_server.cc $(COMMON_SRCS)
@@ -76,23 +87,6 @@ TRACER_TEST_SRCS := src/test/tracer_test.cc $(COMMON_SRCS)
 RAFT_TEST_SRCS := src/test/raft_test.cc $(COMMON_SRCS)
 TPL_TEST_SRCS := src/test/tpl_test.cc $(COMMON_SRCS)
 TEST_SUITE_TEST_SRCS := src/test/test_suite_test.cc $(COMMON_SRCS)
-REMU_RECONFIG_TEST_SRCS := src/test/remu_reconfig_test.cc $(COMMON_SRCS)
-REMU_RECONFIG2_TEST_SRCS := src/test/remu_reconfig2_test.cc $(COMMON_SRCS)
-REMU_ELECT_TEST_SRCS := src/test/remu_elect_test.cc $(COMMON_SRCS)
-REMU_ELECT2_TEST_SRCS := src/test/remu_elect2_test.cc $(COMMON_SRCS)
-REMU_PROPOSE_TEST_SRCS := src/test/remu_propose_test.cc $(COMMON_SRCS)
-REMU_PROPOSE2_TEST_SRCS := src/test/remu_propose2_test.cc $(COMMON_SRCS)
-REMU_SM_TEST_SRCS := src/test/remu_sm_test.cc $(COMMON_SRCS)
-REMU_SM2_TEST_SRCS := src/test/remu_sm2_test.cc $(COMMON_SRCS)
-REMU_SM3_TEST_SRCS := src/test/remu_sm3_test.cc $(COMMON_SRCS)
-REMU_SM4_TEST_SRCS := src/test/remu_sm4_test.cc $(COMMON_SRCS)
-REMU_SM5_TEST_SRCS := src/test/remu_sm5_test.cc $(COMMON_SRCS)
-REMU_RESTART_TEST_SRCS := src/test/remu_restart_test.cc $(COMMON_SRCS)
-REMU_LEADERTRANSFER_TEST_SRCS := src/test/remu_leadertransfer_test.cc $(COMMON_SRCS)
-REMU_TIMEOUT_BYSELF_TEST_SRCS := src/test/remu_timeout_byself_test.cc $(COMMON_SRCS)
-REMU_DISABLE_RECV_TEST_SRCS := src/test/remu_disable_recv_test.cc $(COMMON_SRCS)
-REMU_DISABLE_RECV2_TEST_SRCS := src/test/remu_disable_recv2_test.cc $(COMMON_SRCS)
-REMU_NET_ERROR_TEST_SRCS := src/test/remu_net_error_test.cc $(COMMON_SRCS)
 HOSTPORT_TEST_SRCS := src/test/hostport_test.cc $(COMMON_SRCS)
 BUFFER_TEST_SRCS := src/test/buffer_test.cc $(COMMON_SRCS)
 EVENTLOOP_TEST_SRCS := src/test/eventloop_test.cc $(COMMON_SRCS)
@@ -122,10 +116,29 @@ VDB_ENGINE_TEST_SRCS := src/test/vdb_engine_test.cc $(COMMON_SRCS)
 PARSER_TEST_SRCS := src/test/parser_test.cc $(COMMON_SRCS)
 VSTORE_MSG_TEST_SRCS := src/test/vstore_msg_test.cc $(COMMON_SRCS)
 
-
 # remu test src
+REMU_RECONFIG_TEST_SRCS := src/test/remu_reconfig_test.cc $(COMMON_SRCS)
+REMU_RECONFIG2_TEST_SRCS := src/test/remu_reconfig2_test.cc $(COMMON_SRCS)
+REMU_ELECT_TEST_SRCS := src/test/remu_elect_test.cc $(COMMON_SRCS)
+REMU_ELECT2_TEST_SRCS := src/test/remu_elect2_test.cc $(COMMON_SRCS)
+REMU_PROPOSE_TEST_SRCS := src/test/remu_propose_test.cc $(COMMON_SRCS)
+REMU_PROPOSE2_TEST_SRCS := src/test/remu_propose2_test.cc $(COMMON_SRCS)
+REMU_SM_TEST_SRCS := src/test/remu_sm_test.cc $(COMMON_SRCS)
+REMU_SM2_TEST_SRCS := src/test/remu_sm2_test.cc $(COMMON_SRCS)
+REMU_SM3_TEST_SRCS := src/test/remu_sm3_test.cc $(COMMON_SRCS)
+REMU_SM4_TEST_SRCS := src/test/remu_sm4_test.cc $(COMMON_SRCS)
+REMU_SM5_TEST_SRCS := src/test/remu_sm5_test.cc $(COMMON_SRCS)
+REMU_RESTART_TEST_SRCS := src/test/remu_restart_test.cc $(COMMON_SRCS)
+REMU_LEADERTRANSFER_TEST_SRCS := src/test/remu_leadertransfer_test.cc $(COMMON_SRCS)
+REMU_TIMEOUT_BYSELF_TEST_SRCS := src/test/remu_timeout_byself_test.cc $(COMMON_SRCS)
+REMU_DISABLE_RECV_TEST_SRCS := src/test/remu_disable_recv_test.cc $(COMMON_SRCS)
+REMU_DISABLE_RECV2_TEST_SRCS := src/test/remu_disable_recv2_test.cc $(COMMON_SRCS)
+REMU_NET_ERROR_TEST_SRCS := src/test/remu_net_error_test.cc $(COMMON_SRCS)
 
 # generate .o
+# lib
+VDB_MODULE_OBJECTS := $(VDB_MODULE_SRCS:.cc=.o)
+
 # main
 VRAFT_SERVER_OBJECTS := $(VRAFT_SERVER_SRCS:.cc=.o)
 RLOG_TOOL_OBJECTS := $(RLOG_TOOL_SRCS:.cc=.o)
@@ -170,23 +183,6 @@ TRACER_TEST_OBJECTS := $(TRACER_TEST_SRCS:.cc=.o)
 RAFT_TEST_OBJECTS := $(RAFT_TEST_SRCS:.cc=.o)
 TPL_TEST_OBJECTS := $(TPL_TEST_SRCS:.cc=.o)
 TEST_SUITE_TEST_OBJECTS := $(TEST_SUITE_TEST_SRCS:.cc=.o)
-REMU_ELECT_TEST_OBJECTS := $(REMU_ELECT_TEST_SRCS:.cc=.o)
-REMU_RECONFIG_TEST_OBJECTS := $(REMU_RECONFIG_TEST_SRCS:.cc=.o)
-REMU_RECONFIG2_TEST_OBJECTS := $(REMU_RECONFIG2_TEST_SRCS:.cc=.o)
-REMU_ELECT2_TEST_OBJECTS := $(REMU_ELECT2_TEST_SRCS:.cc=.o)
-REMU_PROPOSE_TEST_OBJECTS := $(REMU_PROPOSE_TEST_SRCS:.cc=.o)
-REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
-REMU_SM_TEST_OBJECTS := $(REMU_SM_TEST_SRCS:.cc=.o)
-REMU_SM2_TEST_OBJECTS := $(REMU_SM2_TEST_SRCS:.cc=.o)
-REMU_SM3_TEST_OBJECTS := $(REMU_SM3_TEST_SRCS:.cc=.o)
-REMU_SM4_TEST_OBJECTS := $(REMU_SM4_TEST_SRCS:.cc=.o)
-REMU_SM5_TEST_OBJECTS := $(REMU_SM5_TEST_SRCS:.cc=.o)
-REMU_RESTART_TEST_OBJECTS := $(REMU_RESTART_TEST_SRCS:.cc=.o)
-REMU_LEADERTRANSFER_TEST_OBJECTS := $(REMU_LEADERTRANSFER_TEST_SRCS:.cc=.o)
-REMU_TIMEOUT_BYSELF_TEST_OBJECTS := $(REMU_TIMEOUT_BYSELF_TEST_SRCS:.cc=.o)
-REMU_DISABLE_RECV_TEST_OBJECTS := $(REMU_DISABLE_RECV_TEST_SRCS:.cc=.o)
-REMU_DISABLE_RECV2_TEST_OBJECTS := $(REMU_DISABLE_RECV2_TEST_SRCS:.cc=.o)
-REMU_NET_ERROR_TEST_OBJECTS := $(REMU_NET_ERROR_TEST_SRCS:.cc=.o)
 HOSTPORT_TEST_OBJECTS := $(HOSTPORT_TEST_SRCS:.cc=.o)
 BUFFER_TEST_OBJECTS := $(BUFFER_TEST_SRCS:.cc=.o)
 EVENTLOOP_TEST_OBJECTS := $(EVENTLOOP_TEST_SRCS:.cc=.o)
@@ -215,9 +211,26 @@ METADATA_TEST_OBJECTS := $(METADATA_TEST_SRCS:.cc=.o)
 VDB_ENGINE_TEST_OBJECTS := $(VDB_ENGINE_TEST_SRCS:.cc=.o)
 PARSER_TEST_OBJECTS := $(PARSER_TEST_SRCS:.cc=.o)
 VSTORE_MSG_TEST_OBJECTS := $(VSTORE_MSG_TEST_SRCS:.cc=.o)
+REMU_ELECT_TEST_OBJECTS := $(REMU_ELECT_TEST_SRCS:.cc=.o)
+REMU_RECONFIG_TEST_OBJECTS := $(REMU_RECONFIG_TEST_SRCS:.cc=.o)
+REMU_RECONFIG2_TEST_OBJECTS := $(REMU_RECONFIG2_TEST_SRCS:.cc=.o)
+REMU_ELECT2_TEST_OBJECTS := $(REMU_ELECT2_TEST_SRCS:.cc=.o)
+REMU_PROPOSE_TEST_OBJECTS := $(REMU_PROPOSE_TEST_SRCS:.cc=.o)
+REMU_PROPOSE2_TEST_OBJECTS := $(REMU_PROPOSE2_TEST_SRCS:.cc=.o)
+REMU_SM_TEST_OBJECTS := $(REMU_SM_TEST_SRCS:.cc=.o)
+REMU_SM2_TEST_OBJECTS := $(REMU_SM2_TEST_SRCS:.cc=.o)
+REMU_SM3_TEST_OBJECTS := $(REMU_SM3_TEST_SRCS:.cc=.o)
+REMU_SM4_TEST_OBJECTS := $(REMU_SM4_TEST_SRCS:.cc=.o)
+REMU_SM5_TEST_OBJECTS := $(REMU_SM5_TEST_SRCS:.cc=.o)
+REMU_RESTART_TEST_OBJECTS := $(REMU_RESTART_TEST_SRCS:.cc=.o)
+REMU_LEADERTRANSFER_TEST_OBJECTS := $(REMU_LEADERTRANSFER_TEST_SRCS:.cc=.o)
+REMU_TIMEOUT_BYSELF_TEST_OBJECTS := $(REMU_TIMEOUT_BYSELF_TEST_SRCS:.cc=.o)
+REMU_DISABLE_RECV_TEST_OBJECTS := $(REMU_DISABLE_RECV_TEST_SRCS:.cc=.o)
+REMU_DISABLE_RECV2_TEST_OBJECTS := $(REMU_DISABLE_RECV2_TEST_SRCS:.cc=.o)
+REMU_NET_ERROR_TEST_OBJECTS := $(REMU_NET_ERROR_TEST_SRCS:.cc=.o)
 
-
-# generate exe
+# generate exe, lib
+LIBS := vdb_module.so
 MAIN := vraft-server rlog-tool meta-tool db-tool remu vectordb-server vectordb-cli vstore-server vstore-cli
 EXAMPLE := echo-server echo-client echo-console turing-machine
 
@@ -295,11 +308,13 @@ REMU_TEST += remu_net_error_test
 
 
 # compile
-all: $(MAIN) $(EXAMPLE) $(TEST) $(REMU_TEST)
+all: $(MAIN) $(EXAMPLE) $(TEST) $(REMU_TEST) $(LIBS)
+
 main: $(MAIN) 
 example: $(EXAMPLE)
 test: $(TEST)
 remu-test: $(REMU_TEST)
+libs: $(LIBS)
 
 
 # .cc -> .o
@@ -307,7 +322,11 @@ remu-test: $(REMU_TEST)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) -c $< -o $@
 
 
-# exe rules
+# exe, libs rules
+# libs
+vdb_module.so: $(VDB_MODULE_OBJECTS)
+	$(CXX) $(INCLUDES) $(LIBS_CXXFLAGS) $^ $(LDFLAGS) -o ./output/libs/$@
+
 # main
 vraft-server: $(VRAFT_SERVER_OBJECTS)
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $^ $(LDFLAGS) -o ./output/main/$@

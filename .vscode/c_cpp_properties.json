@@ -18,6 +18,8 @@
                 "/home/mhlee/Work/dev/vraft/third_party/leveldb/include",
                 "/home/mhlee/Work/dev/vraft/third_party/libuv/include",
                 "/home/mhlee/Work/dev/vraft/third_party/nlohmann_json/single_include",
+                "/home/mhlee/anaconda3/envs/python_study/include/python3.12",
+                "/home/mhlee/anaconda3/envs/python_study/lib/python3.12/site-packages/pybind11/include",
                 "/root/Work/dev/vraft/src/raft",
                 "/root/Work/dev/vraft/src/seda",
                 "/root/Work/dev/vraft/src/util",
