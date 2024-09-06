@@ -15,9 +15,14 @@ PYBIND11_MODULE(vdb_module, m) {
 
     py::class_<vectordb::VdbEngine>(m, "VdbEngine")
         .def(py::init<const std::string &>())
-        .def("get_knn", [](vectordb::VdbEngine &self, const std::string &table, const std::vector<float> &vec, int limit) {
+        .def("get_knn_by_vector", [](vectordb::VdbEngine &self, const std::string &table, const std::vector<float> &vec, int limit) {
             std::vector<vectordb::VecResult> results;
             int32_t res_code = self.GetKNN(table, vec, results, limit);
             return std::make_pair(res_code, results);
-        }, py::arg("table"), py::arg("vec"), py::arg("limit"));
+        }, py::arg("table"), py::arg("vec"), py::arg("limit"))
+        .def("get_knn_by_key", [](vectordb::VdbEngine &self, const std::string &table, const std::string &key, int limit) {
+            std::vector<vectordb::VecResult> results;
+            int32_t res_code = self.GetKNN(table, key, results, limit);
+            return std::make_pair(res_code, results);
+        }, py::arg("table"), py::arg("key"), py::arg("limit"));
 }
