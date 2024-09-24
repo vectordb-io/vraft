@@ -57,6 +57,8 @@ VRAFT is a framework written in C++ that implements the RAFT protocol and the SE
 
 [《Raft Emulator的设计》](https://zhuanlan.zhihu.com/p/707899225) <br>
 
+[remu run cases](https://vectordb-io.github.io/remu/) <br>
+
 ## Remu-Architecture
 
 ![](images/remu_arch.png)
